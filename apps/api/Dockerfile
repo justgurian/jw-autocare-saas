@@ -1,4 +1,4 @@
-# Build stage
+# Build stage - updated 2026-01-21-v2
 FROM node:20-alpine AS builder
 
 WORKDIR /app
