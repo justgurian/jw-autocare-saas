@@ -183,13 +183,10 @@ export const carOfDayService = {
       throw new Error(imageResult.error || `Failed to generate ${assetType} image`);
     }
 
-    // Upload to storage
-    const filename = `cod-${assetType}-${Date.now()}.png`;
-    const imageUrl = await storageService.uploadBuffer(
-      imageResult.imageData,
-      `tenants/${tenantId}/car-of-day/${filename}`,
-      imageResult.mimeType || 'image/png'
-    );
+    // Convert to base64 data URL for immediate display
+    const base64Data = imageResult.imageData.toString('base64');
+    const mimeType = imageResult.mimeType || 'image/png';
+    const imageUrl = `data:${mimeType};base64,${base64Data}`;
 
     // Generate caption
     const caption = generateCaption({

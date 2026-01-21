@@ -127,15 +127,12 @@ router.post('/generate', generationRateLimiter, async (req: Request, res: Respon
             let aiGenerated = false;
 
             if (imageResult.success && imageResult.imageData) {
-              const saved = await storageService.saveImage(
-                imageResult.imageData,
-                tenantId,
-                contentId,
-                imageResult.mimeType || 'image/png'
-              );
-              imageUrl = saved.url;
+              // Convert to base64 data URL for immediate display
+              const base64Data = imageResult.imageData.toString('base64');
+              const mimeType = imageResult.mimeType || 'image/png';
+              imageUrl = `data:${mimeType};base64,${base64Data}`;
               aiGenerated = true;
-              logger.info(`AI image generated for item ${i + 1}`, { contentId });
+              logger.info(`AI image generated for item ${i + 1}`, { contentId, size: imageResult.imageData.length });
             } else {
               // Fallback to placeholder
               const colorHex = theme.imagePrompt.colorPalette.split(',')[0].trim().replace('#', '').substring(0, 6) || 'C53030';

@@ -190,16 +190,14 @@ router.post('/instant', generationRateLimiter, async (req: Request, res: Respons
 
     let imageUrl: string;
     if (imageResult.success && imageResult.imageData) {
-      const saved = await storageService.saveImage(
-        imageResult.imageData,
-        tenantId,
-        contentId,
-        imageResult.mimeType || 'image/png'
-      );
-      imageUrl = saved.url;
-      logger.info('Instant flyer image saved', { contentId, url: imageUrl });
+      // Convert to base64 data URL for immediate display (works without file storage)
+      const base64Data = imageResult.imageData.toString('base64');
+      const mimeType = imageResult.mimeType || 'image/png';
+      imageUrl = `data:${mimeType};base64,${base64Data}`;
+      logger.info('Instant flyer image generated', { contentId, size: imageResult.imageData.length });
     } else {
       // Fallback placeholder
+      logger.warn('Instant flyer image generation failed', { error: imageResult.error });
       const colorHex = randomStyle.previewColors?.[0]?.replace('#', '') || 'C53030';
       imageUrl = `https://placehold.co/800x1000/${colorHex}/FFF?text=${encodeURIComponent(content.message.substring(0, 20))}`;
     }
@@ -336,15 +334,11 @@ router.post('/generate', generationRateLimiter, async (req: Request, res: Respon
     let imageUrl: string;
 
     if (imageResult.success && imageResult.imageData) {
-      // Save the generated image
-      const saved = await storageService.saveImage(
-        imageResult.imageData,
-        tenantId,
-        contentId,
-        imageResult.mimeType || 'image/png'
-      );
-      imageUrl = saved.url;
-      logger.info('AI-generated image saved', { contentId, url: imageUrl });
+      // Convert to base64 data URL for immediate display (works without file storage)
+      const base64Data = imageResult.imageData.toString('base64');
+      const mimeType = imageResult.mimeType || 'image/png';
+      imageUrl = `data:${mimeType};base64,${base64Data}`;
+      logger.info('AI-generated image created', { contentId, size: imageResult.imageData.length });
     } else {
       // Fallback to placeholder if image generation fails
       logger.warn('Image generation failed, using placeholder', { error: imageResult.error });

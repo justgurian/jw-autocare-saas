@@ -313,12 +313,9 @@ Include bold text overlay and automotive imagery.`;
 
     let thumbnailUrl = '';
     if (thumbnailResult.success && thumbnailResult.imageData) {
-      const filename = `video-thumb-${jobId}-${Date.now()}.png`;
-      thumbnailUrl = await storageService.uploadBuffer(
-        thumbnailResult.imageData,
-        `tenants/${tenantId}/videos/${filename}`,
-        'image/png'
-      );
+      // Convert to base64 data URL for immediate display
+      const base64Data = thumbnailResult.imageData.toString('base64');
+      thumbnailUrl = `data:image/png;base64,${base64Data}`;
     }
 
     // Generate caption

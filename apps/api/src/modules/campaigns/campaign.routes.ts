@@ -186,13 +186,10 @@ router.post('/launch', generationRateLimiter, async (req: Request, res: Response
             let aiGenerated = false;
 
             if (imageResult.success && imageResult.imageData) {
-              const saved = await storageService.saveImage(
-                imageResult.imageData,
-                tenantId,
-                contentId,
-                imageResult.mimeType || 'image/png'
-              );
-              imageUrl = saved.url;
+              // Convert to base64 data URL for immediate display
+              const base64Data = imageResult.imageData.toString('base64');
+              const mimeType = imageResult.mimeType || 'image/png';
+              imageUrl = `data:${mimeType};base64,${base64Data}`;
               aiGenerated = true;
             } else {
               // Fallback placeholder

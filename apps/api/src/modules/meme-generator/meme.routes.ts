@@ -114,16 +114,14 @@ router.post('/generate', generationRateLimiter, async (req: Request, res: Respon
 
     let imageUrl: string;
     if (imageResult.success && imageResult.imageData) {
-      const saved = await storageService.saveImage(
-        imageResult.imageData,
-        tenantId,
-        contentId,
-        imageResult.mimeType || 'image/png'
-      );
-      imageUrl = saved.url;
-      logger.info('Meme image saved', { contentId, url: imageUrl });
+      // Convert to base64 data URL for immediate display (works without file storage)
+      const base64Data = imageResult.imageData.toString('base64');
+      const mimeType = imageResult.mimeType || 'image/png';
+      imageUrl = `data:${mimeType};base64,${base64Data}`;
+      logger.info('Meme image generated', { contentId, size: imageResult.imageData.length });
     } else {
       // Fallback placeholder
+      logger.warn('Meme image generation failed', { error: imageResult.error });
       imageUrl = `https://placehold.co/1080x1080/1F2937/FFF?text=${encodeURIComponent(topic.substring(0, 30))}`;
     }
 
@@ -239,14 +237,13 @@ router.post('/random', generationRateLimiter, async (req: Request, res: Response
 
     let imageUrl: string;
     if (imageResult.success && imageResult.imageData) {
-      const saved = await storageService.saveImage(
-        imageResult.imageData,
-        tenantId,
-        contentId,
-        imageResult.mimeType || 'image/png'
-      );
-      imageUrl = saved.url;
+      // Convert to base64 data URL for immediate display
+      const base64Data = imageResult.imageData.toString('base64');
+      const mimeType = imageResult.mimeType || 'image/png';
+      imageUrl = `data:${mimeType};base64,${base64Data}`;
+      logger.info('Random meme image generated', { contentId, size: imageResult.imageData.length });
     } else {
+      logger.warn('Random meme image generation failed', { error: imageResult.error });
       imageUrl = `https://placehold.co/1080x1080/1F2937/FFF?text=${encodeURIComponent(randomTopic.substring(0, 30))}`;
     }
 
