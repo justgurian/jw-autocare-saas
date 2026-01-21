@@ -4,11 +4,19 @@ import path from 'path';
 // Load environment variables
 dotenv.config({ path: path.resolve(__dirname, '../../../../.env') });
 
+// Determine API URL for production (Railway provides RAILWAY_PUBLIC_DOMAIN)
+const getApiUrl = () => {
+  if (process.env.API_URL) return process.env.API_URL;
+  if (process.env.RAILWAY_PUBLIC_DOMAIN) return `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`;
+  if (process.env.RAILWAY_STATIC_URL) return process.env.RAILWAY_STATIC_URL;
+  return 'http://localhost:3001';
+};
+
 export const config = {
   // Application
   env: process.env.NODE_ENV || 'development',
   port: parseInt(process.env.PORT || '3001', 10),
-  apiUrl: process.env.API_URL || 'http://localhost:3001',
+  apiUrl: getApiUrl(),
   webUrl: process.env.WEB_URL || 'http://localhost:3000',
 
   // Database
