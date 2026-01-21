@@ -5,7 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { getSeasonalEventsForMonth, getStateTips, getSeasonName } from '../prompts/calendar/seasonal-data';
 
-// Initialize Gemini client
+// Initialize Gemini client (build: 2026-01-21-v2)
 const genAI = new GoogleGenerativeAI(config.gemini.apiKey);
 
 // Models - using available Gemini models
