@@ -12,9 +12,9 @@ const genAI = new GoogleGenerativeAI(config.gemini.apiKey);
 const textModel = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 const visionModel = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
-// Image generation model - Gemini 2.0 Flash with image output capability
+// Image generation model - Nano Banana Pro (Gemini 3 Pro Image Preview)
 const imageModel = genAI.getGenerativeModel({
-  model: 'gemini-2.0-flash-exp',
+  model: 'gemini-3-pro-image-preview',
   generationConfig: {
     // @ts-ignore - responseModalities is supported in newer versions
     responseModalities: ['TEXT', 'IMAGE'],
