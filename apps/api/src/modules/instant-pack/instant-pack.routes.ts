@@ -6,7 +6,6 @@ import { generationRateLimiter } from '../../middleware/rate-limit.middleware';
 import { prisma } from '../../db/client';
 import { themeRegistry } from '../../prompts/themes';
 import { geminiService } from '../../services/gemini.service';
-import { storageService } from '../../services/storage.service';
 import { ValidationError } from '../../middleware/error.middleware';
 import { TIER_LIMITS } from '../../config';
 import { logger } from '../../utils/logger';

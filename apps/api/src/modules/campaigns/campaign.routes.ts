@@ -5,7 +5,6 @@ import { tenantContext } from '../../middleware/tenant.middleware';
 import { generationRateLimiter } from '../../middleware/rate-limit.middleware';
 import { prisma } from '../../db/client';
 import { geminiService } from '../../services/gemini.service';
-import { storageService } from '../../services/storage.service';
 import { themeRegistry } from '../../prompts/themes';
 import { ValidationError } from '../../middleware/error.middleware';
 import { logger } from '../../utils/logger';

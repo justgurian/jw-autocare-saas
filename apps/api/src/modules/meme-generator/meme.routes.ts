@@ -5,7 +5,6 @@ import { tenantContext } from '../../middleware/tenant.middleware';
 import { generationRateLimiter } from '../../middleware/rate-limit.middleware';
 import { prisma } from '../../db/client';
 import { geminiService } from '../../services/gemini.service';
-import { storageService } from '../../services/storage.service';
 import { MEME_STYLES, getMemeStyle, buildMemePrompt, getRandomTopicForStyle } from '../../prompts/memes/meme-styles';
 import { ValidationError } from '../../middleware/error.middleware';
 import { logger } from '../../utils/logger';
