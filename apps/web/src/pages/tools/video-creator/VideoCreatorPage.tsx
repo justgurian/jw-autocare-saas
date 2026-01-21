@@ -1,0 +1,599 @@
+import { useState, useEffect } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { videoCreatorApi, downloadApi } from '../../../services/api';
+import {
+  Video,
+  Film,
+  Sparkles,
+  Clock,
+  Layout,
+  Play,
+  Download,
+  Share2,
+  Loader,
+  ChevronRight,
+  RefreshCw,
+  Check,
+  AlertCircle,
+} from 'lucide-react';
+import toast from 'react-hot-toast';
+import ShareModal from '../../../components/features/ShareModal';
+
+// Types
+type VideoStyle = 'cinematic' | 'commercial' | 'social-media' | 'documentary' | 'animated' | 'retro';
+type VideoAspectRatio = '16:9' | '9:16' | '1:1' | '4:5';
+type VideoDuration = '5s' | '10s' | '15s' | '30s';
+
+interface VideoTemplate {
+  id: string;
+  name: string;
+  description: string;
+  style: VideoStyle;
+  duration: VideoDuration;
+  aspectRatio: VideoAspectRatio;
+  category: string;
+}
+
+interface VideoJob {
+  id: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  progress: number;
+  videoUrl?: string;
+  thumbnailUrl?: string;
+  caption?: string;
+  error?: string;
+}
+
+interface GeneratedVideo {
+  id: string;
+  videoUrl: string;
+  thumbnailUrl: string;
+  caption: string;
+  duration: string;
+  aspectRatio: string;
+  style: string;
+}
+
+const STYLE_INFO: Record<VideoStyle, { icon: string; color: string }> = {
+  cinematic: { icon: '🎬', color: 'bg-purple-100 text-purple-800' },
+  commercial: { icon: '📺', color: 'bg-blue-100 text-blue-800' },
+  'social-media': { icon: '📱', color: 'bg-pink-100 text-pink-800' },
+  documentary: { icon: '🎥', color: 'bg-green-100 text-green-800' },
+  animated: { icon: '✨', color: 'bg-yellow-100 text-yellow-800' },
+  retro: { icon: '📼', color: 'bg-orange-100 text-orange-800' },
+};
+
+export default function VideoCreatorPage() {
+  const [step, setStep] = useState<'template' | 'customize' | 'generating' | 'result'>('template');
+  const [selectedTemplate, setSelectedTemplate] = useState<VideoTemplate | null>(null);
+  const [formData, setFormData] = useState({
+    topic: '',
+    serviceHighlight: '',
+    callToAction: '',
+    style: 'commercial' as VideoStyle,
+    aspectRatio: '9:16' as VideoAspectRatio,
+    duration: '15s' as VideoDuration,
+    voiceoverText: '',
+  });
+  const [currentJob, setCurrentJob] = useState<VideoJob | null>(null);
+  const [generatedVideo, setGeneratedVideo] = useState<GeneratedVideo | null>(null);
+  const [showShareModal, setShowShareModal] = useState(false);
+
+  // Fetch templates
+  const { data: templatesData, isLoading: templatesLoading } = useQuery({
+    queryKey: ['video-templates'],
+    queryFn: () => videoCreatorApi.getTemplates().then((res) => res.data),
+  });
+
+  // Fetch options
+  const { data: optionsData } = useQuery({
+    queryKey: ['video-options'],
+    queryFn: () => videoCreatorApi.getOptions().then((res) => res.data),
+  });
+
+  const templates: VideoTemplate[] = templatesData?.data || [];
+  const options = optionsData?.data;
+
+  // Generate mutation
+  const generateMutation = useMutation({
+    mutationFn: (data: typeof formData & { templateId?: string }) =>
+      videoCreatorApi.generate(data),
+    onSuccess: (response) => {
+      const job = response.data.data.job;
+      setCurrentJob(job);
+      setStep('generating');
+      pollJobStatus(job.id);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.error || 'Failed to start video generation');
+    },
+  });
+
+  // Poll job status
+  const pollJobStatus = async (jobId: string) => {
+    const poll = async () => {
+      try {
+        const response = await videoCreatorApi.getJob(jobId);
+        const job = response.data.data as VideoJob;
+        setCurrentJob(job);
+
+        if (job.status === 'completed') {
+          setGeneratedVideo({
+            id: jobId,
+            videoUrl: job.videoUrl || '',
+            thumbnailUrl: job.thumbnailUrl || '',
+            caption: job.caption || '',
+            duration: formData.duration,
+            aspectRatio: formData.aspectRatio,
+            style: formData.style,
+          });
+          setStep('result');
+          toast.success('Video generated successfully!');
+        } else if (job.status === 'failed') {
+          toast.error(job.error || 'Video generation failed');
+          setStep('customize');
+        } else {
+          // Continue polling
+          setTimeout(poll, 2000);
+        }
+      } catch (error) {
+        toast.error('Failed to check job status');
+        setStep('customize');
+      }
+    };
+
+    poll();
+  };
+
+  // Handle template selection
+  const handleSelectTemplate = (template: VideoTemplate) => {
+    setSelectedTemplate(template);
+    setFormData((prev) => ({
+      ...prev,
+      style: template.style,
+      aspectRatio: template.aspectRatio,
+      duration: template.duration,
+    }));
+    setStep('customize');
+  };
+
+  // Handle form change
+  const handleChange = (field: keyof typeof formData, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  // Handle generate
+  const handleGenerate = () => {
+    if (!formData.topic.trim()) {
+      toast.error('Please enter a topic');
+      return;
+    }
+
+    generateMutation.mutate({
+      ...formData,
+      templateId: selectedTemplate?.id,
+    });
+  };
+
+  // Handle reset
+  const handleReset = () => {
+    setStep('template');
+    setSelectedTemplate(null);
+    setFormData({
+      topic: '',
+      serviceHighlight: '',
+      callToAction: '',
+      style: 'commercial',
+      aspectRatio: '9:16',
+      duration: '15s',
+      voiceoverText: '',
+    });
+    setCurrentJob(null);
+    setGeneratedVideo(null);
+  };
+
+  // Handle download
+  const handleDownload = async () => {
+    if (!generatedVideo?.videoUrl) {
+      toast.error('No video to download');
+      return;
+    }
+
+    try {
+      // For now, open video in new tab (actual download would require backend support)
+      window.open(generatedVideo.videoUrl, '_blank');
+      toast.success('Opening video...');
+    } catch {
+      toast.error('Failed to download');
+    }
+  };
+
+  return (
+    <div className="max-w-5xl mx-auto space-y-8">
+      {/* Header */}
+      <div className="text-center">
+        <h1 className="heading-retro flex items-center justify-center gap-3">
+          <Video className="text-retro-mustard" />
+          Video Creator
+        </h1>
+        <p className="text-gray-600 mt-2">
+          Create AI-powered promotional videos for your auto shop
+        </p>
+        <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+          <Sparkles size={14} />
+          Powered by Sora 2
+        </div>
+      </div>
+
+      {/* Step: Template Selection */}
+      {step === 'template' && (
+        <div className="space-y-6">
+          <div className="card-retro">
+            <h2 className="font-heading text-xl uppercase mb-4 border-b border-gray-200 pb-2">
+              Choose a Template
+            </h2>
+
+            {templatesLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader className="animate-spin text-retro-red" size={32} />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {templates.map((template) => {
+                  const styleInfo = STYLE_INFO[template.style];
+
+                  return (
+                    <button
+                      key={template.id}
+                      onClick={() => handleSelectTemplate(template)}
+                      className="p-4 border-4 border-gray-200 rounded-lg text-left hover:border-retro-red hover:shadow-retro transition-all group"
+                    >
+                      <div className="flex items-start gap-3">
+                        <span className="text-3xl">{styleInfo.icon}</span>
+                        <div className="flex-1">
+                          <h3 className="font-heading text-lg uppercase group-hover:text-retro-red">
+                            {template.name}
+                          </h3>
+                          <p className="text-sm text-gray-600">{template.description}</p>
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            <span className={`text-xs px-2 py-0.5 rounded ${styleInfo.color}`}>
+                              {template.style}
+                            </span>
+                            <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-700">
+                              {template.duration}
+                            </span>
+                            <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-700">
+                              {template.aspectRatio}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Custom Option */}
+          <div className="text-center">
+            <button
+              onClick={() => setStep('customize')}
+              className="btn-retro-outline"
+            >
+              Or create a custom video from scratch
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Step: Customize */}
+      {step === 'customize' && (
+        <div className="card-retro space-y-6">
+          {/* Selected Template Badge */}
+          {selectedTemplate && (
+            <div className="flex items-center gap-3 p-3 bg-retro-cream border-2 border-retro-mustard rounded">
+              <span className="text-2xl">{STYLE_INFO[selectedTemplate.style].icon}</span>
+              <div>
+                <p className="font-heading uppercase text-sm">Using Template:</p>
+                <p className="font-bold">{selectedTemplate.name}</p>
+              </div>
+              <button
+                onClick={() => {
+                  setSelectedTemplate(null);
+                  setStep('template');
+                }}
+                className="ml-auto text-sm text-gray-500 hover:text-red-500"
+              >
+                Change
+              </button>
+            </div>
+          )}
+
+          {/* Form Fields */}
+          <div className="space-y-4">
+            <div>
+              <label className="block font-heading text-sm uppercase mb-1">
+                Topic / Main Message *
+              </label>
+              <input
+                type="text"
+                value={formData.topic}
+                onChange={(e) => handleChange('topic', e.target.value)}
+                placeholder="e.g., Summer AC Special, Brake Safety Week, Oil Change Deal"
+                className="w-full p-3 border-2 border-black rounded focus:ring-2 focus:ring-retro-red focus:border-retro-red"
+              />
+            </div>
+
+            <div>
+              <label className="block font-heading text-sm uppercase mb-1">
+                Service Highlight
+              </label>
+              <input
+                type="text"
+                value={formData.serviceHighlight}
+                onChange={(e) => handleChange('serviceHighlight', e.target.value)}
+                placeholder="e.g., $49.99 oil change, Free AC check, 10% off brakes"
+                className="w-full p-3 border-2 border-black rounded focus:ring-2 focus:ring-retro-red focus:border-retro-red"
+              />
+            </div>
+
+            <div>
+              <label className="block font-heading text-sm uppercase mb-1">
+                Call to Action
+              </label>
+              <input
+                type="text"
+                value={formData.callToAction}
+                onChange={(e) => handleChange('callToAction', e.target.value)}
+                placeholder="e.g., Call now!, Book online today, Visit us in Scottsdale"
+                className="w-full p-3 border-2 border-black rounded focus:ring-2 focus:ring-retro-red focus:border-retro-red"
+              />
+            </div>
+
+            {/* Style, Duration, Aspect Ratio */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block font-heading text-sm uppercase mb-1">
+                  <Film size={14} className="inline mr-1" />
+                  Style
+                </label>
+                <select
+                  value={formData.style}
+                  onChange={(e) => handleChange('style', e.target.value)}
+                  className="w-full p-3 border-2 border-black rounded focus:ring-2 focus:ring-retro-red"
+                >
+                  {options?.styles?.map((s: any) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  )) || (
+                    <>
+                      <option value="commercial">Commercial</option>
+                      <option value="cinematic">Cinematic</option>
+                      <option value="social-media">Social Media</option>
+                      <option value="documentary">Documentary</option>
+                      <option value="animated">Animated</option>
+                      <option value="retro">Retro</option>
+                    </>
+                  )}
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-heading text-sm uppercase mb-1">
+                  <Clock size={14} className="inline mr-1" />
+                  Duration
+                </label>
+                <select
+                  value={formData.duration}
+                  onChange={(e) => handleChange('duration', e.target.value)}
+                  className="w-full p-3 border-2 border-black rounded focus:ring-2 focus:ring-retro-red"
+                >
+                  <option value="5s">5 seconds</option>
+                  <option value="10s">10 seconds</option>
+                  <option value="15s">15 seconds</option>
+                  <option value="30s">30 seconds</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-heading text-sm uppercase mb-1">
+                  <Layout size={14} className="inline mr-1" />
+                  Aspect Ratio
+                </label>
+                <select
+                  value={formData.aspectRatio}
+                  onChange={(e) => handleChange('aspectRatio', e.target.value)}
+                  className="w-full p-3 border-2 border-black rounded focus:ring-2 focus:ring-retro-red"
+                >
+                  <option value="9:16">Portrait 9:16 (TikTok/Reels)</option>
+                  <option value="16:9">Landscape 16:9 (YouTube)</option>
+                  <option value="1:1">Square 1:1 (Instagram)</option>
+                  <option value="4:5">Portrait 4:5 (Instagram Feed)</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Voiceover (optional) */}
+            <div>
+              <label className="block font-heading text-sm uppercase mb-1">
+                Voiceover Script (Optional)
+              </label>
+              <textarea
+                value={formData.voiceoverText}
+                onChange={(e) => handleChange('voiceoverText', e.target.value)}
+                placeholder="Add a script for AI-generated voiceover..."
+                rows={3}
+                className="w-full p-3 border-2 border-black rounded focus:ring-2 focus:ring-retro-red focus:border-retro-red"
+              />
+            </div>
+          </div>
+
+          {/* Generate Button */}
+          <div className="flex gap-4">
+            <button
+              onClick={() => setStep('template')}
+              className="btn-retro-outline"
+            >
+              Back
+            </button>
+            <button
+              onClick={handleGenerate}
+              disabled={generateMutation.isPending || !formData.topic.trim()}
+              className="flex-1 btn-retro-primary flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {generateMutation.isPending ? (
+                <Loader className="animate-spin" size={20} />
+              ) : (
+                <Sparkles size={20} />
+              )}
+              Generate Video
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Step: Generating */}
+      {step === 'generating' && currentJob && (
+        <div className="card-retro text-center py-12">
+          <div className="max-w-md mx-auto space-y-6">
+            <div className="relative">
+              <div className="w-24 h-24 mx-auto rounded-full bg-retro-red/10 flex items-center justify-center">
+                <Loader className="w-12 h-12 animate-spin text-retro-red" />
+              </div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-3xl">🎬</span>
+              </div>
+            </div>
+
+            <div>
+              <h2 className="font-heading text-2xl uppercase">Creating Your Video</h2>
+              <p className="text-gray-600 mt-2">
+                {currentJob.status === 'pending' && 'Preparing your video...'}
+                {currentJob.status === 'processing' && 'AI is generating your video...'}
+              </p>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="w-full bg-gray-200 rounded-full h-3">
+              <div
+                className="h-full bg-retro-red rounded-full transition-all duration-500"
+                style={{ width: `${currentJob.progress}%` }}
+              />
+            </div>
+            <p className="text-sm text-gray-500">{currentJob.progress}% complete</p>
+
+            <p className="text-xs text-gray-400">
+              This may take 30-60 seconds depending on video length
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Step: Result */}
+      {step === 'result' && generatedVideo && (
+        <div className="space-y-6">
+          <div className="card-retro text-center">
+            <div className="flex items-center justify-center gap-2 text-green-600 mb-4">
+              <Check size={24} />
+              <span className="font-heading text-xl uppercase">Video Ready!</span>
+            </div>
+
+            {/* Video Preview */}
+            <div className="max-w-lg mx-auto">
+              {generatedVideo.thumbnailUrl ? (
+                <div className="relative aspect-video bg-gray-900 rounded-lg overflow-hidden border-4 border-black shadow-retro">
+                  <img
+                    src={generatedVideo.thumbnailUrl}
+                    alt="Video thumbnail"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-16 h-16 bg-white/90 rounded-full flex items-center justify-center">
+                      <Play size={32} className="text-retro-red ml-1" />
+                    </div>
+                  </div>
+                  <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-2 py-1 rounded">
+                    {generatedVideo.duration}
+                  </div>
+                </div>
+              ) : (
+                <div className="aspect-video bg-gray-100 rounded-lg flex items-center justify-center border-4 border-black">
+                  <div className="text-center text-gray-500">
+                    <AlertCircle size={48} className="mx-auto mb-2" />
+                    <p>Video preview not available</p>
+                    <p className="text-xs">(API key required for full video generation)</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Video Info */}
+            <div className="flex justify-center gap-4 mt-4">
+              <span className={`px-3 py-1 rounded-full text-sm ${STYLE_INFO[generatedVideo.style as VideoStyle]?.color || 'bg-gray-100'}`}>
+                {STYLE_INFO[generatedVideo.style as VideoStyle]?.icon} {generatedVideo.style}
+              </span>
+              <span className="px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-700">
+                {generatedVideo.aspectRatio}
+              </span>
+              <span className="px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-700">
+                {generatedVideo.duration}
+              </span>
+            </div>
+          </div>
+
+          {/* Caption */}
+          {generatedVideo.caption && (
+            <div className="card-retro">
+              <h3 className="font-heading text-sm uppercase text-gray-600 mb-2">Caption:</h3>
+              <p className="text-gray-900 whitespace-pre-wrap">{generatedVideo.caption}</p>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="grid grid-cols-2 gap-4">
+            <button
+              onClick={handleDownload}
+              className="btn-retro-secondary flex items-center justify-center gap-2"
+              disabled={!generatedVideo.videoUrl}
+            >
+              <Download size={18} />
+              Download
+            </button>
+            <button
+              onClick={() => setShowShareModal(true)}
+              className="btn-retro-primary flex items-center justify-center gap-2"
+            >
+              <Share2 size={18} />
+              Share
+            </button>
+          </div>
+
+          {/* Start Over */}
+          <button
+            onClick={handleReset}
+            className="w-full btn-retro-outline flex items-center justify-center gap-2"
+          >
+            <RefreshCw size={16} />
+            Create Another Video
+          </button>
+        </div>
+      )}
+
+      {/* Share Modal */}
+      {generatedVideo && (
+        <ShareModal
+          isOpen={showShareModal}
+          onClose={() => setShowShareModal(false)}
+          content={{
+            id: generatedVideo.id,
+            title: `Video - ${formData.topic}`,
+            imageUrl: generatedVideo.thumbnailUrl,
+            caption: generatedVideo.caption,
+          }}
+        />
+      )}
+    </div>
+  );
+}

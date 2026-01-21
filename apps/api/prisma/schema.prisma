@@ -1,0 +1,393 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// TENANTS & USERS
+// ============================================================================
+
+model Tenant {
+  id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                 String   @db.VarChar(255)
+  slug                 String   @unique @db.VarChar(100)
+  subscriptionTier     String   @default("base") @map("subscription_tier") @db.VarChar(20)
+  subscriptionStatus   String   @default("trialing") @map("subscription_status") @db.VarChar(20)
+  stripeCustomerId     String?  @map("stripe_customer_id") @db.VarChar(255)
+  stripeSubscriptionId String?  @map("stripe_subscription_id") @db.VarChar(255)
+  settings             Json     @default("{}")
+  onboardingCompleted  Boolean  @default(false) @map("onboarding_completed")
+  onboardingStep       Int      @default(1) @map("onboarding_step")
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt            DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  users               User[]
+  brandKit            BrandKit?
+  services            Service[]
+  specials            Special[]
+  content             Content[]
+  calendarEvents      CalendarEvent[]
+  usageLogs           UsageLog[]
+  batchJobs           BatchJob[]
+  socialAccounts      SocialAccount[]
+  checkInSubmissions  CheckInSubmission[]
+  prizeConfiguration  PrizeConfiguration?
+
+  @@map("tenants")
+}
+
+model User {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String   @map("tenant_id") @db.Uuid
+  email         String   @db.VarChar(255)
+  passwordHash  String?  @map("password_hash") @db.VarChar(255)
+  role          String   @default("staff") @db.VarChar(20)
+  firstName     String?  @map("first_name") @db.VarChar(100)
+  lastName      String?  @map("last_name") @db.VarChar(100)
+  googleId      String?  @map("google_id") @db.VarChar(255)
+  emailVerified Boolean  @default(false) @map("email_verified")
+  lastLoginAt   DateTime? @map("last_login_at") @db.Timestamptz
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  content   Content[]
+  usageLogs UsageLog[]
+  batchJobs BatchJob[]
+
+  @@unique([tenantId, email])
+  @@map("users")
+}
+
+// ============================================================================
+// BRAND & BUSINESS INFO
+// ============================================================================
+
+model BrandKit {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId       String   @unique @map("tenant_id") @db.Uuid
+
+  // Logo & Colors
+  logoUrl        String?  @map("logo_url") @db.VarChar(500)
+  logoPublicId   String?  @map("logo_public_id") @db.VarChar(255)
+  primaryColor   String?  @map("primary_color") @db.VarChar(7)
+  secondaryColor String?  @map("secondary_color") @db.VarChar(7)
+  accentColor    String?  @map("accent_color") @db.VarChar(7)
+
+  // Brand Identity
+  brandVoice     String?  @map("brand_voice") @db.Text
+  tagline        String?  @db.VarChar(255)
+
+  // Business Info
+  businessName   String?  @map("business_name") @db.VarChar(255)
+  phone          String?  @db.VarChar(20)
+  email          String?  @db.VarChar(255)
+  address        String?  @db.Text
+  city           String?  @db.VarChar(100)
+  state          String?  @db.VarChar(50)
+  zipCode        String?  @map("zip_code") @db.VarChar(20)
+  website        String?  @db.VarChar(255)
+
+  // Shop Specialties & Expertise
+  specialties    String[] @default([])
+
+  // Unique Selling Points
+  uniqueSellingPoints String[] @default([]) @map("unique_selling_points")
+
+  // Target Customers
+  targetDemographics String? @map("target_demographics") @db.Text
+  targetPainPoints   String? @map("target_pain_points") @db.Text
+
+  // Social Media
+  socialLinks    Json     @default("{}") @map("social_links")
+
+  // Shop Photos
+  shopPhotos     String[] @default([]) @map("shop_photos")
+
+  // Content Preferences
+  defaultVehicle String   @default("corvette") @map("default_vehicle") @db.VarChar(20)
+
+  // Timestamps
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("brand_kits")
+}
+
+model Service {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  name        String   @db.VarChar(255)
+  description String?  @db.Text
+  priceRange  String?  @map("price_range") @db.VarChar(50)
+  category    String?  @db.VarChar(100)
+  isSpecialty Boolean  @default(false) @map("is_specialty")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("services")
+}
+
+model Special {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String   @map("tenant_id") @db.Uuid
+  title         String   @db.VarChar(255)
+  description   String?  @db.Text
+  discountType  String?  @map("discount_type") @db.VarChar(20)
+  discountValue Decimal? @map("discount_value") @db.Decimal(10, 2)
+  validDays     String[] @map("valid_days") @db.VarChar(50)
+  recurring     Boolean  @default(false)
+  startDate     DateTime? @map("start_date") @db.Date
+  endDate       DateTime? @map("end_date") @db.Date
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("specials")
+}
+
+// ============================================================================
+// GENERATED CONTENT
+// ============================================================================
+
+model Content {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId         String   @map("tenant_id") @db.Uuid
+  userId           String?  @map("user_id") @db.Uuid
+  batchJobId       String?  @map("batch_job_id") @db.Uuid
+  tool             String   @db.VarChar(50)
+  contentType      String   @map("content_type") @db.VarChar(20)
+  title            String?  @db.VarChar(255)
+  promptUsed       String?  @map("prompt_used") @db.Text
+  theme            String?  @db.VarChar(100)
+  imageUrl         String?  @map("image_url") @db.VarChar(500)
+  pdfUrl           String?  @map("pdf_url") @db.VarChar(500)
+  thumbnailUrl     String?  @map("thumbnail_url") @db.VarChar(500)
+  mockupUrl        String?  @map("mockup_url") @db.VarChar(500)
+  caption          String?  @db.Text
+  captionSpanish   String?  @map("caption_spanish") @db.Text
+  metadata         Json     @default("{}")
+  status           String   @default("draft") @db.VarChar(20)
+  moderationStatus String   @default("pending") @map("moderation_status") @db.VarChar(20)
+  moderationNotes  String?  @map("moderation_notes") @db.Text
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user           User?           @relation(fields: [userId], references: [id])
+  batchJob       BatchJob?       @relation(fields: [batchJobId], references: [id])
+  calendarEvents CalendarEvent[]
+
+  @@index([tenantId, tool])
+  @@index([tenantId, createdAt])
+  @@map("content")
+}
+
+// ============================================================================
+// MARKETING CALENDAR
+// ============================================================================
+
+model CalendarEvent {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  contentId      String?  @map("content_id") @db.Uuid
+  scheduledDate  DateTime @map("scheduled_date") @db.Date
+  beatType       String?  @map("beat_type") @db.VarChar(50)
+  suggestedTopic String?  @map("suggested_topic") @db.Text
+  suggestedTheme String?  @map("suggested_theme") @db.VarChar(100)
+  aiGenerated    Boolean  @default(true) @map("ai_generated")
+  status         String   @default("suggested") @db.VarChar(20)
+  notes          String?  @db.Text
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  tenant  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  content Content? @relation(fields: [contentId], references: [id])
+
+  @@index([tenantId, scheduledDate])
+  @@map("calendar_events")
+}
+
+// ============================================================================
+// USAGE & BILLING
+// ============================================================================
+
+model UsageLog {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  userId      String?  @map("user_id") @db.Uuid
+  action      String   @db.VarChar(50)
+  tool        String?  @db.VarChar(50)
+  tokensUsed  Int      @default(0) @map("tokens_used")
+  creditsUsed Decimal  @default(0) @map("credits_used") @db.Decimal(10, 4)
+  metadata    Json     @default("{}")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [userId], references: [id])
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, action])
+  @@map("usage_logs")
+}
+
+model BatchJob {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId       String    @map("tenant_id") @db.Uuid
+  userId         String?   @map("user_id") @db.Uuid
+  jobType        String    @map("job_type") @db.VarChar(50)
+  totalItems     Int       @map("total_items")
+  completedItems Int       @default(0) @map("completed_items")
+  failedItems    Int       @default(0) @map("failed_items")
+  status         String    @default("pending") @db.VarChar(20)
+  metadata       Json      @default("{}")
+  startedAt      DateTime? @map("started_at") @db.Timestamptz
+  completedAt    DateTime? @map("completed_at") @db.Timestamptz
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  tenant  Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user    User?     @relation(fields: [userId], references: [id])
+  content Content[]
+
+  @@index([tenantId, status])
+  @@map("batch_jobs")
+}
+
+// ============================================================================
+// REFRESH TOKENS (for JWT rotation)
+// ============================================================================
+
+model RefreshToken {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  token     String   @unique @db.VarChar(500)
+  userId    String   @map("user_id") @db.Uuid
+  expiresAt DateTime @map("expires_at") @db.Timestamptz
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+// ============================================================================
+// SOCIAL MEDIA ACCOUNTS
+// ============================================================================
+
+model SocialAccount {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid
+  platform        String    @db.VarChar(20) // 'facebook' | 'instagram'
+  accountId       String    @map("account_id") @db.VarChar(255) // Platform-specific account ID
+  accountName     String?   @map("account_name") @db.VarChar(255)
+  accountUsername String?   @map("account_username") @db.VarChar(255)
+  accountAvatar   String?   @map("account_avatar") @db.VarChar(500)
+  accessToken     String    @map("access_token") @db.Text
+  refreshToken    String?   @map("refresh_token") @db.Text
+  tokenExpiresAt  DateTime? @map("token_expires_at") @db.Timestamptz
+  pageId          String?   @map("page_id") @db.VarChar(255) // For Facebook Pages
+  pageName        String?   @map("page_name") @db.VarChar(255)
+  pageAccessToken String?   @map("page_access_token") @db.Text
+  isActive        Boolean   @default(true) @map("is_active")
+  metadata        Json      @default("{}")
+  connectedAt     DateTime  @default(now()) @map("connected_at") @db.Timestamptz
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  scheduledPosts ScheduledPost[]
+
+  @@unique([tenantId, platform, accountId])
+  @@index([tenantId, platform])
+  @@map("social_accounts")
+}
+
+model ScheduledPost {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid
+  contentId       String    @map("content_id") @db.Uuid
+  socialAccountId String    @map("social_account_id") @db.Uuid
+  caption         String?   @db.Text
+  scheduledFor    DateTime? @map("scheduled_for") @db.Timestamptz
+  status          String    @default("pending") @db.VarChar(20) // 'pending' | 'scheduled' | 'posted' | 'failed'
+  postId          String?   @map("post_id") @db.VarChar(255) // Platform post ID after publishing
+  postUrl         String?   @map("post_url") @db.VarChar(500)
+  errorMessage    String?   @map("error_message") @db.Text
+  postedAt        DateTime? @map("posted_at") @db.Timestamptz
+  metadata        Json      @default("{}")
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  socialAccount SocialAccount @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status])
+  @@index([scheduledFor])
+  @@map("scheduled_posts")
+}
+
+// ============================================================================
+// CHECK-IN TO WIN (Gamified Customer Engagement)
+// ============================================================================
+
+model CheckInSubmission {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId         String    @map("tenant_id") @db.Uuid
+  customerName     String    @map("customer_name") @db.VarChar(255)
+  customerPhone    String?   @map("customer_phone") @db.VarChar(20)
+  carYear          Int?      @map("car_year")
+  carMake          String?   @map("car_make") @db.VarChar(100)
+  carModel         String?   @map("car_model") @db.VarChar(100)
+  carColor         String?   @map("car_color") @db.VarChar(50)
+  mileage          Int?
+  issueDescription String?   @map("issue_description") @db.Text
+  prizeWon         String?   @map("prize_won") @db.VarChar(100)
+  prizeId          String?   @map("prize_id") @db.VarChar(50)
+  validationCode   String    @unique @map("validation_code") @db.VarChar(20)
+  redeemed         Boolean   @default(false)
+  redeemedAt       DateTime? @map("redeemed_at") @db.Timestamptz
+  contentId        String?   @map("content_id") @db.Uuid
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, redeemed])
+  @@index([validationCode])
+  @@map("check_in_submissions")
+}
+
+model PrizeConfiguration {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String   @unique @map("tenant_id") @db.Uuid
+  prizes    Json     @default("[]")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("prize_configurations")
+}

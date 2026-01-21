@@ -1,0 +1,411 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================
+   JW AUTO CARE AI - RETRO 1950s THEME
+   ============================================ */
+
+@layer base {
+  html {
+    font-family: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  body {
+    @apply bg-retro-cream text-retro-navy antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Oswald', 'Franklin Gothic Medium', sans-serif;
+    @apply font-bold tracking-tight;
+  }
+
+  .font-display {
+    font-family: 'Bebas Neue', 'Impact', sans-serif;
+  }
+
+  .font-script {
+    font-family: 'Pacifico', cursive;
+  }
+}
+
+@layer components {
+  /* Retro Button */
+  .btn-retro {
+    @apply px-6 py-3 font-heading font-bold uppercase tracking-wide;
+    @apply border-2 border-black shadow-retro;
+    @apply transition-all duration-150;
+    @apply hover:translate-x-1 hover:translate-y-1 hover:shadow-none;
+    @apply active:translate-x-1 active:translate-y-1 active:shadow-none;
+  }
+
+  .btn-retro-primary {
+    @apply btn-retro bg-retro-red text-white hover:bg-red-700;
+  }
+
+  .btn-retro-secondary {
+    @apply btn-retro bg-retro-teal text-white hover:bg-teal-700;
+  }
+
+  .btn-retro-outline {
+    @apply btn-retro bg-transparent text-retro-navy hover:bg-retro-navy hover:text-white;
+  }
+
+  /* Retro Card */
+  .card-retro {
+    @apply bg-white border-2 border-black shadow-retro;
+    @apply p-6;
+  }
+
+  /* Retro Input */
+  .input-retro {
+    @apply w-full px-4 py-3 bg-white;
+    @apply border-2 border-black;
+    @apply font-body text-retro-navy;
+    @apply focus:outline-none focus:ring-2 focus:ring-retro-red focus:border-retro-red;
+    @apply placeholder:text-gray-400;
+  }
+
+  /* Retro Select */
+  .select-retro {
+    @apply input-retro appearance-none cursor-pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%231A365D'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-position: right 12px center;
+    background-repeat: no-repeat;
+    background-size: 20px;
+    padding-right: 40px;
+  }
+
+  /* Retro Badge */
+  .badge-retro {
+    @apply inline-flex items-center px-3 py-1;
+    @apply text-xs font-heading font-bold uppercase tracking-wider;
+    @apply border-2 border-black;
+  }
+
+  /* Retro Heading Styles */
+  .heading-retro {
+    @apply font-display text-4xl md:text-5xl uppercase tracking-wider;
+    @apply text-retro-navy;
+    text-shadow: 3px 3px 0 rgba(0,0,0,0.1);
+  }
+
+  .subheading-retro {
+    @apply font-heading text-xl md:text-2xl uppercase tracking-wide;
+    @apply text-retro-teal;
+  }
+
+  /* Retro Divider */
+  .divider-retro {
+    @apply border-b-4 border-black;
+    @apply my-6;
+  }
+
+  /* Checkerboard Background */
+  .bg-checkerboard {
+    background-image:
+      linear-gradient(45deg, #e5e5e5 25%, transparent 25%),
+      linear-gradient(-45deg, #e5e5e5 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #e5e5e5 75%),
+      linear-gradient(-45deg, transparent 75%, #e5e5e5 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+  }
+
+  /* Neon Glow Effect */
+  .neon-glow {
+    text-shadow:
+      0 0 5px currentColor,
+      0 0 10px currentColor,
+      0 0 20px currentColor,
+      0 0 40px currentColor;
+  }
+
+  /* Vintage Paper Texture */
+  .paper-texture {
+    background-color: #FDF6E3;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' viewBox='0 0 4 4'%3E%3Cpath fill='%239C92AC' fill-opacity='0.05' d='M1 3h1v1H1V3zm2-2h1v1H3V1z'%3E%3C/path%3E%3C/svg%3E");
+  }
+
+  /* Chrome Gradient (for premium elements) */
+  .chrome-gradient {
+    background: linear-gradient(135deg, #f5f5f5 0%, #d4d4d4 50%, #f5f5f5 100%);
+  }
+
+  /* Retro Progress Bar */
+  .progress-retro {
+    @apply h-6 bg-gray-200 border-2 border-black;
+  }
+
+  .progress-retro-fill {
+    @apply h-full bg-retro-teal;
+    @apply transition-all duration-300 ease-out;
+  }
+
+  /* Retro Toggle */
+  .toggle-retro {
+    @apply relative w-14 h-8;
+    @apply bg-gray-300 border-2 border-black;
+    @apply cursor-pointer transition-colors;
+  }
+
+  .toggle-retro.active {
+    @apply bg-retro-teal;
+  }
+
+  .toggle-retro::after {
+    content: '';
+    @apply absolute top-1 left-1 w-5 h-5;
+    @apply bg-white border-2 border-black;
+    @apply transition-transform;
+  }
+
+  .toggle-retro.active::after {
+    @apply translate-x-6;
+  }
+
+  /* Retro Tooltip */
+  .tooltip-retro {
+    @apply absolute z-50 px-3 py-2;
+    @apply bg-retro-navy text-white text-sm;
+    @apply border-2 border-black shadow-retro-sm;
+    @apply opacity-0 invisible transition-all;
+  }
+
+  .tooltip-retro.show {
+    @apply opacity-100 visible;
+  }
+}
+
+@layer utilities {
+  /* Animation utilities */
+  .animate-bounce-slow {
+    animation: bounce 2s infinite;
+  }
+
+  /* Retro shadow variations */
+  .shadow-retro-red {
+    box-shadow: 4px 4px 0px 0px #C53030;
+  }
+
+  .shadow-retro-teal {
+    box-shadow: 4px 4px 0px 0px #2C7A7B;
+  }
+
+  .shadow-retro-navy {
+    box-shadow: 4px 4px 0px 0px #1A365D;
+  }
+
+  /* Gradient text */
+  .text-gradient-retro {
+    @apply bg-gradient-to-r from-retro-red via-retro-mustard to-retro-teal;
+    @apply bg-clip-text text-transparent;
+  }
+
+  /* Hover lift effect */
+  .hover-lift {
+    @apply transition-transform duration-200;
+    @apply hover:-translate-y-1;
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-200;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-retro-navy border-2 border-black;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-retro-teal;
+}
+
+/* Selection styling */
+::selection {
+  @apply bg-retro-red text-white;
+}
+
+/* ============================================
+   MOBILE-FIRST OPTIMIZATIONS
+   Touch targets, spacing, and responsiveness
+   ============================================ */
+
+@layer components {
+  /* Mobile-optimized touch targets (44px minimum) */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+    @apply flex items-center justify-center;
+  }
+
+  /* Mobile-friendly buttons */
+  .btn-mobile {
+    @apply min-h-[48px] px-6 py-3;
+    @apply text-base font-medium;
+    @apply active:scale-95 transition-transform;
+  }
+
+  /* Large action button for mobile */
+  .btn-action-lg {
+    @apply min-h-[56px] px-8 py-4;
+    @apply text-lg font-bold uppercase tracking-wide;
+  }
+
+  /* Mobile card with better padding */
+  .card-mobile {
+    @apply p-4 sm:p-6;
+  }
+
+  /* Mobile-optimized form fields */
+  .input-mobile {
+    @apply min-h-[48px] px-4 py-3;
+    @apply text-base; /* Prevents iOS zoom on focus */
+  }
+
+  /* Mobile navigation item */
+  .nav-item-mobile {
+    @apply min-h-[48px] px-4 py-3;
+    @apply flex items-center gap-3;
+    @apply active:bg-black/10;
+  }
+
+  /* Swipeable container */
+  .swipe-container {
+    @apply flex overflow-x-auto snap-x snap-mandatory;
+    @apply -mx-4 px-4;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .swipe-container::-webkit-scrollbar {
+    display: none;
+  }
+
+  .swipe-item {
+    @apply flex-shrink-0 snap-center;
+  }
+
+  /* Bottom action bar for mobile */
+  .bottom-action-bar {
+    @apply fixed bottom-0 left-0 right-0;
+    @apply bg-white border-t-4 border-black;
+    @apply p-4 pb-safe;
+    @apply flex items-center justify-center gap-4;
+    @apply z-50;
+  }
+
+  /* Safe area padding for notched devices */
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .pl-safe {
+    padding-left: env(safe-area-inset-left, 0px);
+  }
+
+  .pr-safe {
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+
+  /* Thumb-friendly zone indicator (bottom of screen) */
+  .thumb-zone {
+    @apply fixed bottom-0 left-0 right-0;
+    @apply h-[200px];
+    @apply pointer-events-none;
+  }
+
+  /* Mobile-optimized grid */
+  .grid-mobile {
+    @apply grid grid-cols-1 gap-4;
+    @apply sm:grid-cols-2 lg:grid-cols-3;
+  }
+
+  /* Floating action button */
+  .fab {
+    @apply fixed bottom-6 right-6;
+    @apply w-16 h-16 rounded-full;
+    @apply bg-retro-red text-white;
+    @apply border-4 border-black shadow-retro;
+    @apply flex items-center justify-center;
+    @apply active:scale-95 transition-transform;
+    @apply z-40;
+  }
+
+  .fab-with-bar {
+    @apply bottom-24; /* Account for bottom action bar */
+  }
+}
+
+/* Mobile-specific media queries */
+@media (max-width: 640px) {
+  /* Larger text for mobile readability */
+  .heading-retro {
+    @apply text-3xl;
+  }
+
+  /* More padding on mobile cards */
+  .card-retro {
+    @apply p-4;
+  }
+
+  /* Full-width buttons on mobile */
+  .btn-retro {
+    @apply w-full justify-center;
+  }
+
+  /* Stack form labels on mobile */
+  .form-group-mobile {
+    @apply flex flex-col gap-2;
+  }
+
+  /* Larger checkboxes and radios on mobile */
+  input[type="checkbox"],
+  input[type="radio"] {
+    @apply w-6 h-6;
+  }
+
+  /* Better touch spacing for lists */
+  .list-touch li {
+    @apply py-3 border-b border-gray-200;
+  }
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .card-retro {
+    @apply border-4;
+  }
+
+  .btn-retro {
+    @apply border-4;
+  }
+
+  .input-retro {
+    @apply border-4;
+  }
+}
+
+/* Dark mode preparation (if enabled later) */
+@media (prefers-color-scheme: dark) {
+  /* Can be enabled later with a toggle */
+}

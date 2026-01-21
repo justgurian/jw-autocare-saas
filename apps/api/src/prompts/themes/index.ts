@@ -1,0 +1,472 @@
+import { BRAND_STYLES, BrandStyle, getBrandStyle, buildBrandStyleImagePrompt } from './brand-styles';
+import { ADDITIONAL_THEMES } from './additional-themes';
+
+export interface ThemeImagePrompt {
+  style: string;
+  colorPalette: string;
+  typography: string;
+  elements: string;
+  mood: string;
+}
+
+export interface ThemeTextPrompt {
+  tone: string;
+  vocabulary: string[];
+}
+
+export interface ThemeDefinition {
+  id: string;
+  name: string;
+  category: string;
+  previewUrl?: string;
+  previewColors?: string[]; // Color chips for UI preview
+  shortDescription?: string;
+  fullDescription?: string;
+  imagePrompt: ThemeImagePrompt;
+  textPrompt: ThemeTextPrompt;
+  mockupScenes: string[];
+  compatibleTools: string[];
+  // Link to comprehensive brand style (if available)
+  brandStyleId?: string;
+}
+
+// Convert brand styles to theme definitions for backward compatibility
+function brandStyleToTheme(style: BrandStyle): ThemeDefinition {
+  return {
+    id: style.id,
+    name: style.name,
+    category: getCategoryFromStyle(style.id),
+    previewColors: style.previewColors,
+    shortDescription: style.shortDescription,
+    fullDescription: style.fullDescription,
+    imagePrompt: {
+      style: style.imagePrompt.styleDirective,
+      colorPalette: style.imagePrompt.colorInstructions,
+      typography: style.imagePrompt.typographyInstructions,
+      elements: style.imagePrompt.visualElements,
+      mood: style.visual.mood,
+    },
+    textPrompt: {
+      tone: style.captionStyle.tone,
+      vocabulary: style.captionStyle.vocabulary,
+    },
+    mockupScenes: [
+      'on professional shop wall',
+      'displayed on service counter',
+      'shared on social media',
+    ],
+    compatibleTools: ['promo_flyer', 'instant_pack', 'personal_card', 'campaign'],
+    brandStyleId: style.id,
+  };
+}
+
+function getCategoryFromStyle(styleId: string): string {
+  const categoryMap: Record<string, string> = {
+    '1950s-americana': 'vintage',
+    'european-luxury': 'premium',
+    'muscle-performance': 'automotive',
+    'modern-tech': 'modern',
+    'friendly-neighborhood': 'lifestyle',
+    'desert-southwest': 'regional',
+    'urban-industrial': 'professional',
+    'british-racing': 'premium',
+  };
+  return categoryMap[styleId] || 'general';
+}
+
+// Brand styles converted to themes (primary styles - shown first)
+const brandStyleThemes: ThemeDefinition[] = BRAND_STYLES.map(brandStyleToTheme);
+
+// Legacy theme definitions (kept for backward compatibility)
+const legacyThemes: ThemeDefinition[] = [
+  {
+    id: 'retro-garage',
+    name: 'Retro Garage',
+    category: 'vintage',
+    previewUrl: '/themes/retro-garage-preview.jpg',
+    imagePrompt: {
+      style: 'vintage 1950s americana garage aesthetic, hand-painted sign style',
+      colorPalette: 'warm sepia tones, chrome accents, red and cream, classic blue',
+      typography: 'bold vintage lettering, hand-painted sign style, retro fonts',
+      elements: 'classic car silhouettes, oil cans, vintage tools, checkered floor, neon signs',
+      mood: 'nostalgic, trustworthy, classic american, family-owned feel',
+    },
+    textPrompt: {
+      tone: 'friendly, nostalgic, family-business feel',
+      vocabulary: ['folks', 'trusted', 'family-owned', 'since', 'classic', 'dependable'],
+    },
+    mockupScenes: [
+      'posted on vintage garage wall with tools',
+      'held by mechanic in retro uniform',
+      'displayed on classic car windshield',
+    ],
+    compatibleTools: ['promo_flyer', 'instant_pack', 'personal_card'],
+  },
+  {
+    id: 'arizona-desert',
+    name: 'Arizona Desert',
+    category: 'regional',
+    previewUrl: '/themes/arizona-desert-preview.jpg',
+    imagePrompt: {
+      style: 'southwestern desert aesthetic, Arizona sunset vibes',
+      colorPalette: 'terracotta orange, desert sand, sunset pink, turquoise accents',
+      typography: 'bold western fonts, rustic styling, cactus motifs',
+      elements: 'saguaro cacti, desert mountains, sunset gradients, Route 66 vibes',
+      mood: 'warm, adventurous, local pride, rugged reliability',
+    },
+    textPrompt: {
+      tone: 'warm, local, adventure-oriented',
+      vocabulary: ['desert-tested', 'Arizona tough', 'beat the heat', 'local', 'your neighbor'],
+    },
+    mockupScenes: [
+      'posted on adobe wall',
+      'on truck tailgate in desert setting',
+      'roadside with mountains backdrop',
+    ],
+    compatibleTools: ['promo_flyer', 'instant_pack', 'car_of_day'],
+  },
+  {
+    id: 'neon-nights',
+    name: 'Neon Nights',
+    category: 'modern',
+    previewUrl: '/themes/neon-nights-preview.jpg',
+    imagePrompt: {
+      style: 'cyberpunk neon aesthetic, night city vibes, glowing signage',
+      colorPalette: 'electric blue, hot pink, neon green, deep purple, black backgrounds',
+      typography: 'glowing neon tube letters, futuristic fonts, outlined text',
+      elements: 'neon signs, city reflections, rain-slicked streets, glowing car lights',
+      mood: 'edgy, modern, premium, night-owl energy',
+    },
+    textPrompt: {
+      tone: 'edgy, premium, modern',
+      vocabulary: ['premium', 'performance', 'elite', '24/7', 'night owl'],
+    },
+    mockupScenes: [
+      'neon sign in shop window',
+      'reflected in wet pavement',
+      'illuminated in dark garage',
+    ],
+    compatibleTools: ['promo_flyer', 'instant_pack', 'ugc_video'],
+  },
+  {
+    id: 'classic-mechanic',
+    name: 'Classic Mechanic',
+    category: 'professional',
+    previewUrl: '/themes/classic-mechanic-preview.jpg',
+    imagePrompt: {
+      style: 'professional auto service aesthetic, clean workshop vibes',
+      colorPalette: 'deep blue, silver chrome, white, red accents',
+      typography: 'clean sans-serif, professional bold headings, clear readable text',
+      elements: 'wrench and gear icons, clean tools, organized workspace, certificates',
+      mood: 'professional, trustworthy, certified, expert',
+    },
+    textPrompt: {
+      tone: 'professional, expert, reassuring',
+      vocabulary: ['certified', 'expert', 'professional', 'factory-trained', 'guaranteed'],
+    },
+    mockupScenes: [
+      'on clipboard in clean shop',
+      'framed on shop wall',
+      'on service counter',
+    ],
+    compatibleTools: ['promo_flyer', 'instant_pack', 'personal_card', 'review_reply'],
+  },
+  {
+    id: 'pop-culture-80s',
+    name: '80s Pop Culture',
+    category: 'retro',
+    previewUrl: '/themes/pop-culture-80s-preview.jpg',
+    imagePrompt: {
+      style: '1980s pop culture aesthetic, synthwave vibes, VHS era',
+      colorPalette: 'hot pink, electric cyan, yellow, purple gradient sunsets',
+      typography: 'chrome 3D text, grid patterns, italic speed lines',
+      elements: 'palm trees, sunset grids, geometric shapes, cassette tapes, DeLorean vibes',
+      mood: 'fun, nostalgic, energetic, totally rad',
+    },
+    textPrompt: {
+      tone: 'fun, nostalgic, energetic',
+      vocabulary: ['radical', 'awesome', 'totally', 'turbo', 'maximum'],
+    },
+    mockupScenes: [
+      'VHS cover style',
+      'arcade cabinet screen',
+      'boombox sticker',
+    ],
+    compatibleTools: ['promo_flyer', 'instant_pack', 'ugc_video'],
+  },
+  {
+    id: 'modern-minimal',
+    name: 'Modern Minimal',
+    category: 'modern',
+    previewUrl: '/themes/modern-minimal-preview.jpg',
+    imagePrompt: {
+      style: 'clean minimalist design, modern luxury aesthetic',
+      colorPalette: 'white space, black text, single accent color, subtle grays',
+      typography: 'thin modern fonts, generous spacing, lowercase elegance',
+      elements: 'clean lines, geometric shapes, ample white space, subtle shadows',
+      mood: 'sophisticated, premium, clean, modern luxury',
+    },
+    textPrompt: {
+      tone: 'sophisticated, concise, premium',
+      vocabulary: ['precision', 'excellence', 'premium', 'curated', 'refined'],
+    },
+    mockupScenes: [
+      'on marble countertop',
+      'minimal white gallery wall',
+      'luxury car dashboard',
+    ],
+    compatibleTools: ['promo_flyer', 'instant_pack', 'personal_card', 'seo_blog'],
+  },
+  {
+    id: 'sports-car',
+    name: 'Sports Car',
+    category: 'automotive',
+    previewUrl: '/themes/sports-car-preview.jpg',
+    imagePrompt: {
+      style: 'high-performance automotive aesthetic, racing heritage',
+      colorPalette: 'racing red, carbon black, metallic silver, yellow accents',
+      typography: 'bold italic racing fonts, speed lines, dynamic angles',
+      elements: 'racing stripes, carbon fiber textures, speedometer graphics, checkered flags',
+      mood: 'fast, powerful, exciting, performance-focused',
+    },
+    textPrompt: {
+      tone: 'exciting, performance-driven, enthusiast',
+      vocabulary: ['performance', 'power', 'precision', 'speed', 'track-ready', 'horsepower'],
+    },
+    mockupScenes: [
+      'on race track barrier',
+      'garage with sports car',
+      'pit lane display',
+    ],
+    compatibleTools: ['promo_flyer', 'instant_pack', 'car_of_day'],
+  },
+  {
+    id: 'family-friendly',
+    name: 'Family Friendly',
+    category: 'lifestyle',
+    previewUrl: '/themes/family-friendly-preview.jpg',
+    imagePrompt: {
+      style: 'warm family-oriented design, approachable and friendly',
+      colorPalette: 'soft blue, warm yellow, gentle green, friendly orange',
+      typography: 'rounded friendly fonts, easy to read, welcoming style',
+      elements: 'family car silhouettes, happy illustrations, safe symbols, heart icons',
+      mood: 'warm, trustworthy, safe, family-first',
+    },
+    textPrompt: {
+      tone: 'warm, caring, family-oriented',
+      vocabulary: ['family', 'safe', 'trusted', 'care', 'protect', 'peace of mind'],
+    },
+    mockupScenes: [
+      'on family minivan',
+      'school pickup line',
+      'soccer mom approved',
+    ],
+    compatibleTools: ['promo_flyer', 'instant_pack', 'personal_card', 'check_in_to_win'],
+  },
+  {
+    id: 'truck-country',
+    name: 'Truck Country',
+    category: 'automotive',
+    previewUrl: '/themes/truck-country-preview.jpg',
+    imagePrompt: {
+      style: 'rugged truck and country aesthetic, work-ready vibes',
+      colorPalette: 'forest green, brown earth tones, rust orange, denim blue',
+      typography: 'bold stencil fonts, rugged textures, workwear style',
+      elements: 'pickup truck silhouettes, mountains, dirt roads, tool graphics',
+      mood: 'rugged, hardworking, reliable, no-nonsense',
+    },
+    textPrompt: {
+      tone: 'straight-talking, hardworking, reliable',
+      vocabulary: ['tough', 'reliable', 'work-ready', 'built to last', 'get it done'],
+    },
+    mockupScenes: [
+      'truck bed display',
+      'country road sign',
+      'work site bulletin board',
+    ],
+    compatibleTools: ['promo_flyer', 'instant_pack', 'car_of_day'],
+  },
+  {
+    id: 'eco-green',
+    name: 'Eco Green',
+    category: 'modern',
+    previewUrl: '/themes/eco-green-preview.jpg',
+    imagePrompt: {
+      style: 'eco-friendly modern design, sustainable vibes',
+      colorPalette: 'leaf green, sky blue, earth brown, clean white',
+      typography: 'clean modern fonts, organic curves, nature-inspired',
+      elements: 'leaf motifs, EV charging, recycling symbols, nature backgrounds',
+      mood: 'sustainable, forward-thinking, responsible, clean',
+    },
+    textPrompt: {
+      tone: 'responsible, forward-thinking, caring',
+      vocabulary: ['eco-friendly', 'sustainable', 'green', 'future', 'responsible', 'clean'],
+    },
+    mockupScenes: [
+      'EV charging station',
+      'green parking lot',
+      'sustainable shop front',
+    ],
+    compatibleTools: ['promo_flyer', 'instant_pack', 'seo_blog'],
+  },
+];
+
+// Combined themes: brand styles first (premium), then legacy themes, then additional themes
+const themes: ThemeDefinition[] = [
+  ...brandStyleThemes,
+  ...legacyThemes.filter(lt => !brandStyleThemes.some(bt => bt.id === lt.id)), // Avoid duplicates
+  ...ADDITIONAL_THEMES.filter(at =>
+    !brandStyleThemes.some(bt => bt.id === at.id) &&
+    !legacyThemes.some(lt => lt.id === at.id)
+  ), // Avoid duplicates with additional themes
+];
+
+// Category definitions with display info
+export const THEME_CATEGORIES = [
+  { id: 'vintage', name: 'Vintage & Retro', icon: '🎞️', description: 'Classic and nostalgic styles' },
+  { id: 'modern', name: 'Modern & Tech', icon: '⚡', description: 'Sleek and futuristic designs' },
+  { id: 'premium', name: 'Premium & Luxury', icon: '✨', description: 'High-end and sophisticated' },
+  { id: 'automotive', name: 'Automotive', icon: '🏎️', description: 'Performance and car culture' },
+  { id: 'regional', name: 'Regional', icon: '📍', description: 'Location-specific styles' },
+  { id: 'lifestyle', name: 'Lifestyle', icon: '👨‍👩‍👧‍👦', description: 'Family and daily life' },
+  { id: 'professional', name: 'Professional', icon: '🔧', description: 'Business and industrial' },
+  { id: 'seasonal', name: 'Seasonal', icon: '🗓️', description: 'Time-based promotions' },
+  { id: 'specialty', name: 'Specialty', icon: '🎯', description: 'Niche and specific services' },
+  { id: 'retro', name: 'Retro', icon: '📼', description: '80s and 90s throwback' },
+  { id: 'general', name: 'General', icon: '🎨', description: 'All-purpose styles' },
+];
+
+// Theme registry
+export const themeRegistry = {
+  getAllThemes(): ThemeDefinition[] {
+    return themes;
+  },
+
+  // Get total theme count
+  getThemeCount(): number {
+    return themes.length;
+  },
+
+  // Get premium brand styles only (for featured display)
+  getBrandStyles(): ThemeDefinition[] {
+    return brandStyleThemes;
+  },
+
+  getTheme(id: string): ThemeDefinition | undefined {
+    return themes.find(t => t.id === id);
+  },
+
+  // Get comprehensive brand style for enhanced prompts
+  getBrandStyle(id: string): BrandStyle | undefined {
+    return getBrandStyle(id);
+  },
+
+  // Build enhanced image prompt using brand style system
+  buildImagePrompt(
+    styleId: string,
+    content: {
+      headline: string;
+      subject: string;
+      details?: string;
+      businessName?: string;
+      logoInstructions?: string;
+    }
+  ): string {
+    const brandStyle = getBrandStyle(styleId);
+    if (brandStyle) {
+      return buildBrandStyleImagePrompt(brandStyle, content);
+    }
+    // Fallback for legacy and additional themes
+    const theme = themes.find(t => t.id === styleId);
+    if (theme) {
+      return `Create a professional promotional flyer.
+Style: ${theme.imagePrompt.style}
+Colors: ${theme.imagePrompt.colorPalette}
+Typography: ${theme.imagePrompt.typography}
+Elements: ${theme.imagePrompt.elements}
+Mood: ${theme.imagePrompt.mood}
+
+Content:
+- Headline: "${content.headline}"
+- Subject: ${content.subject}
+${content.details ? `- Details: ${content.details}` : ''}
+${content.businessName ? `- Business: "${content.businessName}"` : ''}
+${content.logoInstructions ? `\nLogo: ${content.logoInstructions}` : ''}
+
+Create a print-ready 4:5 aspect ratio flyer.`;
+    }
+    return '';
+  },
+
+  // Get all category definitions with metadata
+  getCategoryDefinitions(): typeof THEME_CATEGORIES {
+    return THEME_CATEGORIES;
+  },
+
+  getCategories(): string[] {
+    return [...new Set(themes.map(t => t.category))];
+  },
+
+  getThemesByCategory(category: string): ThemeDefinition[] {
+    return themes.filter(t => t.category === category);
+  },
+
+  // Get themes organized by category for UI display
+  getThemesGroupedByCategory(): Record<string, ThemeDefinition[]> {
+    const grouped: Record<string, ThemeDefinition[]> = {};
+    for (const theme of themes) {
+      if (!grouped[theme.category]) {
+        grouped[theme.category] = [];
+      }
+      grouped[theme.category].push(theme);
+    }
+    return grouped;
+  },
+
+  getThemesForTool(tool: string): ThemeDefinition[] {
+    return themes.filter(t => t.compatibleTools.includes(tool));
+  },
+
+  // Search themes by name or description
+  searchThemes(query: string): ThemeDefinition[] {
+    const lowerQuery = query.toLowerCase();
+    return themes.filter(t =>
+      t.name.toLowerCase().includes(lowerQuery) ||
+      t.shortDescription?.toLowerCase().includes(lowerQuery) ||
+      t.category.toLowerCase().includes(lowerQuery)
+    );
+  },
+
+  // Get featured themes (brand styles + popular picks)
+  getFeaturedThemes(count: number = 8): ThemeDefinition[] {
+    const featured = [
+      ...brandStyleThemes.slice(0, 4),
+      ...themes.filter(t => !brandStyleThemes.some(bs => bs.id === t.id)).slice(0, count - 4),
+    ];
+    return featured.slice(0, count);
+  },
+
+  getRandomThemes(count: number, exclude: string[] = []): ThemeDefinition[] {
+    const available = themes.filter(t => !exclude.includes(t.id));
+    const shuffled = [...available].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, Math.min(count, shuffled.length));
+  },
+
+  // Get random brand styles (premium styles only)
+  getRandomBrandStyles(count: number, exclude: string[] = []): ThemeDefinition[] {
+    const available = brandStyleThemes.filter(t => !exclude.includes(t.id));
+    const shuffled = [...available].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, Math.min(count, shuffled.length));
+  },
+
+  // Get themes by multiple categories
+  getThemesByCategories(categories: string[]): ThemeDefinition[] {
+    return themes.filter(t => categories.includes(t.category));
+  },
+};
+
+// Re-export brand style types and helpers
+export { BrandStyle, getBrandStyle, buildBrandStyleImagePrompt, BRAND_STYLES };
+export { ADDITIONAL_THEMES } from './additional-themes';
+
+export default themeRegistry;

@@ -1,0 +1,363 @@
+import { Router, Request, Response, NextFunction } from 'express';
+import { z } from 'zod';
+import { authenticate } from '../../middleware/auth.middleware';
+import { tenantContext } from '../../middleware/tenant.middleware';
+import { prisma } from '../../db/client';
+import { ValidationError } from '../../middleware/error.middleware';
+
+const router = Router();
+
+router.use(authenticate);
+router.use(tenantContext);
+
+// Profile field weights for completion calculation
+const PROFILE_WEIGHTS = {
+  businessName: 15,
+  logoUrl: 10,
+  phone: 10,
+  email: 5,
+  address: 5,
+  city: 5,
+  state: 5,
+  zipCode: 5,
+  website: 5,
+  primaryColor: 5,
+  secondaryColor: 3,
+  brandVoice: 7,
+  tagline: 5,
+  specialties: 5,      // At least 1
+  uniqueSellingPoints: 5,  // At least 1
+  services: 5,         // At least 1 service in services table
+};
+
+// Calculate profile completion percentage
+function calculateProfileCompletion(brandKit: any, serviceCount: number): {
+  percentage: number;
+  completedFields: string[];
+  missingFields: string[];
+  suggestions: string[];
+} {
+  let totalWeight = 0;
+  let earnedWeight = 0;
+  const completedFields: string[] = [];
+  const missingFields: string[] = [];
+  const suggestions: string[] = [];
+
+  // Check each field
+  for (const [field, weight] of Object.entries(PROFILE_WEIGHTS)) {
+    totalWeight += weight;
+
+    if (field === 'services') {
+      if (serviceCount > 0) {
+        earnedWeight += weight;
+        completedFields.push(field);
+      } else {
+        missingFields.push(field);
+        suggestions.push('Add at least one service you offer');
+      }
+    } else if (field === 'specialties' || field === 'uniqueSellingPoints') {
+      const arr = brandKit?.[field];
+      if (arr && Array.isArray(arr) && arr.length > 0) {
+        earnedWeight += weight;
+        completedFields.push(field);
+      } else {
+        missingFields.push(field);
+        if (field === 'specialties') {
+          suggestions.push('Add your shop specialties (e.g., European, Diesel, Imports)');
+        } else {
+          suggestions.push('Add what makes your shop unique');
+        }
+      }
+    } else {
+      const value = brandKit?.[field];
+      if (value && value.toString().trim() !== '') {
+        earnedWeight += weight;
+        completedFields.push(field);
+      } else {
+        missingFields.push(field);
+        // Add suggestions for important missing fields
+        if (field === 'businessName') suggestions.push('Add your business name');
+        if (field === 'logoUrl') suggestions.push('Upload your logo');
+        if (field === 'phone') suggestions.push('Add your phone number');
+        if (field === 'brandVoice') suggestions.push('Set your brand voice (friendly, professional, etc.)');
+      }
+    }
+  }
+
+  const percentage = Math.round((earnedWeight / totalWeight) * 100);
+
+  return {
+    percentage,
+    completedFields,
+    missingFields,
+    suggestions: suggestions.slice(0, 3), // Top 3 suggestions
+  };
+}
+
+// Get brand kit (basic)
+router.get('/', async (req: Request, res: Response) => {
+  const brandKit = await prisma.brandKit.findUnique({
+    where: { tenantId: req.user!.tenantId },
+  });
+  res.json(brandKit);
+});
+
+// Get full profile with completion status
+router.get('/profile', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const tenantId = req.user!.tenantId;
+
+    // Fetch all profile-related data in parallel
+    const [brandKit, services, specials, tenant] = await Promise.all([
+      prisma.brandKit.findUnique({
+        where: { tenantId },
+      }),
+      prisma.service.findMany({
+        where: { tenantId },
+        orderBy: { sortOrder: 'asc' },
+      }),
+      prisma.special.findMany({
+        where: { tenantId, isActive: true },
+      }),
+      prisma.tenant.findUnique({
+        where: { id: tenantId },
+        select: {
+          name: true,
+          subscriptionTier: true,
+          subscriptionStatus: true,
+          onboardingCompleted: true,
+        },
+      }),
+    ]);
+
+    // Calculate completion
+    const completion = calculateProfileCompletion(brandKit, services.length);
+
+    res.json({
+      brandKit,
+      services,
+      specials,
+      tenant,
+      completion,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get just completion status (lightweight)
+router.get('/completion', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const tenantId = req.user!.tenantId;
+
+    const [brandKit, serviceCount] = await Promise.all([
+      prisma.brandKit.findUnique({
+        where: { tenantId },
+      }),
+      prisma.service.count({
+        where: { tenantId },
+      }),
+    ]);
+
+    const completion = calculateProfileCompletion(brandKit, serviceCount);
+    res.json(completion);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Update brand kit
+router.put('/', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const brandKit = await prisma.brandKit.update({
+      where: { tenantId: req.user!.tenantId },
+      data: req.body,
+    });
+    res.json(brandKit);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Update profile (comprehensive update with validation)
+const updateProfileSchema = z.object({
+  // Business Info
+  businessName: z.string().max(255).optional(),
+  phone: z.string().max(20).optional(),
+  email: z.string().email().max(255).optional().nullable(),
+  address: z.string().optional().nullable(),
+  city: z.string().max(100).optional().nullable(),
+  state: z.string().max(50).optional().nullable(),
+  zipCode: z.string().max(20).optional().nullable(),
+  website: z.string().url().max(255).optional().nullable(),
+
+  // Brand Identity
+  tagline: z.string().max(255).optional().nullable(),
+  brandVoice: z.string().optional().nullable(),
+
+  // Colors
+  primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional().nullable(),
+  secondaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional().nullable(),
+  accentColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional().nullable(),
+
+  // Arrays
+  specialties: z.array(z.string()).optional(),
+  uniqueSellingPoints: z.array(z.string()).optional(),
+  shopPhotos: z.array(z.string().url()).optional(),
+
+  // Target Customers
+  targetDemographics: z.string().optional().nullable(),
+  targetPainPoints: z.string().optional().nullable(),
+
+  // Social Links
+  socialLinks: z.object({
+    facebook: z.string().url().optional(),
+    instagram: z.string().url().optional(),
+    twitter: z.string().url().optional(),
+    youtube: z.string().url().optional(),
+    tiktok: z.string().url().optional(),
+    yelp: z.string().url().optional(),
+    google: z.string().url().optional(),
+  }).optional(),
+
+  // Preferences
+  defaultVehicle: z.enum(['corvette', 'jeep']).optional(),
+});
+
+router.put('/profile', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = updateProfileSchema.safeParse(req.body);
+    if (!result.success) {
+      throw new ValidationError('Validation failed',
+        Object.fromEntries(result.error.errors.map(e => [e.path.join('.'), [e.message]]))
+      );
+    }
+
+    const tenantId = req.user!.tenantId;
+
+    // Update brand kit
+    const brandKit = await prisma.brandKit.update({
+      where: { tenantId },
+      data: result.data,
+    });
+
+    // Get updated completion status
+    const serviceCount = await prisma.service.count({ where: { tenantId } });
+    const completion = calculateProfileCompletion(brandKit, serviceCount);
+
+    res.json({
+      brandKit,
+      completion,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Add specialty
+router.post('/specialties', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { specialty } = req.body;
+    if (!specialty || typeof specialty !== 'string') {
+      throw new ValidationError('Specialty is required');
+    }
+
+    const brandKit = await prisma.brandKit.update({
+      where: { tenantId: req.user!.tenantId },
+      data: {
+        specialties: {
+          push: specialty.trim(),
+        },
+      },
+    });
+
+    res.json(brandKit);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Remove specialty
+router.delete('/specialties/:specialty', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const specialty = decodeURIComponent(req.params.specialty);
+    const tenantId = req.user!.tenantId;
+
+    // Get current specialties
+    const current = await prisma.brandKit.findUnique({
+      where: { tenantId },
+      select: { specialties: true },
+    });
+
+    if (!current) {
+      res.status(404).json({ error: 'Brand kit not found' });
+      return;
+    }
+
+    // Filter out the specialty
+    const updatedSpecialties = current.specialties.filter(s => s !== specialty);
+
+    const brandKit = await prisma.brandKit.update({
+      where: { tenantId },
+      data: { specialties: updatedSpecialties },
+    });
+
+    res.json(brandKit);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Add unique selling point
+router.post('/usps', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { usp } = req.body;
+    if (!usp || typeof usp !== 'string') {
+      throw new ValidationError('USP is required');
+    }
+
+    const brandKit = await prisma.brandKit.update({
+      where: { tenantId: req.user!.tenantId },
+      data: {
+        uniqueSellingPoints: {
+          push: usp.trim(),
+        },
+      },
+    });
+
+    res.json(brandKit);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Remove unique selling point
+router.delete('/usps/:index', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const index = parseInt(req.params.index);
+    const tenantId = req.user!.tenantId;
+
+    const current = await prisma.brandKit.findUnique({
+      where: { tenantId },
+      select: { uniqueSellingPoints: true },
+    });
+
+    if (!current) {
+      res.status(404).json({ error: 'Brand kit not found' });
+      return;
+    }
+
+    const updatedUSPs = current.uniqueSellingPoints.filter((_, i) => i !== index);
+
+    const brandKit = await prisma.brandKit.update({
+      where: { tenantId },
+      data: { uniqueSellingPoints: updatedUSPs },
+    });
+
+    res.json(brandKit);
+  } catch (error) {
+    next(error);
+  }
+});
+
+export default router;
