@@ -28,9 +28,13 @@ export default function OnboardingPage() {
     logoUrl: '',
     primaryColor: '#C53030',
     services: [] as string[],
+    specials: [] as { title: string; discount: string; description: string }[],
     brandVoice: 'friendly',
     defaultVehicle: 'corvette',
+    websiteUrl: '',
   });
+  const [showSpecialModal, setShowSpecialModal] = useState(false);
+  const [newSpecial, setNewSpecial] = useState({ title: '', discount: '', description: '' });
 
   const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -212,26 +216,102 @@ export default function OnboardingPage() {
 
           {currentStep === 3 && (
             <div className="space-y-4">
-              <p className="text-gray-600 mb-4">
-                Select the services your shop offers:
-              </p>
-              {['Oil Change', 'Brake Service', 'Engine Repair', 'AC Service', 'Tire Service', 'Transmission'].map((service) => (
-                <label key={service} className="flex items-center gap-3 p-3 border-2 border-black cursor-pointer hover:bg-gray-50">
+              {/* URL Import Option */}
+              <div className="bg-retro-navy/5 p-4 border-2 border-retro-navy/20 mb-6">
+                <p className="font-heading text-sm uppercase mb-2">Import from Website (Optional)</p>
+                <div className="flex gap-2">
                   <input
-                    type="checkbox"
-                    className="w-5 h-5"
-                    checked={formData.services.includes(service)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setFormData({ ...formData, services: [...formData.services, service] });
-                      } else {
-                        setFormData({ ...formData, services: formData.services.filter(s => s !== service) });
+                    type="url"
+                    className="input-retro flex-1"
+                    placeholder="https://yourshop.com/services"
+                    value={formData.websiteUrl || ''}
+                    onChange={(e) => setFormData({ ...formData, websiteUrl: e.target.value })}
+                  />
+                  <button
+                    type="button"
+                    className="btn-retro-secondary text-sm"
+                    onClick={() => {
+                      if (formData.websiteUrl) {
+                        toast.loading('AI is scanning your website...');
+                        // TODO: Implement AI website scraping
+                        setTimeout(() => {
+                          toast.dismiss();
+                          toast.success('Services imported! Review below.');
+                        }, 2000);
+                      }
+                    }}
+                  >
+                    Import
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">AI will extract services from your website</p>
+              </div>
+
+              <p className="text-gray-600 mb-4">
+                Or select from common auto repair services:
+              </p>
+              <div className="grid grid-cols-2 gap-2 max-h-[400px] overflow-y-auto">
+                {[
+                  'Oil Change', 'Brake Service', 'Brake Pads', 'Brake Rotors',
+                  'Engine Repair', 'Engine Diagnostics', 'Check Engine Light',
+                  'AC Service', 'AC Repair', 'Heater Repair',
+                  'Tire Service', 'Tire Rotation', 'Wheel Alignment', 'Wheel Balancing',
+                  'Transmission Service', 'Transmission Repair', 'Transmission Flush',
+                  'Battery Service', 'Battery Replacement', 'Electrical Repair',
+                  'Suspension Repair', 'Shocks & Struts', 'Steering Repair',
+                  'Exhaust Repair', 'Muffler Service', 'Catalytic Converter',
+                  'Radiator Service', 'Coolant Flush', 'Overheating Repair',
+                  'Fuel System Service', 'Fuel Injection Cleaning', 'Fuel Pump Repair',
+                  'Timing Belt', 'Serpentine Belt', 'Belt Replacement',
+                  'Spark Plugs', 'Tune Up', 'Emissions Testing',
+                  'State Inspection', 'Pre-Purchase Inspection', 'Fleet Service',
+                  'Diesel Repair', 'Hybrid Service', 'Electric Vehicle Service',
+                  'Classic Car Service', 'Performance Upgrades', 'Custom Work',
+                  'Windshield Repair', 'Wiper Blades', 'Headlight Restoration',
+                  'Power Steering', 'Clutch Repair', 'Differential Service',
+                  'Driveshaft Repair', 'CV Joint/Axle', 'Transfer Case Service',
+                  '4x4 Service', 'Lift Kit Installation', 'Lowering Kits'
+                ].map((service) => (
+                  <label key={service} className="flex items-center gap-2 p-2 border border-black cursor-pointer hover:bg-gray-50 text-sm">
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4"
+                      checked={formData.services.includes(service)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setFormData({ ...formData, services: [...formData.services, service] });
+                        } else {
+                          setFormData({ ...formData, services: formData.services.filter(s => s !== service) });
+                        }
+                      }}
+                    />
+                    <span className="font-heading uppercase text-xs">{service}</span>
+                  </label>
+                ))}
+              </div>
+              {/* Custom service input */}
+              <div className="mt-4 pt-4 border-t border-gray-300">
+                <p className="font-heading text-sm uppercase mb-2">Add Custom Service</p>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    className="input-retro flex-1"
+                    placeholder="Enter custom service..."
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        const input = e.target as HTMLInputElement;
+                        if (input.value.trim()) {
+                          setFormData({ ...formData, services: [...formData.services, input.value.trim()] });
+                          input.value = '';
+                        }
                       }
                     }}
                   />
-                  <span className="font-heading uppercase">{service}</span>
-                </label>
-              ))}
+                </div>
+              </div>
+              <p className="text-sm text-gray-500 mt-2">
+                Selected: {formData.services.length} services
+              </p>
             </div>
           )}
 
@@ -262,13 +342,104 @@ export default function OnboardingPage() {
           )}
 
           {currentStep === 5 && (
-            <div className="text-center py-8">
-              <p className="text-gray-600 mb-4">
+            <div className="py-4">
+              <p className="text-gray-600 mb-4 text-center">
                 Add recurring promotions to your Specials Vault (optional)
               </p>
-              <button className="btn-retro-outline">Add Special</button>
-              <p className="text-sm text-gray-500 mt-4">
-                You can add specials later from the dashboard
+
+              {/* Added Specials List */}
+              {formData.specials.length > 0 && (
+                <div className="space-y-2 mb-4">
+                  {formData.specials.map((special, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-retro-teal/10 border border-retro-teal">
+                      <div>
+                        <p className="font-heading uppercase">{special.title}</p>
+                        <p className="text-sm text-gray-600">{special.discount} - {special.description}</p>
+                      </div>
+                      <button
+                        onClick={() => setFormData({
+                          ...formData,
+                          specials: formData.specials.filter((_, i) => i !== index)
+                        })}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Add Special Form */}
+              {showSpecialModal ? (
+                <div className="border-2 border-black p-4 space-y-3">
+                  <input
+                    type="text"
+                    className="input-retro"
+                    placeholder="Special name (e.g., Monday Oil Change)"
+                    value={newSpecial.title}
+                    onChange={(e) => setNewSpecial({ ...newSpecial, title: e.target.value })}
+                  />
+                  <input
+                    type="text"
+                    className="input-retro"
+                    placeholder="Discount (e.g., $10 Off, 15% Off)"
+                    value={newSpecial.discount}
+                    onChange={(e) => setNewSpecial({ ...newSpecial, discount: e.target.value })}
+                  />
+                  <input
+                    type="text"
+                    className="input-retro"
+                    placeholder="Description (e.g., Every Monday)"
+                    value={newSpecial.description}
+                    onChange={(e) => setNewSpecial({ ...newSpecial, description: e.target.value })}
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      className="btn-retro-primary flex-1"
+                      onClick={() => {
+                        if (newSpecial.title && newSpecial.discount) {
+                          setFormData({
+                            ...formData,
+                            specials: [...formData.specials, newSpecial]
+                          });
+                          setNewSpecial({ title: '', discount: '', description: '' });
+                          setShowSpecialModal(false);
+                          toast.success('Special added!');
+                        } else {
+                          toast.error('Please fill in title and discount');
+                        }
+                      }}
+                    >
+                      Save Special
+                    </button>
+                    <button
+                      className="btn-retro-outline"
+                      onClick={() => {
+                        setShowSpecialModal(false);
+                        setNewSpecial({ title: '', discount: '', description: '' });
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center">
+                  <button
+                    className="btn-retro-outline"
+                    onClick={() => setShowSpecialModal(true)}
+                  >
+                    Add Special
+                  </button>
+                </div>
+              )}
+
+              <p className="text-sm text-gray-500 mt-4 text-center">
+                {formData.specials.length === 0
+                  ? "You can add specials later from the dashboard"
+                  : `${formData.specials.length} special(s) added`
+                }
               </p>
             </div>
           )}
