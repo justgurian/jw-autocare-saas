@@ -91,29 +91,88 @@ export const geminiService = {
     }
   },
 
-  // Generate image using Gemini 2.0 Flash
+  // Generate image using Nano Banana Pro (Gemini 3 Pro Image Preview)
   async generateImage(prompt: string, options: ImageGenerationOptions = {}): Promise<ImageGenResult> {
     try {
-      logger.info('Starting image generation with Gemini 2.0 Flash', { promptLength: prompt.length });
+      logger.info('Starting image generation with Nano Banana Pro', { promptLength: prompt.length });
 
-      // Build the full prompt with style guidelines
-      const fullPrompt = `Create a professional marketing flyer image.
+      // Build comprehensive prompt for high-quality auto repair marketing images
+      const fullPrompt = `You are a professional graphic designer creating a stunning social media marketing image for an auto repair shop.
 
+CREATE A VISUALLY STRIKING, HIGH-QUALITY MARKETING IMAGE with the following specifications:
+
+=== CORE CONTENT ===
 ${prompt}
 
-IMPORTANT STYLE GUIDELINES:
-- This must be a promotional flyer for an auto repair shop
-- Include bold, readable text
-- Use professional marketing design principles
-- Make it visually striking and eye-catching
-- Aspect ratio: ${options.aspectRatio || '4:5'} (portrait orientation for social media)
-${options.negativePrompt ? `\nAVOID: ${options.negativePrompt}` : ''}`;
+=== VISUAL DESIGN REQUIREMENTS ===
+
+COMPOSITION & LAYOUT:
+- Create a clean, professional composition with clear visual hierarchy
+- Use the rule of thirds for balanced, eye-catching design
+- Leave breathing room - don't overcrowd the image
+- Ensure the main message is immediately visible and readable
+- Aspect ratio: ${options.aspectRatio || '4:5'} (optimized for Instagram/Facebook)
+
+TYPOGRAPHY & TEXT:
+- Use BOLD, LARGE, highly readable text for headlines
+- Text must have HIGH CONTRAST against background (white text on dark, or dark text with white outline)
+- Professional sans-serif fonts that convey trust and reliability
+- Text should be readable even when image is viewed as a small thumbnail on mobile
+- Include subtle text shadows or outlines for maximum readability
+
+COLOR PALETTE:
+- Use rich, vibrant colors that pop on social media feeds
+- Professional automotive colors: deep reds, metallic blues, chrome silvers, classic blacks
+- Accent colors that create energy: bright yellows, electric oranges, clean whites
+- Ensure colors work together harmoniously
+
+VISUAL ELEMENTS:
+- Incorporate automotive imagery: tools, cars, wheels, gauges, garage elements
+- Use dynamic angles and perspectives for visual interest
+- Add subtle shine, reflections, or metallic effects for premium feel
+- Include design elements like racing stripes, checkered patterns, or gear shapes
+
+STYLE & MOOD:
+- Professional yet approachable - trustworthy auto shop aesthetic
+- Clean, modern design that stands out in social media feeds
+- Balance between eye-catching and professional
+- Convey expertise, reliability, and quality service
+
+=== QUALITY STANDARDS ===
+- This image will be used for REAL BUSINESS MARKETING on social media
+- It must look like it was created by a professional graphic designer
+- The image should make people STOP SCROLLING when they see it
+- Quality level: Ready to post on Instagram, Facebook, or print as a flyer
+
+=== DO NOT INCLUDE ===
+- Realistic human faces or photographs of real people
+- Copyrighted logos, brand names, or trademarked characters
+- Low quality, clipart-style, or amateur-looking elements
+- Tiny unreadable text
+- Cluttered or chaotic layouts
+- Generic stock photo aesthetic
+${options.negativePrompt ? `- ${options.negativePrompt}` : ''}
+
+Generate a single, stunning marketing image that an auto repair shop would be proud to post on their social media.`;
+
+      logger.info('Calling Nano Banana Pro model for image generation...');
 
       const result = await imageModel.generateContent(fullPrompt);
       const response = result.response;
 
+      logger.info('Received response from image model', {
+        hasResponse: !!response,
+        hasCandidates: !!(response?.candidates?.length),
+        candidateCount: response?.candidates?.length || 0,
+      });
+
       // Check for image parts in the response
       const parts = response.candidates?.[0]?.content?.parts || [];
+
+      logger.info('Response parts analysis', {
+        partsCount: parts.length,
+        partTypes: parts.map((p: any) => p.inlineData ? 'image' : p.text ? 'text' : 'unknown'),
+      });
 
       for (const part of parts) {
         // @ts-ignore - inlineData may contain image
@@ -123,9 +182,10 @@ ${options.negativePrompt ? `\nAVOID: ${options.negativePrompt}` : ''}`;
           // @ts-ignore
           const mimeType = part.inlineData.mimeType || 'image/png';
 
-          logger.info('Image generated successfully', {
+          logger.info('Image generated successfully with Nano Banana Pro', {
             size: imageData.length,
-            mimeType
+            mimeType,
+            sizeKB: Math.round(imageData.length / 1024),
           });
 
           // Save to local file if outputDir is provided
@@ -151,23 +211,45 @@ ${options.negativePrompt ? `\nAVOID: ${options.negativePrompt}` : ''}`;
         }
       }
 
-      // If no image was generated, return error
-      logger.warn('No image generated in response', {
-        response: response.text()
+      // If no image was generated, log the text response for debugging
+      const textResponse = response.text();
+      logger.warn('No image generated in response - model returned text only', {
+        textResponseLength: textResponse?.length || 0,
+        textResponsePreview: textResponse?.substring(0, 500) || 'empty',
+        finishReason: response.candidates?.[0]?.finishReason,
+        safetyRatings: response.candidates?.[0]?.safetyRatings,
       });
 
       return {
         success: false,
-        error: 'No image generated. The model returned text instead of an image.',
+        error: `No image generated. Model response: ${textResponse?.substring(0, 200) || 'empty'}`,
       };
     } catch (error: any) {
-      logger.error('Gemini image generation failed', { error: error.message });
+      logger.error('Nano Banana Pro image generation failed', {
+        error: error.message,
+        errorName: error.name,
+        errorStack: error.stack?.substring(0, 500),
+      });
 
       // Check for specific errors
       if (error.message?.includes('SAFETY')) {
         return {
           success: false,
           error: 'Content was blocked by safety filters. Try adjusting your prompt.',
+        };
+      }
+
+      if (error.message?.includes('not found') || error.message?.includes('404')) {
+        return {
+          success: false,
+          error: 'Image generation model not available. Please check model configuration.',
+        };
+      }
+
+      if (error.message?.includes('quota') || error.message?.includes('rate')) {
+        return {
+          success: false,
+          error: 'API rate limit reached. Please try again in a moment.',
         };
       }
 

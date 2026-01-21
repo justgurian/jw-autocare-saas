@@ -775,35 +775,77 @@ export function buildBrandStyleImagePrompt(
 ): string {
   const { imagePrompt } = style;
 
-  return `${imagePrompt.styleDirective}
+  return `You are an expert graphic designer at a top marketing agency creating a STUNNING promotional image for an auto repair shop's social media marketing.
 
-VISUAL STYLE:
+=== CREATIVE DIRECTION ===
+${imagePrompt.styleDirective}
+
+=== TARGET OUTPUT ===
+Create a high-quality, professional promotional flyer/social media post that:
+- Stops people scrolling on Instagram/Facebook
+- Looks like it was designed by a professional agency
+- Perfectly captures the "${style.name}" visual identity
+- Makes people want to visit this auto shop
+
+=== VISUAL DESIGN SPECIFICATIONS ===
+
+STYLE & AESTHETIC:
 ${imagePrompt.visualElements}
 
-COLOR PALETTE:
+COLOR PALETTE (USE THESE EXACT COLORS):
 ${imagePrompt.colorInstructions}
 
-TYPOGRAPHY:
+TYPOGRAPHY REQUIREMENTS (CRITICAL):
 ${imagePrompt.typographyInstructions}
+- Main headline must be EXTREMELY LARGE and BOLD
+- Text must be crisp, clear, and readable even as a small thumbnail
+- Use HIGH CONTRAST - white or light text on dark backgrounds, or dark text with stroke on light backgrounds
+- Text should take up significant space in the composition
 
-CONTENT TO INCLUDE:
-- Main Headline: "${content.headline}"
-- Subject/Service: ${content.subject}
-${content.details ? `- Details: ${content.details}` : ''}
-${content.businessName ? `- Business Name: "${content.businessName}" - feature prominently` : ''}
-${content.logoInstructions ? `\nLOGO: ${content.logoInstructions}` : ''}
+=== CONTENT TO FEATURE ===
+HEADLINE (feature this prominently): "${content.headline}"
+SUBJECT/SERVICE: ${content.subject}
+${content.details ? `ADDITIONAL DETAILS: ${content.details}` : ''}
+${content.businessName ? `BUSINESS NAME: "${content.businessName}" - include this in the design as branding` : ''}
+${content.logoInstructions ? `\nLOGO PLACEMENT: ${content.logoInstructions}` : ''}
 
-COMPOSITION:
+=== COMPOSITION & LAYOUT ===
 ${imagePrompt.compositionRules}
+- Create a single, cohesive marketing image (NOT a collage or multiple panels)
+- Strong visual hierarchy: Headline > Subject > Details > Branding
+- Professional marketing quality - this will represent a real business
+- Balanced, intentional white/negative space
 
-DO NOT INCLUDE:
+=== QUALITY STANDARDS ===
+This image MUST look like:
+- Professional graphic design work from a marketing agency
+- Something a business would proudly post on their social media
+- High-end marketing material, not clip-art or amateur design
+- Clean, polished, and visually impressive
+
+=== ABSOLUTE REQUIREMENTS ===
+✅ Professional marketing quality
+✅ Bold, readable text that pops
+✅ Cohesive ${style.name} visual style throughout
+✅ Eye-catching colors and composition
+✅ Automotive/auto-repair appropriate imagery
+
+=== MUST AVOID ===
 ${imagePrompt.avoidElements}
-- Any copyrighted logos or characters
-- Realistic human faces
-- Phone numbers or specific addresses
-- Offensive or inappropriate content
+❌ Realistic photographs of human faces
+❌ Copyrighted logos, brand names, or characters
+❌ Tiny, illegible, or poorly placed text
+❌ Cluttered, busy, or chaotic layouts
+❌ Generic stock photo aesthetic
+❌ Watermarks or template-looking elements
+❌ Phone numbers or specific street addresses
+❌ Low-quality, amateur, or unprofessional elements
 
-Create a professional, print-ready promotional flyer that perfectly captures the ${style.name} aesthetic.
-The result should look like authentic professional marketing material, not AI-generated.
-Aspect ratio: 4:5 (portrait, social media optimized)`;
+=== OUTPUT SPECIFICATIONS ===
+- Aspect ratio: 4:5 (portrait, optimized for Instagram/Facebook)
+- Single cohesive image (not a collage)
+- Print-ready quality at the given dimensions
+- The ${style.name} style should be immediately recognizable
+
+Create ONE stunning, scroll-stopping promotional image that a professional auto repair shop would proudly share on their social media.`;
 }

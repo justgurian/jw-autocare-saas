@@ -379,21 +379,52 @@ export const themeRegistry = {
     // Fallback for legacy and additional themes
     const theme = themes.find(t => t.id === styleId);
     if (theme) {
-      return `Create a professional promotional flyer.
-Style: ${theme.imagePrompt.style}
-Colors: ${theme.imagePrompt.colorPalette}
-Typography: ${theme.imagePrompt.typography}
-Elements: ${theme.imagePrompt.elements}
-Mood: ${theme.imagePrompt.mood}
+      return `You are an expert graphic designer creating a STUNNING promotional image for an auto repair shop's social media marketing.
 
-Content:
-- Headline: "${content.headline}"
-- Subject: ${content.subject}
-${content.details ? `- Details: ${content.details}` : ''}
-${content.businessName ? `- Business: "${content.businessName}"` : ''}
-${content.logoInstructions ? `\nLogo: ${content.logoInstructions}` : ''}
+=== CREATIVE DIRECTION ===
+Create a professional marketing flyer in the "${theme.name}" style.
+Visual Style: ${theme.imagePrompt.style}
+Color Mood: ${theme.imagePrompt.mood}
 
-Create a print-ready 4:5 aspect ratio flyer.`;
+=== VISUAL DESIGN SPECIFICATIONS ===
+
+COLORS:
+${theme.imagePrompt.colorPalette}
+- Use bold, vibrant versions of these colors that pop on social media
+- Ensure strong contrast between background and text
+
+TYPOGRAPHY:
+${theme.imagePrompt.typography}
+- Headlines must be EXTREMELY LARGE, BOLD, and READABLE
+- Text must be clearly legible even as a small thumbnail
+- Use high contrast text colors (white with black outline works universally)
+
+DESIGN ELEMENTS:
+${theme.imagePrompt.elements}
+- Incorporate these elements tastefully to support the theme
+- Don't overcrowd - leave breathing room
+
+=== CONTENT TO FEATURE ===
+HEADLINE (prominent): "${content.headline}"
+SUBJECT/SERVICE: ${content.subject}
+${content.details ? `DETAILS: ${content.details}` : ''}
+${content.businessName ? `BUSINESS NAME: "${content.businessName}" - include as branding` : ''}
+${content.logoInstructions ? `LOGO: ${content.logoInstructions}` : ''}
+
+=== QUALITY STANDARDS ===
+- Professional marketing agency quality
+- Scroll-stopping visual impact
+- Clean, polished, impressive design
+- Auto repair industry appropriate
+
+=== MUST AVOID ===
+❌ Realistic human faces
+❌ Copyrighted logos or characters
+❌ Tiny, unreadable text
+❌ Cluttered layouts
+❌ Amateur or low-quality appearance
+
+Create ONE stunning 4:5 aspect ratio promotional image that an auto repair shop would proudly post on Instagram/Facebook.`;
     }
     return '';
   },

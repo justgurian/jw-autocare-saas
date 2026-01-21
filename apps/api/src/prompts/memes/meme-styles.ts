@@ -244,40 +244,71 @@ export function buildMemePrompt(
 ): string {
   const { imagePrompt } = style;
 
-  return `Create a MEME-STYLE promotional image for an auto repair shop.
+  return `Create a VIRAL-WORTHY MEME IMAGE for an auto repair shop's social media marketing.
 
-MEME STYLE: ${style.name}
-${style.description}
+=== MEME CONCEPT ===
+Style: "${style.name}" - ${style.description}
+Topic: ${content.topic}
+${content.customText ? `Caption/Text: "${content.customText}"` : ''}
 
-FORMAT: ${imagePrompt.format}
-VISUAL STYLE: ${imagePrompt.style}
-KEY ELEMENTS: ${imagePrompt.elements}
-TEXT PLACEMENT: ${imagePrompt.textPlacement}
-MOOD/TONE: ${imagePrompt.mood}
+=== VISUAL DESIGN SPECIFICATIONS ===
 
-CONTENT:
-- Topic: ${content.topic}
-${content.customText ? `- Custom Text/Caption: "${content.customText}"` : ''}
-${content.businessName ? `- Business Name (include in design): "${content.businessName}"` : ''}
+LAYOUT FORMAT:
+${imagePrompt.format}
+
+ARTISTIC STYLE:
+${imagePrompt.style}
+- Use BOLD, SATURATED COLORS that pop on social media
+- High contrast between elements for visual impact
+- Clean, crisp lines and professional illustration quality
+- Modern meme aesthetic that feels current and trendy
+
+KEY VISUAL ELEMENTS TO INCLUDE:
+${imagePrompt.elements}
+- Automotive theme: cars, tools, garage setting, mechanical parts
+- Expressive cartoon characters (NOT realistic humans)
+- Dynamic composition with energy and movement
+
+TEXT DESIGN (CRITICAL):
+${imagePrompt.textPlacement}
+- Text must be EXTREMELY LARGE and BOLD - readable even as a thumbnail
+- Use classic meme fonts: Impact, bold sans-serif, or stylized block letters
+- WHITE TEXT with THICK BLACK OUTLINE for maximum readability
+- Text should take up significant portion of the image
+- Caption placement should follow established meme conventions
+
+MOOD & TONE:
+${imagePrompt.mood}
+- This should make car owners LAUGH and want to SHARE
+- Relatable humor that mechanics and customers both appreciate
+- Professional enough for a business to post proudly
+
+${content.businessName ? `
+BRANDING:
+- Business: "${content.businessName}"
 ${content.tagline ? `- Tagline: "${content.tagline}"` : ''}
+- Include subtle branding - small logo placement or business name in corner
+- Don't make it feel like an ad - meme first, branding second
+` : ''}
 
-REQUIREMENTS:
-- Make it FUNNY and SHAREABLE - this should make people want to tag their friends
-- Include clear, readable text that works as a meme caption
-- Incorporate auto repair/car themes naturally
-- Professional enough for business use but entertaining enough for social media
-- The humor should be relatable to car owners
-- Text should be LARGE and HIGH CONTRAST for readability on phones
-${content.businessName ? `- Subtly include the business name/branding without being too "salesy"` : ''}
+=== QUALITY REQUIREMENTS ===
+- This will be posted on Instagram, Facebook, Twitter by a REAL BUSINESS
+- Must look professionally designed, not amateur or cheap
+- Should generate engagement: likes, comments, shares, tags
+- The humor should land immediately - no explanation needed
+- Image quality: crisp, clean, high resolution appearance
 
-DO NOT INCLUDE:
-- Realistic human faces
-- Copyrighted meme characters (create original illustrated versions)
-- Offensive or inappropriate content
-- Tiny unreadable text
+=== ABSOLUTELY DO NOT INCLUDE ===
+- Realistic photographs or human faces
+- Copyrighted characters (create ORIGINAL cartoon characters)
+- Offensive, crude, or inappropriate content
+- Tiny text that's hard to read
+- Cluttered or confusing layouts
+- Watermarks or stock photo artifacts
+- Generic clip-art style graphics
 
-Create a viral-worthy auto repair meme that balances humor with professional branding.
-Aspect ratio: 1:1 (square, optimized for social media)`;
+Generate a scroll-stopping, shareable automotive meme that balances HUMOR with PROFESSIONALISM.
+Aspect ratio: 1:1 (square format for social media)`;
 }
 
 // Get random topic suggestion for a style
