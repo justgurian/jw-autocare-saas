@@ -279,7 +279,7 @@ model BatchJob {
 
 model RefreshToken {
   id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  token     String   @unique @db.VarChar(500)
+  token     String   @unique @db.Text
   userId    String   @map("user_id") @db.Uuid
   expiresAt DateTime @map("expires_at") @db.Timestamptz
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz

@@ -101,12 +101,15 @@ export const authService = {
   async register(input: RegisterInput): Promise<{ user: UserResponse; tokens: AuthTokens }> {
     const { email, password, firstName, lastName, businessName } = input;
 
+    logger.info('Registration attempt', { email, businessName });
+
     // Check if email already exists
     const existingUser = await prisma.user.findFirst({
       where: { email: email.toLowerCase() },
     });
 
     if (existingUser) {
+      logger.warn('Registration failed: email already exists', { email });
       throw new ConflictError('Email already registered');
     }
 
@@ -114,72 +117,90 @@ export const authService = {
     const passwordHash = await bcrypt.hash(password, 12);
 
     // Create tenant and user in transaction
-    const result = await prisma.$transaction(async (tx) => {
-      // Create tenant
-      const tenant = await tx.tenant.create({
-        data: {
-          name: businessName,
-          slug: generateSlug(businessName),
-          subscriptionTier: 'base',
-          subscriptionStatus: 'trialing',
-          onboardingStep: 1,
-          settings: {
-            onboardingCompleted: false,
-          },
-        },
-      });
-
-      // Create user as owner
-      const user = await tx.user.create({
-        data: {
-          tenantId: tenant.id,
-          email: email.toLowerCase(),
-          passwordHash,
-          firstName,
-          lastName,
-          role: USER_ROLES.OWNER,
-          emailVerified: false,
-        },
-        include: {
-          tenant: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-              subscriptionTier: true,
-              onboardingCompleted: true,
+    let result;
+    try {
+      result = await prisma.$transaction(async (tx) => {
+        logger.info('Creating tenant', { businessName });
+        // Create tenant
+        const tenant = await tx.tenant.create({
+          data: {
+            name: businessName,
+            slug: generateSlug(businessName),
+            subscriptionTier: 'base',
+            subscriptionStatus: 'trialing',
+            onboardingStep: 1,
+            settings: {
+              onboardingCompleted: false,
             },
           },
-        },
-      });
+        });
+        logger.info('Tenant created', { tenantId: tenant.id });
 
-      // Create brand kit placeholder
-      await tx.brandKit.create({
-        data: {
-          tenantId: tenant.id,
-          businessName,
-        },
-      });
+        // Create user as owner
+        const user = await tx.user.create({
+          data: {
+            tenantId: tenant.id,
+            email: email.toLowerCase(),
+            passwordHash,
+            firstName,
+            lastName,
+            role: USER_ROLES.OWNER,
+            emailVerified: false,
+          },
+          include: {
+            tenant: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                subscriptionTier: true,
+                onboardingCompleted: true,
+              },
+            },
+          },
+        });
+        logger.info('User created', { userId: user.id });
 
-      return user;
-    });
+        // Create brand kit placeholder
+        await tx.brandKit.create({
+          data: {
+            tenantId: tenant.id,
+            businessName,
+          },
+        });
+        logger.info('Brand kit created');
+
+        return user;
+      });
+    } catch (txError) {
+      logger.error('Transaction failed during registration', { error: txError, email });
+      throw txError;
+    }
 
     // Generate tokens
+    logger.info('Generating tokens');
     const tokens = generateTokens({
       sub: result.id,
       tenantId: result.tenantId,
       email: result.email,
       role: result.role,
     });
+    logger.info('Tokens generated', { tokenLength: tokens.refreshToken.length });
 
     // Store refresh token
-    await prisma.refreshToken.create({
-      data: {
-        token: tokens.refreshToken,
-        userId: result.id,
-        expiresAt: new Date(Date.now() + parseExpiresIn(config.jwt.refreshExpiresIn)),
-      },
-    });
+    try {
+      await prisma.refreshToken.create({
+        data: {
+          token: tokens.refreshToken,
+          userId: result.id,
+          expiresAt: new Date(Date.now() + parseExpiresIn(config.jwt.refreshExpiresIn)),
+        },
+      });
+      logger.info('Refresh token stored');
+    } catch (tokenError) {
+      logger.error('Failed to store refresh token', { error: tokenError, tokenLength: tokens.refreshToken.length });
+      throw tokenError;
+    }
 
     logger.info('New user registered', { userId: result.id, tenantId: result.tenantId });
 
