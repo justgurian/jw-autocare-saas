@@ -42,6 +42,24 @@ interface RecentCampaign {
   createdAt: string;
 }
 
+interface CampaignJob {
+  id: string;
+  status: string;
+  progress?: {
+    total: number;
+    completed: number;
+    failed: number;
+    percentage: number;
+  };
+  content?: Array<{
+    id: string;
+    title: string;
+    imageUrl: string;
+    caption: string;
+    theme: string;
+  }>;
+}
+
 const TEMPLATE_ICONS: Record<string, React.ReactNode> = {
   seasonal_special: <Calendar size={24} />,
   service_spotlight: <Target size={24} />,
@@ -100,7 +118,7 @@ export default function CampaignPage() {
   });
 
   // Poll for job status
-  const { data: jobData } = useQuery({
+  const { data: jobData } = useQuery<CampaignJob | null>({
     queryKey: ['campaign-job', activeJobId],
     queryFn: () => (activeJobId ? campaignApi.getJob(activeJobId).then((res) => res.data) : null),
     enabled: !!activeJobId,

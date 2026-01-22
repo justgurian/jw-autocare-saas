@@ -4,6 +4,15 @@ import { instantPackApi } from '../../../services/api';
 import { Package, Zap, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+interface InstantPackJob {
+  status: string;
+  total: number;
+  completed: number;
+  failed: number;
+  progress: number;
+  content?: Array<{ id: string; imageUrl: string; title: string; theme: string }>;
+}
+
 export default function InstantPackPage() {
   const [count, setCount] = useState(5);
   const [jobId, setJobId] = useState<string | null>(null);
@@ -21,12 +30,12 @@ export default function InstantPackPage() {
   });
 
   // Poll job status
-  const { data: jobData } = useQuery({
+  const { data: jobData } = useQuery<InstantPackJob>({
     queryKey: ['instant-pack-job', jobId],
     queryFn: () => instantPackApi.getJob(jobId!).then(res => res.data),
     enabled: !!jobId,
-    refetchInterval: (data) => {
-      if (data?.status === 'completed' || data?.status === 'failed') {
+    refetchInterval: (query) => {
+      if (query.state.data?.status === 'completed' || query.state.data?.status === 'failed') {
         return false;
       }
       return 2000; // Poll every 2 seconds

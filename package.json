@@ -19,14 +19,12 @@
     "db:seed": "cd apps/api && npx prisma db seed"
   },
   "devDependencies": {
+    "@railway/cli": "^4.26.0",
     "turbo": "^2.0.0",
     "typescript": "^5.3.0"
   },
   "engines": {
     "node": ">=20.0.0"
   },
-  "packageManager": "npm@10.0.0",
-  "dependencies": {
-    "@railway/cli": "^4.26.0"
-  }
+  "packageManager": "npm@10.0.0"
 }
