@@ -82,7 +82,7 @@ export default function CampaignPage() {
   const [details, setDetails] = useState('');
   const [startDate, setStartDate] = useState('');
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
-  const [pollInterval, setPollInterval] = useState<number | null>(null);
+  const [pollInterval, setPollInterval] = useState<number | false>(false);
   const [shareContent, setShareContent] = useState<{ id: string; title?: string; imageUrl?: string; caption?: string } | null>(null);
   const queryClient = useQueryClient();
 
@@ -128,7 +128,7 @@ export default function CampaignPage() {
   // Stop polling when job completes
   useEffect(() => {
     if (jobData?.status === 'completed' || jobData?.status === 'failed') {
-      setPollInterval(null);
+      setPollInterval(false);
       if (jobData.status === 'completed') {
         toast.success('Campaign generated successfully!');
         queryClient.invalidateQueries({ queryKey: ['recent-campaigns'] });
