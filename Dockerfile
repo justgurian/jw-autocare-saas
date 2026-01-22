@@ -29,17 +29,22 @@ RUN npm run build
 # Production stage - serve with nginx
 FROM nginx:alpine AS runner
 
-# Copy custom nginx config
-COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
+# Copy custom nginx config template
+COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf.template
 
 # Copy built files
 COPY --from=builder /app/apps/web/dist /usr/share/nginx/html
 
+# Use PORT from environment (Railway standard), default to 80
+ENV PORT=80
+
 # Expose port
 EXPOSE 80
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:80 || exit 1
+# Create startup script that configures nginx with the correct port
+RUN echo '#!/bin/sh' > /docker-entrypoint.sh && \
+    echo 'sed "s/listen 80;/listen ${PORT};/g" /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf' >> /docker-entrypoint.sh && \
+    echo 'exec nginx -g "daemon off;"' >> /docker-entrypoint.sh && \
+    chmod +x /docker-entrypoint.sh
 
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["/docker-entrypoint.sh"]
