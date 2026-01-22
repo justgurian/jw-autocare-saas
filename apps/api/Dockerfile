@@ -64,5 +64,5 @@ EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3001/health || exit 1
 
-# Start command - run migrations then start server
-CMD ["sh", "-c", "npx prisma migrate deploy && npx tsx src/app.ts"]
+# Start command - run migrations then start server (using compiled JS)
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/app.js"]
