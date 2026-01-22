@@ -81,23 +81,12 @@ configurePassport(passport);
 app.use(passport.initialize());
 
 // Health check endpoint
-app.get('/health', async (_req: Request, res: Response) => {
-  let dbStatus = 'unknown';
-  try {
-    // Import prisma dynamically to avoid circular dependency
-    const { prisma } = await import('./db/client');
-    await prisma.$queryRaw`SELECT 1`;
-    dbStatus = 'connected';
-  } catch (err) {
-    dbStatus = `error: ${err instanceof Error ? err.message : 'unknown'}`;
-  }
-
+app.get('/health', (_req: Request, res: Response) => {
   res.status(200).json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
     version: process.env.npm_package_version || '1.0.0',
-    build: 'db-check-v1',
-    database: dbStatus,
+    build: 'token-fix-v1',
   });
 });
 
