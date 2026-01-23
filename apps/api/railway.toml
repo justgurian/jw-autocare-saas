@@ -1,8 +1,9 @@
 [build]
-builder = "dockerfile"
-dockerfilePath = "Dockerfile"
+builder = "nixpacks"
+buildCommand = "npm install && npx prisma generate"
 
 [deploy]
+startCommand = "npx prisma migrate deploy && npx tsx src/app.ts"
 healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"
