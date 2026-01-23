@@ -53,8 +53,14 @@ app.use(helmet({
 }));
 
 // CORS configuration
+const allowedOrigins = [
+  config.webUrl,
+  'http://localhost:3000',
+  'https://web-production-58966.up.railway.app',
+].filter(Boolean);
+
 app.use(cors({
-  origin: [config.webUrl, 'http://localhost:3000'],
+  origin: allowedOrigins,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-ID'],
