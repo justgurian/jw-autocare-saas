@@ -185,23 +185,55 @@ export default function BatchFlyerPage() {
     },
   });
 
-  // Initialize content from suggestions
+  // Initialize content from suggestions or raw service/special lists
   useEffect(() => {
-    if (suggestionsData?.contentSuggestions && selectedContent.length === 0) {
-      const items: ContentItem[] = suggestionsData.contentSuggestions.map((s: {
-        serviceId?: string;
-        specialId?: string;
-        name: string;
-        isPreSelected: boolean;
-        reason: string;
-      }) => ({
-        id: s.serviceId || s.specialId || '',
-        type: s.serviceId ? 'service' : 'special' as 'service' | 'special',
-        name: s.name,
-        isSelected: s.isPreSelected,
-        reason: s.reason,
-      }));
-      setSelectedContent(items);
+    if (selectedContent.length === 0 && suggestionsData) {
+      const items: ContentItem[] = [];
+
+      // First try contentSuggestions (smart AI suggestions)
+      if (suggestionsData.contentSuggestions?.length > 0) {
+        for (const s of suggestionsData.contentSuggestions) {
+          items.push({
+            id: s.serviceId || s.specialId || '',
+            type: s.serviceId ? 'service' : 'special' as 'service' | 'special',
+            name: s.name,
+            isSelected: s.isPreSelected,
+            reason: s.reason,
+          });
+        }
+      }
+
+      // If no suggestions, use raw service/special lists
+      if (items.length === 0) {
+        // Add all services
+        if (suggestionsData.allServices?.length > 0) {
+          for (const service of suggestionsData.allServices) {
+            items.push({
+              id: service.id,
+              type: 'service',
+              name: service.name,
+              isSelected: items.length < 3, // Pre-select first 3
+              reason: service.category || 'Available service',
+            });
+          }
+        }
+        // Add all specials
+        if (suggestionsData.allSpecials?.length > 0) {
+          for (const special of suggestionsData.allSpecials) {
+            items.push({
+              id: special.id,
+              type: 'special',
+              name: special.title,
+              isSelected: true, // Always pre-select specials
+              reason: 'Active special',
+            });
+          }
+        }
+      }
+
+      if (items.length > 0) {
+        setSelectedContent(items);
+      }
     }
   }, [suggestionsData, selectedContent.length]);
 

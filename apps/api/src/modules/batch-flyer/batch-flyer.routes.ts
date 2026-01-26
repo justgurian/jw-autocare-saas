@@ -14,6 +14,7 @@ import {
   NOSTALGIC_THEMES,
   NostalgicThemeDefinition,
   EraVehicle,
+  getThemesFromHolidayPacks,
 } from '../../prompts/themes';
 import { ValidationError } from '../../middleware/error.middleware';
 import { logger } from '../../utils/logger';
@@ -31,8 +32,91 @@ import {
   InpaintPreset,
 } from './batch-flyer.types';
 import { getSmartSuggestions, getTopPerformingThemes } from './suggestions.service';
+import sharp from 'sharp';
+import { creativeLogoService } from '../../services/creative-logo.service';
+import { LogoStyle, selectRandomLogoStyle } from '../../services/logo-styles';
 
 const router = Router();
+
+// ============================================================================
+// CREATIVE LOGO INTEGRATION HELPER
+// ============================================================================
+
+/**
+ * Get logo buffer from URL or data URL
+ */
+async function getLogoBuffer(logoUrl: string): Promise<Buffer | null> {
+  try {
+    if (logoUrl.startsWith('data:image')) {
+      const base64Data = logoUrl.split(',')[1];
+      if (!base64Data) return null;
+      return Buffer.from(base64Data, 'base64');
+    } else {
+      const response = await fetch(logoUrl);
+      if (!response.ok) {
+        logger.warn('Failed to fetch logo from URL', { logoUrl });
+        return null;
+      }
+      return Buffer.from(await response.arrayBuffer());
+    }
+  } catch (error) {
+    logger.warn('Error getting logo buffer', { error });
+    return null;
+  }
+}
+
+/**
+ * Creative logo integration with variety of styles
+ * Returns the modified base64 image and the style that was applied
+ * @param specificStyle - Optional: Use a specific pre-selected style instead of random
+ */
+async function compositeLogoCreatively(
+  imageBase64: string,
+  logoUrl: string | null | undefined,
+  excludeStyles: string[] = [],
+  specificStyle?: string // NEW: Use pre-selected style
+): Promise<{ base64: string; appliedStyle: string }> {
+  if (!logoUrl) {
+    return { base64: imageBase64, appliedStyle: 'none' };
+  }
+
+  try {
+    const imageBuffer = Buffer.from(imageBase64, 'base64');
+    const logoBuffer = await getLogoBuffer(logoUrl);
+
+    if (!logoBuffer) {
+      return { base64: imageBase64, appliedStyle: 'none' };
+    }
+
+    // Use creative logo service for placement
+    // If specificStyle provided, use it; otherwise random with exclusions
+    const result = await creativeLogoService.integrateLogoCreatively({
+      logoBuffer,
+      imageBuffer,
+      style: specificStyle || 'random', // Use pre-selected style if provided
+      excludeStyles: specificStyle ? [] : excludeStyles.slice(-2), // Only exclude if random
+      variationSeed: Date.now() + Math.random() * 1000,
+    });
+
+    logger.info('Applied creative logo style', {
+      style: result.appliedStyle,
+      styleName: result.styleName,
+      position: result.position,
+      wasPreSelected: !!specificStyle,
+    });
+
+    return {
+      base64: result.imageBuffer.toString('base64'),
+      appliedStyle: result.appliedStyle,
+    };
+  } catch (error) {
+    logger.warn('Failed to composite logo creatively, falling back to simple', { error });
+    return { base64: imageBase64, appliedStyle: 'error' };
+  }
+}
+
+// Track used logo styles within a batch generation to ensure variety
+const batchLogoStyles: Map<string, string[]> = new Map();
 
 router.use(authenticate);
 router.use(tenantContext);
@@ -45,7 +129,16 @@ router.use(tenantContext);
 router.get('/suggestions', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const tenantId = req.user!.tenantId;
+    logger.info('Getting suggestions for tenant', { tenantId });
+
     const suggestions = await getSmartSuggestions(tenantId);
+
+    logger.info('Suggestions response', {
+      tenantId,
+      contentSuggestionsCount: suggestions.contentSuggestions?.length || 0,
+      allServicesCount: suggestions.allServices?.length || 0,
+      allSpecialsCount: suggestions.allSpecials?.length || 0,
+    });
 
     res.json(suggestions);
   } catch (error) {
@@ -89,6 +182,7 @@ router.post('/generate', generationRateLimiter, async (req: Request, res: Respon
       themeStrategy,
       singleThemeId,
       themeMatrix,
+      holidayPacks, // Optional: opt-in holiday theme packs
       language,
       vehicleId,
     } = result.data;
@@ -114,6 +208,7 @@ router.post('/generate', generationRateLimiter, async (req: Request, res: Respon
           specialIds,
           language,
           vehicleId,
+          holidayPacks, // Track which holiday packs were selected
         },
         startedAt: new Date(),
       },
@@ -145,8 +240,8 @@ router.post('/generate', generationRateLimiter, async (req: Request, res: Respon
       customContent
     );
 
-    // Select themes for each flyer
-    const selectedThemes = selectThemes(count, themeStrategy, singleThemeId, themeMatrix);
+    // Select themes for each flyer (include holiday themes only if packs are selected)
+    const selectedThemes = selectThemes(count, themeStrategy, singleThemeId, themeMatrix, holidayPacks);
 
     // Generate flyers (async - don't await)
     generateFlyers(
@@ -680,35 +775,50 @@ function selectThemes(
   count: number,
   strategy: string,
   singleThemeId?: string,
-  themeMatrix?: Array<{ index: number; themeId: string }>
+  themeMatrix?: Array<{ index: number; themeId: string }>,
+  holidayPacks?: string[] // Optional: include themes from these holiday packs
 ): NostalgicThemeDefinition[] {
   const themes: NostalgicThemeDefinition[] = [];
 
+  // Get holiday themes if packs are selected
+  const holidayThemes = holidayPacks?.length
+    ? getThemesFromHolidayPacks(holidayPacks)
+    : [];
+
   if (strategy === 'single' && singleThemeId) {
     // All flyers use the same theme
-    const theme = themeRegistry.getNostalgicTheme(singleThemeId) ||
-                  NOSTALGIC_THEMES[0];
+    // Check both nostalgic and holiday themes
+    let theme = themeRegistry.getNostalgicTheme(singleThemeId);
+    if (!theme) {
+      theme = themeRegistry.getHolidayTheme(singleThemeId);
+    }
+    theme = theme || NOSTALGIC_THEMES[0];
     for (let i = 0; i < count; i++) {
       themes.push(theme);
     }
   } else if (strategy === 'matrix' && themeMatrix?.length) {
     // User-specified theme for each slot
+    const combinedThemes = [...NOSTALGIC_THEMES, ...holidayThemes];
     for (let i = 0; i < count; i++) {
       const entry = themeMatrix.find(e => e.index === i);
       if (entry) {
-        const theme = themeRegistry.getNostalgicTheme(entry.themeId);
-        themes.push(theme || NOSTALGIC_THEMES[Math.floor(Math.random() * NOSTALGIC_THEMES.length)]);
+        let theme = themeRegistry.getNostalgicTheme(entry.themeId);
+        if (!theme) {
+          theme = themeRegistry.getHolidayTheme(entry.themeId);
+        }
+        themes.push(theme || combinedThemes[Math.floor(Math.random() * combinedThemes.length)]);
       } else {
-        themes.push(NOSTALGIC_THEMES[Math.floor(Math.random() * NOSTALGIC_THEMES.length)]);
+        themes.push(combinedThemes[Math.floor(Math.random() * combinedThemes.length)]);
       }
     }
   } else {
-    // Auto: AI picks varied themes
-    const available = [...NOSTALGIC_THEMES];
+    // Auto: AI picks varied themes from combined pool
+    // Include holiday themes only if explicitly requested via holidayPacks
+    const available = [...NOSTALGIC_THEMES, ...holidayThemes];
     for (let i = 0; i < count; i++) {
       if (available.length === 0) {
         // Reset pool if we need more themes than available
-        available.push(...NOSTALGIC_THEMES);
+        available.push(...NOSTALGIC_THEMES, ...holidayThemes);
       }
       const randomIndex = Math.floor(Math.random() * available.length);
       themes.push(available.splice(randomIndex, 1)[0]);
@@ -758,7 +868,22 @@ async function generateFlyers(
           vehiclePromptAddition = `\n\nFEATURE THIS VEHICLE: ${themeRegistry.getVehicleImagePrompt(selectedVehicle)}`;
         }
 
-        // Build image prompt
+        // PRE-SELECT logo style BEFORE image generation so AI knows where to leave space
+        let preSelectedLogoStyle: LogoStyle | null = null;
+        let logoPromptHint = '';
+        if (brandKit?.logoUrl) {
+          const usedStyles = batchLogoStyles.get(jobId) || [];
+          preSelectedLogoStyle = selectRandomLogoStyle(usedStyles.slice(-2));
+          logoPromptHint = creativeLogoService.getPromptEnhancement(preSelectedLogoStyle.id);
+          logger.info('Pre-selected logo style for image generation', {
+            jobId,
+            index: i,
+            style: preSelectedLogoStyle.id,
+            promptHint: logoPromptHint,
+          });
+        }
+
+        // Build image prompt WITH logo placement hint
         const imagePrompt = buildNostalgicImagePrompt(theme, {
           headline: content.message,
           subject: content.subject,
@@ -768,6 +893,7 @@ async function generateFlyers(
             ? 'Incorporate the business logo aesthetically into the design'
             : undefined,
           vehiclePrompt: vehiclePromptAddition,
+          logoPlacementHint: logoPromptHint, // Tell AI where to leave space for logo
         });
 
         const contentId = uuidv4();
@@ -784,9 +910,35 @@ async function generateFlyers(
         });
 
         let imageUrl: string;
+        let appliedLogoStyle = 'none'; // Track which logo style was used
+
         if (imageResult.success && imageResult.imageData) {
-          const base64Data = imageResult.imageData.toString('base64');
-          const mimeType = imageResult.mimeType || 'image/png';
+          let base64Data = imageResult.imageData.toString('base64');
+
+          // Creative logo integration using PRE-SELECTED style
+          if (brandKit?.logoUrl && preSelectedLogoStyle) {
+            logger.info('Applying creative logo integration with pre-selected style', {
+              jobId,
+              index: i,
+              preSelectedStyle: preSelectedLogoStyle.id,
+            });
+
+            const logoResult = await compositeLogoCreatively(
+              base64Data,
+              brandKit.logoUrl,
+              [], // No exclusions needed - we already selected the style
+              preSelectedLogoStyle.id // Use the pre-selected style
+            );
+            base64Data = logoResult.base64;
+            appliedLogoStyle = logoResult.appliedStyle;
+
+            // Track this style for batch variety
+            const usedStyles = batchLogoStyles.get(jobId) || [];
+            usedStyles.push(appliedLogoStyle);
+            batchLogoStyles.set(jobId, usedStyles);
+          }
+
+          const mimeType = 'image/png'; // Always PNG after sharp processing
           imageUrl = `data:${mimeType};base64,${base64Data}`;
         } else {
           const colorHex = theme.previewColors?.[0]?.replace('#', '') || 'C53030';
@@ -850,6 +1002,7 @@ async function generateFlyers(
               sourceType: content.sourceType,
               sourceId: content.sourceId,
               aiGenerated: imageResult.success,
+              logoStyle: appliedLogoStyle, // Creative logo placement style used
             },
             status: 'draft',
             moderationStatus: 'pending',
@@ -896,6 +1049,9 @@ async function generateFlyers(
 
     logger.info('Batch generation completed', { jobId, total: contentItems.length });
 
+    // Cleanup logo styles tracking for this batch
+    batchLogoStyles.delete(jobId);
+
   } catch (error) {
     logger.error('Batch generation failed', { jobId, error });
 
@@ -915,8 +1071,14 @@ function buildNostalgicImagePrompt(
     businessName?: string;
     logoInstructions?: string;
     vehiclePrompt?: string;
+    logoPlacementHint?: string; // NEW: Tell AI where to leave space for logo
   }
 ): string {
+  // Build logo placement section if hint provided
+  const logoPlacementSection = content.logoPlacementHint
+    ? `\n=== CRITICAL: LOGO PLACEMENT AREA ===\n${content.logoPlacementHint}\nDO NOT place text, important elements, or cluttered content in this area - the business logo will be placed there.\n`
+    : '';
+
   return `You are an expert graphic designer creating a STUNNING promotional image for an auto repair shop's social media marketing.
 
 === CREATIVE DIRECTION ===
@@ -944,7 +1106,7 @@ ${content.vehiclePrompt || ''}
 
 === COMPOSITION & LAYOUT ===
 ${theme.composition}
-
+${logoPlacementSection}
 === CONTENT TO FEATURE ===
 HEADLINE (feature prominently): "${content.headline}"
 SUBJECT/SERVICE: ${content.subject}
@@ -966,6 +1128,7 @@ ${theme.avoidList}
 - Tiny, unreadable text
 - Cluttered layouts
 - Amateur or low-quality appearance
+${content.logoPlacementHint ? '- Placing text or important content in the logo placement area' : ''}
 
 Create ONE stunning 4:5 aspect ratio promotional image that an auto repair shop would proudly post on Instagram/Facebook.`;
 }

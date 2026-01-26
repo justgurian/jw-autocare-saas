@@ -21,6 +21,16 @@ import {
   getVehicleImagePrompt,
   ERA_INFO,
 } from './era-vehicles';
+import {
+  HOLIDAY_PACKS,
+  HolidayPack,
+  getAllHolidayPacks,
+  getHolidayPack,
+  getThemesFromHolidayPacks,
+  getAllHolidayThemeIds,
+  getInSeasonHolidayPacks,
+  getHolidayTheme,
+} from './holiday-themes';
 
 export interface ThemeImagePrompt {
   style: string;
@@ -635,6 +645,40 @@ Create ONE stunning 4:5 aspect ratio promotional image that an auto repair shop 
   getThemesByCategories(categories: string[]): ThemeDefinition[] {
     return themes.filter(t => categories.includes(t.category));
   },
+
+  // ============================================================================
+  // HOLIDAY THEME METHODS
+  // ============================================================================
+
+  // Get all holiday packs
+  getAllHolidayPacks(): HolidayPack[] {
+    return getAllHolidayPacks();
+  },
+
+  // Get a specific holiday pack by ID
+  getHolidayPack(id: string): HolidayPack | undefined {
+    return getHolidayPack(id);
+  },
+
+  // Get themes from specified holiday packs
+  getThemesFromHolidayPacks(packIds: string[]): NostalgicThemeDefinition[] {
+    return getThemesFromHolidayPacks(packIds);
+  },
+
+  // Get holiday packs that are currently in season
+  getInSeasonHolidayPacks(): HolidayPack[] {
+    return getInSeasonHolidayPacks();
+  },
+
+  // Get a specific holiday theme by ID
+  getHolidayTheme(themeId: string): NostalgicThemeDefinition | undefined {
+    return getHolidayTheme(themeId);
+  },
+
+  // Get all holiday theme IDs (useful for exclusion)
+  getAllHolidayThemeIds(): string[] {
+    return getAllHolidayThemeIds();
+  },
 };
 
 // Re-export brand style types and helpers
@@ -665,5 +709,17 @@ export {
   getVehicleImagePrompt,
   ERA_INFO,
 } from './era-vehicles';
+
+// Re-export holiday theme types and helpers
+export {
+  HOLIDAY_PACKS,
+  HolidayPack,
+  getAllHolidayPacks,
+  getHolidayPack,
+  getThemesFromHolidayPacks,
+  getAllHolidayThemeIds,
+  getInSeasonHolidayPacks,
+  getHolidayTheme,
+} from './holiday-themes';
 
 export default themeRegistry;

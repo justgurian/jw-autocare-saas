@@ -39,6 +39,10 @@ export const batchGenerateSchema = z.object({
   singleThemeId: z.string().optional(),
   themeMatrix: z.array(themeMatrixEntrySchema).optional(),
 
+  // Holiday Packs (opt-in seasonal themes)
+  // By default, holiday themes are NOT included unless explicitly selected
+  holidayPacks: z.array(z.string()).optional(), // e.g., ['halloween', 'christmas']
+
   // Options
   language: z.enum(['en', 'es', 'both']).default('en'),
   vehicleId: z.string().optional(),
@@ -164,6 +168,18 @@ export interface SuggestionsResponse {
     name: string;
     isPreSelected: boolean;
     reason: string;
+  }>;
+  // Raw lists so UI can display all available options
+  allServices: Array<{
+    id: string;
+    name: string;
+    description: string | null;
+    category: string | null;
+  }>;
+  allSpecials: Array<{
+    id: string;
+    title: string;
+    description: string | null;
   }>;
 }
 

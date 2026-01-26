@@ -312,11 +312,46 @@ export async function getSmartSuggestions(tenantId: string): Promise<Suggestions
     }
   }
 
+  // If no content suggestions were generated, add ALL services and specials
+  // This ensures the UI always shows available content
+  if (contentSuggestions.length === 0) {
+    // Add all services
+    for (const service of services) {
+      contentSuggestions.push({
+        serviceId: service.id,
+        name: service.name,
+        isPreSelected: contentSuggestions.length < 3, // Pre-select first 3
+        reason: 'Available service',
+      });
+    }
+    // Add all specials
+    for (const special of specials) {
+      contentSuggestions.push({
+        specialId: special.id,
+        name: special.title,
+        isPreSelected: true, // Always pre-select specials
+        reason: 'Active special',
+      });
+    }
+  }
+
   return {
     seasonal: sortedSeasonal.slice(0, 5),
     trending: trending.slice(0, 5),
     rotation: sortedRotation.slice(0, 5),
     contentSuggestions,
+    // Also include raw lists for the UI to display all options
+    allServices: services.map(s => ({
+      id: s.id,
+      name: s.name,
+      description: s.description,
+      category: s.category,
+    })),
+    allSpecials: specials.map(s => ({
+      id: s.id,
+      title: s.title,
+      description: s.description,
+    })),
   };
 }
 

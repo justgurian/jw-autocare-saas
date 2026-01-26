@@ -154,7 +154,17 @@ export const onboardingService = {
     let extractedColors: string[] = [];
 
     try {
-      const palette = await Vibrant.from(logoUrl).getPalette();
+      // Handle base64 data URLs - convert to buffer for Vibrant
+      let vibrantInput: string | Buffer = logoUrl;
+      if (logoUrl.startsWith('data:image')) {
+        // Extract base64 data after the comma
+        const base64Data = logoUrl.split(',')[1];
+        if (base64Data) {
+          vibrantInput = Buffer.from(base64Data, 'base64');
+        }
+      }
+
+      const palette = await Vibrant.from(vibrantInput).getPalette();
       extractedColors = [
         palette.Vibrant?.hex || '#C53030',
         palette.Muted?.hex || '#2C7A7B',

@@ -1,6 +1,12 @@
 /**
  * Nostalgic Automotive Themes
- * 48 themes across 3 styles (Comic Book, Movie Poster, Car Magazine) and 4 eras (1950s, 1960s, 1970s, 1980s)
+ * Premium agency-quality themes across 4 styles and 4 eras
+ *
+ * Styles:
+ * - Superhero Comics (5 themes) - Marvel/DC inspired with 3-panel story option
+ * - Automotive Movie Posters (7 themes) - Action, racing, road trip focused
+ * - Car Magazine (16 themes) - Classic automotive publication styles
+ * - Classic Auto Advertising (4 themes) - Vintage service station and dealer ads
  */
 
 import { ThemeDefinition, ThemeImagePrompt, ThemeTextPrompt } from './index';
@@ -8,7 +14,7 @@ import { ThemeDefinition, ThemeImagePrompt, ThemeTextPrompt } from './index';
 // Extended interface for nostalgic themes with era and style metadata
 export interface NostalgicThemeDefinition extends ThemeDefinition {
   era: '1950s' | '1960s' | '1970s' | '1980s';
-  style: 'comic-book' | 'movie-poster' | 'magazine';
+  style: 'comic-book' | 'movie-poster' | 'magazine' | 'advertising';
   carStyle: string;  // How to render vehicles in this style
   composition: string;  // Layout and framing guidance
   avoidList: string;  // What NOT to include
@@ -16,1177 +22,1291 @@ export interface NostalgicThemeDefinition extends ThemeDefinition {
 }
 
 // ============================================================================
-// COMIC BOOK STYLES (16 themes)
+// SUPERHERO COMIC STYLES (5 themes - automotive hero focus)
+// Each theme can render as single cover OR 3-panel story based on composition
 // ============================================================================
 
 export const comicBookThemes: NostalgicThemeDefinition[] = [
-  // 1950s Comic Book Styles
+  // 1950s Golden Age Superhero
   {
     id: 'comic-50s-golden-age',
     name: 'Golden Age Hero',
     category: 'nostalgic',
     era: '1950s',
     style: 'comic-book',
-    shortDescription: 'Bold primary colors and heroic poses',
+    shortDescription: 'Classic Superman-era heroic comic covers',
     previewColors: ['#FF0000', '#0000FF', '#FFD700', '#FFFFFF'],
     imagePrompt: {
-      style: `1950s Golden Age comic book style. Bold primary colors with flat areas of solid color.
-        Ben-Day dots halftone pattern visible on skin tones and backgrounds. Heavy black outlines
-        around all elements. Heroic dynamic poses. Classic four-color printing aesthetic.`,
-      colorPalette: `Primary colors dominate: bright red (#FF0000), royal blue (#0000FF),
-        golden yellow (#FFD700). White (#FFFFFF) for highlights. Black for heavy outlines.
-        Ben-Day dots in pink, yellow, and cyan for shading.`,
-      typography: `Bold sans-serif block letters with heavy black outlines. Slightly condensed.
-        Action words in explosive burst shapes. Speech bubbles with rounded corners.
-        Headlines in all caps with dramatic perspective.`,
-      elements: `Sunburst action lines behind main subject. Comic panel borders.
-        Speed lines for motion. Star bursts and explosion shapes. Heroic emblems.`,
-      mood: `Heroic, triumphant, powerful, patriotic. The car is the hero saving the day.
-        Confident and unstoppable.`,
+      style: `1950s Golden Age superhero comic book style inspired by early Superman, Captain America, and Wonder Woman comics.
+        This is PREMIUM AGENCY QUALITY - every detail matters.
+
+        VISUAL TECHNIQUE:
+        - Bold primary colors with FLAT areas of solid color (no gradients within color blocks)
+        - Visible Ben-Day dots halftone pattern on skin tones, backgrounds, and shadows
+        - HEAVY black ink outlines (3-4pt weight) around ALL elements
+        - Four-color printing aesthetic: cyan, magenta, yellow, black only
+        - Hand-painted illustration quality with visible brushwork confidence
+
+        COMPOSITION OPTIONS:
+        Option A - COMIC COVER: Single dramatic hero shot with the car as the heroic vehicle
+        Option B - 3-PANEL STORY: Three horizontal panels showing Problem → Repair → Victory
+
+        For 3-panel layout:
+        Panel 1: Vehicle in distress (steam, flat tire, warning light) - worried expression
+        Panel 2: Heroic mechanic action shot with tools, dynamic pose
+        Panel 3: Triumphant vehicle, gleaming, owner celebrating`,
+      colorPalette: `STRICT Golden Age palette:
+        - Hero Red (#FF0000) - bold, confident, dominant
+        - Justice Blue (#0000FF) - trustworthy, heroic accents
+        - Victory Gold (#FFD700) - triumph, excellence, chrome
+        - Pure White (#FFFFFF) - highlights, speed lines, purity
+        - Heavy Black - outlines, shadows, drama
+
+        Ben-Day dot colors: Pink dots for skin, Yellow dots for warmth, Cyan dots for cool shadows
+        NO modern gradients. Colors are FLAT with dot patterns for shading.`,
+      typography: `AUTHENTIC Golden Age lettering:
+        - Bold sans-serif block letters, slightly condensed, with THICK black outlines
+        - Headlines in ALL CAPS with dramatic 3D perspective shadow
+        - Action words ("POW!", "ZOOM!", "FIXED!") in explosive starburst shapes
+        - Speech bubbles: rounded corners, thick black outlines, confident tails
+        - Title treatment: Large, heroic, often arched or with perspective
+        - Taglines in smaller italic serif: "The Incredible Story of..."`,
+      elements: `GOLDEN AGE VISUAL ELEMENTS:
+        - Dramatic sunburst/radiating lines behind hero vehicle (like Superman poses)
+        - Comic panel borders: thick black with slight rounded corners
+        - Speed lines for motion (parallel lines indicating movement)
+        - Starbursts and explosion shapes for impact moments
+        - Heroic emblems and badges (shop logo as superhero emblem)
+        - American flag motifs and patriotic elements subtle in background
+        - "Comics Code" style approval stamp aesthetic in corner`,
+      mood: `HEROIC, TRIUMPHANT, PATRIOTIC, UNSTOPPABLE.
+        The vehicle is the HERO of this story - powerful, gleaming, victorious.
+        The auto shop is the hero's secret base where miracles happen.
+        Every repair is a VICTORY over the forces of breakdown and despair.
+        Confidence radiates from every element. This shop SAVES THE DAY.`,
     },
     textPrompt: {
-      tone: 'Heroic, triumphant, confident',
-      vocabulary: ['mighty', 'powerful', 'saves', 'hero', 'amazing', 'incredible'],
+      tone: 'Heroic, triumphant, confident, American',
+      vocabulary: ['mighty', 'powerful', 'saves the day', 'hero', 'amazing', 'incredible', 'victory', 'triumph'],
     },
-    carStyle: `Classic 1950s car rendered as a heroic vehicle, chrome gleaming,
-      positioned heroically with dramatic lighting. Fins and chrome emphasized.`,
-    composition: `Central heroic composition with car at dramatic angle.
-      Sunburst rays emanating from behind. Bold panel border frame.`,
-    avoidList: `Realistic human faces, dark/gritty themes, modern vehicles,
-      minimalist design, photorealistic rendering.`,
+    carStyle: `1950s HERO VEHICLE rendering:
+      - Chrome GLEAMING like polished mirrors catching dramatic light
+      - Fins and curves emphasized as heroic design elements
+      - Low angle shots making the car look powerful and imposing
+      - Vehicle posed heroically: three-quarter front view, slight upward tilt
+      - Paint so perfect it reflects the sky and surroundings
+      - The car should look like it could leap tall buildings`,
+    composition: `GOLDEN AGE COMPOSITION:
+      COVER FORMAT: Central heroic composition with car at dramatic 3/4 angle.
+      Sunburst rays emanating from behind the vehicle. Bold panel border frame.
+      Title at top with dramatic perspective. Tagline at bottom.
+
+      3-PANEL FORMAT: Three equal horizontal panels stacked vertically.
+      Clear visual storytelling: distress → action → triumph.
+      Each panel has its own border with small gutters between.
+      Captions in yellow boxes at top of each panel.`,
+    avoidList: `ABSOLUTELY AVOID:
+      - Realistic human faces (use heroic silhouettes or stylized figures)
+      - Modern vehicles or design elements
+      - Gradients or photorealistic rendering
+      - Dark, gritty, or cynical themes
+      - Minimalist design
+      - Muted or desaturated colors
+      - Contemporary fonts or digital effects`,
     eraVehicles: ['chevy-57', 'tbird-55', 'cadillac-59', 'corvette-58'],
     mockupScenes: ['comic book cover', 'newsstand display', 'collectors frame'],
     compatibleTools: ['promo_flyer', 'instant_pack', 'campaign'],
   },
-  {
-    id: 'comic-50s-ec-horror',
-    name: 'EC Horror Comics',
-    category: 'nostalgic',
-    era: '1950s',
-    style: 'comic-book',
-    shortDescription: 'Tales from the Crypt lurid style',
-    previewColors: ['#8B0000', '#4A0080', '#00FF00', '#FFD700'],
-    imagePrompt: {
-      style: `1950s EC Horror Comics style (Tales from the Crypt, Vault of Horror).
-        Lurid, exaggerated colors. Dramatic shadows and grotesque details.
-        Highly detailed linework with cross-hatching. Melodramatic compositions.`,
-      colorPalette: `Blood red (#8B0000), eerie purple (#4A0080), sickly green (#00FF00),
-        gold for title treatment (#FFD700). Deep shadows in blue-black.
-        Flesh tones with green undertones for creepy effect.`,
-      typography: `Dripping horror letters, irregular and creepy. Title in large
-        ghoulish font with 3D depth. Narrative boxes in yellowed parchment style.
-        Exclamation-heavy text.`,
-      elements: `Creepy shadows, dramatic lighting from below, cobwebs,
-        cemetery gates, eerie mist, full moon, gnarled trees. But automotive themed.`,
-      mood: `Campy horror, tongue-in-cheek spooky, dramatic irony. The deal is
-        "scary good" - play on horror tropes for auto service.`,
-    },
-    textPrompt: {
-      tone: 'Campy horror, dramatic, tongue-in-cheek',
-      vocabulary: ['terrifying', 'shocking', 'beware', 'doom', 'fate', 'horror'],
-    },
-    carStyle: `1950s car emerging from fog or shadow, headlights glowing ominously,
-      chrome reflecting eerie moonlight. Dramatic low-angle shot.`,
-    composition: `Dutch angle, dramatic shadows. Vignette effect with dark edges.
-      Title treatment at top in horror font.`,
-    avoidList: `Actual gore, real monsters, child-unfriendly content,
-      modern horror aesthetics, realistic violence.`,
-    eraVehicles: ['mercury-49', 'chevy-57', 'cadillac-59'],
-    mockupScenes: ['horror comic cover', 'midnight display', 'spooky backdrop'],
-    compatibleTools: ['promo_flyer', 'instant_pack', 'campaign'],
-  },
-  {
-    id: 'comic-50s-romance',
-    name: 'Romance Comics',
-    category: 'nostalgic',
-    era: '1950s',
-    style: 'comic-book',
-    shortDescription: 'Dreamy pastels and heart motifs',
-    previewColors: ['#FFB6C1', '#E6E6FA', '#FF69B4', '#87CEEB'],
-    imagePrompt: {
-      style: `1950s Romance Comics style. Soft, dreamy illustrations with
-        beautiful idealized subjects. Pastel color palette. Gentle linework
-        with soft hatching. Emotional, sentimental compositions.`,
-      colorPalette: `Soft pink (#FFB6C1), lavender (#E6E6FA), hot pink accent (#FF69B4),
-        powder blue (#87CEEB). Cream backgrounds. Soft shadows in purple tones.`,
-      typography: `Elegant script fonts for titles mixed with readable serif text.
-        Thought bubbles with cloud-like edges. Heart decorations.
-        Romantic cursive headlines.`,
-      elements: `Heart motifs, soft clouds, starbursts of love, dreamy backgrounds,
-        soft-focus effects, romantic scenery. Flowers and ribbons.`,
-      mood: `Romantic, dreamy, emotional. The love story between a car owner
-        and their trusted mechanic. Sweet and sentimental.`,
-    },
-    textPrompt: {
-      tone: 'Romantic, sweet, heartfelt',
-      vocabulary: ['love', 'trust', 'forever', 'care', 'devoted', 'cherish'],
-    },
-    carStyle: `1950s car as object of affection, polished and beautiful,
-      soft lighting making chrome glow romantically. Like a love interest.`,
-    composition: `Soft vignette, dreamy edges. Central composition with
-      decorative heart borders. Pastel gradient backgrounds.`,
-    avoidList: `Harsh colors, aggressive imagery, dark themes,
-      anything unromantic or harsh.`,
-    eraVehicles: ['tbird-55', 'corvette-58', 'chevy-57'],
-    mockupScenes: ['magazine rack', 'bedside table', 'romantic setting'],
-    compatibleTools: ['promo_flyer', 'instant_pack', 'personal_card'],
-  },
-  {
-    id: 'comic-50s-scifi-pulp',
-    name: 'Sci-Fi Pulp',
-    category: 'nostalgic',
-    era: '1950s',
-    style: 'comic-book',
-    shortDescription: 'Retro rockets and ray guns',
-    previewColors: ['#00CED1', '#FF4500', '#FFD700', '#4B0082'],
-    imagePrompt: {
-      style: `1950s Sci-Fi Pulp comic style. Retro-futuristic aesthetic with
-        rocket ships, ray guns, and alien landscapes. Vivid, saturated colors.
-        Dramatic space backgrounds. Chrome and fins everywhere.`,
-      colorPalette: `Turquoise (#00CED1), rocket orange (#FF4500), gold chrome (#FFD700),
-        space purple (#4B0082). Starfield blacks. Laser beam reds and greens.`,
-      typography: `Atomic age fonts with orbital rings and satellite dots.
-        Futuristic sans-serif with chrome effects. Exclamation-heavy.
-        "Amazing!" "Incredible!" style callouts.`,
-      elements: `Rocket fins, orbital rings, stars and planets, ray beams,
-        chrome robots, atomic symbols, retro space helmets. Futuristic cityscapes.`,
-      mood: `Wonder, excitement, futuristic optimism. The auto shop of TOMORROW!
-        Space-age technology meets automotive care.`,
-    },
-    textPrompt: {
-      tone: 'Futuristic, exciting, wonder-filled',
-      vocabulary: ['atomic', 'space-age', 'future', 'incredible', 'amazing', 'rocket'],
-    },
-    carStyle: `1950s car reimagined with rocket fins and chrome, looking like
-      a space vehicle. Futuristic lighting with lens flares. Flying car vibes.`,
-    composition: `Dynamic diagonal composition. Space background with planets.
-      Rocket trails and speed lines. Chrome reflections.`,
-    avoidList: `Modern sci-fi aesthetics, dark/dystopian themes, realistic space,
-      contemporary vehicles.`,
-    eraVehicles: ['cadillac-59', 'corvette-58', 'tbird-55'],
-    mockupScenes: ['comic book stand', 'retro diner', 'collectors display'],
-    compatibleTools: ['promo_flyer', 'instant_pack', 'campaign'],
-  },
 
-  // 1960s Comic Book Styles
+  // 1960s Silver Age Marvel
   {
     id: 'comic-60s-marvel',
     name: 'Silver Age Marvel',
     category: 'nostalgic',
     era: '1960s',
     style: 'comic-book',
-    shortDescription: 'Kirby crackle and dynamic poses',
+    shortDescription: 'Kirby crackle and dynamic Marvel action',
     previewColors: ['#FF0000', '#0000CD', '#FFD700', '#000000'],
     imagePrompt: {
-      style: `1960s Silver Age Marvel Comics style. Jack Kirby-inspired dynamic poses
-        and "Kirby Crackle" energy effects. Bold, muscular compositions.
-        High contrast with heavy blacks. Dramatic foreshortening.`,
-      colorPalette: `Marvel red (#FF0000), Marvel blue (#0000CD), heroic gold (#FFD700),
-        heavy blacks for shadows. Four-color printing aesthetic with bold primaries.`,
-      typography: `Bold condensed sans-serif, often italicized for action.
-        Sound effects in explosive, jagged letters. "THWAK!" "KRAKOOM!" style.
-        Marvel-style logo treatment with bold outlines.`,
-      elements: `Kirby Crackle energy dots, dynamic action lines, cosmic swirls,
-        dramatic foreshortening, explosive backgrounds. Panel-breaking compositions.`,
-      mood: `Powerful, dynamic, heroic. Every oil change is an EPIC BATTLE
-        against wear and tear! High energy and excitement.`,
+      style: `1960s Silver Age Marvel Comics style - the Jack Kirby and Steve Ditko era.
+        Spider-Man, Fantastic Four, X-Men aesthetic. PREMIUM AGENCY QUALITY.
+
+        VISUAL TECHNIQUE:
+        - "KIRBY CRACKLE" energy dots: clusters of black dots forming energy fields
+        - EXTREME dynamic poses with dramatic foreshortening
+        - Bold, muscular compositions that BURST from the panel
+        - High contrast with heavy blacks pooling in shadows
+        - Four-color printing with bold, saturated primaries
+        - Figures and vehicles breaking panel borders for impact
+
+        COMPOSITION OPTIONS:
+        Option A - DYNAMIC COVER: Car bursting toward viewer with Kirby Crackle energy
+        Option B - 3-PANEL ACTION: Dynamic story panels with Marvel-style excitement
+
+        For 3-panel layout:
+        Panel 1: Dramatic problem reveal with exclamation effects ("MY CAR!")
+        Panel 2: Heroic mechanic in dynamic Kirby pose, tools like weapons
+        Panel 3: Explosive success with "INCREDIBLE!" burst effects`,
+      colorPalette: `AUTHENTIC Marvel Silver Age palette:
+        - Marvel Red (#FF0000) - power, danger, excitement
+        - Marvel Blue (#0000CD) - heroic, cosmic, trustworthy
+        - Heroic Gold (#FFD700) - triumph, energy, chrome accents
+        - Heavy Blacks - dramatic shadows, outlines, Kirby Crackle
+
+        Four-color printing aesthetic with BOLD saturation.
+        Shadows rendered with crosshatching or solid black pools.`,
+      typography: `MARVEL SILVER AGE LETTERING:
+        - Bold condensed sans-serif, often ITALICIZED for ACTION
+        - Sound effects in explosive, jagged, dimensional letters
+        - "THWAK!" "KRAKOOM!" "VROOOOM!" style exclamations
+        - Marvel-style title treatment: bold outlines, slight 3D effect
+        - Caption boxes: yellow backgrounds, dramatic narration
+        - Word balloons: more angular than Golden Age, dynamic tails`,
+      elements: `SILVER AGE MARVEL ELEMENTS:
+        - KIRBY CRACKLE: clusters of black dots forming energy patterns
+        - Dynamic action lines (concentrated speed lines)
+        - Cosmic swirls and energy effects surrounding vehicles
+        - Panel-BREAKING compositions (elements cross borders)
+        - Dramatic foreshortening (car coming RIGHT AT viewer)
+        - Explosive backgrounds with debris and energy
+        - "Marvel Corner Box" style logo placement option`,
+      mood: `POWERFUL, DYNAMIC, EXPLOSIVE, EPIC.
+        Every oil change is an EPIC BATTLE against the forces of wear!
+        Every repair is an INCREDIBLE TRIUMPH over mechanical villainy!
+        The excitement is PALPABLE. The action is UNSTOPPABLE.
+        Readers should feel the POWER radiating from the image.`,
     },
     textPrompt: {
-      tone: 'Epic, powerful, action-packed',
-      vocabulary: ['mighty', 'incredible', 'unstoppable', 'power', 'battle', 'triumph'],
+      tone: 'Epic, powerful, action-packed, incredible',
+      vocabulary: ['mighty', 'incredible', 'unstoppable', 'power', 'battle', 'triumph', 'amazing', 'spectacular'],
     },
-    carStyle: `1960s muscle car in powerful, dynamic pose with Kirby Crackle
-      energy surrounding it. Low angle, heroic stance. Breaking out of the frame.`,
-    composition: `Dramatic foreshortening with car coming toward viewer.
-      Kirby Crackle dots as energy background. Diagonal panel borders.`,
-    avoidList: `Static poses, minimal design, realistic rendering,
-      soft colors, quiet compositions.`,
+    carStyle: `1960s MUSCLE CAR as Marvel hero vehicle:
+      - Dynamic pose with EXTREME foreshortening (front grille huge, rear small)
+      - Kirby Crackle energy surrounding the vehicle
+      - Low angle making the car look MASSIVE and powerful
+      - Vehicle should appear to be BURSTING from the panel
+      - Chrome and paint reflecting cosmic energy
+      - Aggressive stance: wheels turned, ready for action`,
+    composition: `MARVEL SILVER AGE COMPOSITION:
+      COVER FORMAT: Dramatic foreshortening with car coming toward viewer.
+      Kirby Crackle dots as energy field background. Diagonal panel borders.
+      Title at top breaking conventional placement. Action-packed density.
+
+      3-PANEL FORMAT: Each panel BURSTING with energy and motion.
+      Elements breaking panel borders for impact. Overlapping compositions.
+      Speed lines and energy effects connecting panels.`,
+    avoidList: `ABSOLUTELY AVOID:
+      - Static, posed compositions
+      - Minimal or quiet design
+      - Realistic photographic rendering
+      - Soft or muted colors
+      - Modern vehicles
+      - Calm, peaceful imagery
+      - Empty negative space`,
     eraVehicles: ['mustang-67', 'camaro-69', 'charger-68', 'corvette-63'],
     mockupScenes: ['spinner rack', 'collectors wall', 'comic shop display'],
     compatibleTools: ['promo_flyer', 'instant_pack', 'campaign'],
   },
-  {
-    id: 'comic-60s-pop-art',
-    name: 'Pop Art (Lichtenstein)',
-    category: 'nostalgic',
-    era: '1960s',
-    style: 'comic-book',
-    shortDescription: 'Ben-Day dots and speech bubbles',
-    previewColors: ['#FFFF00', '#FF0000', '#0000FF', '#FFFFFF'],
-    imagePrompt: {
-      style: `Roy Lichtenstein Pop Art style. Large visible Ben-Day dots.
-        Bold black outlines. Primary colors. Single dramatic moment frozen.
-        Comic panel aesthetic blown up to gallery size.`,
-      colorPalette: `Bold yellow (#FFFF00), bright red (#FF0000), pure blue (#0000FF),
-        stark white (#FFFFFF). Large visible Ben-Day dots in these colors.
-        Heavy black outlines around everything.`,
-      typography: `Comic book speech bubbles with bold sans-serif text.
-        All caps. Thought bubbles. Sound effects in explosive shapes.
-        Text as visual element, not just communication.`,
-      elements: `Oversized Ben-Day dots as prominent pattern. Speech bubbles
-        with bold proclamations. Dramatic single-moment composition.
-        Bold black outlines on everything.`,
-      mood: `Dramatic, ironic, art-gallery elevated. A single moment of
-        automotive revelation captured in fine art style.`,
-    },
-    textPrompt: {
-      tone: 'Dramatic, ironic, bold',
-      vocabulary: ['suddenly', 'amazing', 'wow', 'incredible', 'perfect'],
-    },
-    carStyle: `1960s car rendered in flat Pop Art style with visible Ben-Day
-      dots. Bold black outlines. Simplified forms. Single dramatic angle.`,
-    composition: `Single dramatic moment, tightly cropped. Large speech bubble
-      with key message. Ben-Day dots as dominant texture.`,
-    avoidList: `Realistic rendering, subtle colors, complex compositions,
-      photographic quality, modern vehicles.`,
-    eraVehicles: ['mustang-67', 'corvette-63', 'camaro-69'],
-    mockupScenes: ['art gallery', 'modern museum', 'design studio'],
-    compatibleTools: ['promo_flyer', 'instant_pack', 'personal_card'],
-  },
-  {
-    id: 'comic-60s-underground',
-    name: 'Underground Comix',
-    category: 'nostalgic',
-    era: '1960s',
-    style: 'comic-book',
-    shortDescription: 'Psychedelic counterculture style',
-    previewColors: ['#FF00FF', '#00FF00', '#FF6600', '#FFFF00'],
-    imagePrompt: {
-      style: `1960s Underground Comix style. Psychedelic, surreal artwork.
-        R. Crumb and Zap Comix influenced. Exaggerated proportions, melting
-        forms, trippy patterns. Hand-drawn, rough linework.`,
-      colorPalette: `Psychedelic magenta (#FF00FF), acid green (#00FF00),
-        orange (#FF6600), yellow (#FFFF00). Clashing, vibrant combinations.
-        Swirling gradients and rainbow effects.`,
-      typography: `Hand-drawn, wobbly letters. Organic, flowing text that
-        curves and bends. Bubble letters. Counter-culture aesthetic.
-        Text integrated into psychedelic patterns.`,
-      elements: `Swirling patterns, melting forms, paisley, flowers, peace
-        symbols, mushrooms, cosmic eyes. Surreal, dreamy backgrounds.`,
-      mood: `Trippy, free-spirited, counterculture cool. Far out automotive
-        vibes. The mechanic as psychedelic guru.`,
-    },
-    textPrompt: {
-      tone: 'Trippy, free-spirited, groovy',
-      vocabulary: ['groovy', 'far out', 'cosmic', 'trippy', 'peace', 'cool'],
-    },
-    carStyle: `1960s VW Bus or muscle car with psychedelic paint job,
-      melting slightly, surrounded by swirling patterns. Peace symbols
-      and flowers incorporated.`,
-    composition: `Swirling, organic layout without rigid panels. Elements
-      flow into each other. Central subject surrounded by psychedelic patterns.`,
-    avoidList: `Corporate look, rigid layouts, conservative colors,
-      modern vehicles, clean minimalism.`,
-    eraVehicles: ['corvette-63', 'mustang-67', 'gto-65'],
-    mockupScenes: ['head shop poster', 'dorm room wall', 'record store'],
-    compatibleTools: ['promo_flyer', 'instant_pack', 'campaign'],
-  },
-  {
-    id: 'comic-60s-spy',
-    name: 'Spy Comics',
-    category: 'nostalgic',
-    era: '1960s',
-    style: 'comic-book',
-    shortDescription: 'International intrigue and gadgets',
-    previewColors: ['#000000', '#C0C0C0', '#FFD700', '#DC143C'],
-    imagePrompt: {
-      style: `1960s Spy Comics and espionage thriller style. Sleek, sophisticated.
-        James Bond influence. Exotic locations, gadgets, danger. High contrast
-        with dramatic shadows. Elegant and dangerous.`,
-      colorPalette: `Tuxedo black (#000000), sleek silver (#C0C0C0), gold accents (#FFD700),
-        femme fatale red (#DC143C). Gun barrel gray. Martini olive hints.`,
-      typography: `Sleek, sophisticated sans-serif. Title in gold with shadow.
-        International intrigue feeling. Dossier-style text treatments.
-        Bold but elegant.`,
-      elements: `Gun barrels, silhouettes, exotic locations, gadgets and gizmos,
-        tuxedos and evening gowns (suggested, not shown). Casino chips, martini glasses.`,
-      mood: `Sophisticated danger, international intrigue. Your car gets
-        secret agent level treatment. Licensed to thrill.`,
-    },
-    textPrompt: {
-      tone: 'Sophisticated, dangerous, intriguing',
-      vocabulary: ['secret', 'elite', 'mission', 'classified', 'agent', 'exclusive'],
-    },
-    carStyle: `1960s Aston Martin type sports car, sleek and dangerous,
-      emerging from shadows. Chrome glinting. Gadget-equipped appearance.`,
-    composition: `Dramatic silhouette composition. Gun barrel spiral frame option.
-      Mysterious shadows. Diagonal compositions suggesting danger.`,
-    avoidList: `Cute or friendly imagery, bright cheerful colors,
-      family-oriented themes, casual aesthetic.`,
-    eraVehicles: ['corvette-63', 'mustang-67', 'charger-68'],
-    mockupScenes: ['casino display', 'luxury hotel', 'secret lair'],
-    compatibleTools: ['promo_flyer', 'instant_pack', 'personal_card'],
-  },
 
-  // 1970s Comic Book Styles
+  // 1970s Bronze Age Street Hero
   {
     id: 'comic-70s-bronze-age',
-    name: 'Bronze Age Gritty',
+    name: 'Bronze Age Street Hero',
     category: 'nostalgic',
     era: '1970s',
     style: 'comic-book',
-    shortDescription: 'Urban anti-heroes and darker tones',
+    shortDescription: 'Gritty urban heroes and street-level action',
     previewColors: ['#8B4513', '#4A4A4A', '#FF6600', '#1C1C1C'],
     imagePrompt: {
-      style: `1970s Bronze Age Comics style. Grittier, more realistic than Silver Age.
-        Urban settings, anti-heroes, social relevance. Neal Adams influenced
-        realistic anatomy and dramatic lighting. Darker color palette.`,
-      colorPalette: `Gritty brown (#8B4513), urban gray (#4A4A4A), warning orange (#FF6600),
-        shadow black (#1C1C1C). Muted, earthier colors. Less bright primaries.`,
-      typography: `More mature, serious fonts. Less exclamation marks.
-        Grounded, realistic text. Bold but not bombastic.
-        Urban, street-level feeling.`,
-      elements: `City streets, urban decay, streetlights, graffiti hints,
-        chain link fences. Gritty urban environment. Realistic vehicles.`,
-      mood: `Gritty, realistic, street-level heroism. Your neighborhood
-        mechanic fighting the good fight against automotive problems.`,
+      style: `1970s Bronze Age Comics style - Luke Cage, Iron Fist, The Punisher era.
+        Grittier, more realistic than Silver Age. Street-level heroism.
+        Neal Adams influenced realistic anatomy and dramatic lighting.
+        PREMIUM AGENCY QUALITY - sophisticated and mature.
+
+        VISUAL TECHNIQUE:
+        - More realistic proportions than Silver Age (still stylized)
+        - Heavy use of shadow and dramatic lighting contrasts
+        - Urban environments: streetlights, neon signs, city textures
+        - Earthier, muted color palette with strategic bright accents
+        - Detailed cross-hatching for shadows and texture
+        - Social relevance themes: working class heroes
+
+        COMPOSITION OPTIONS:
+        Option A - STREET COVER: Urban hero shot with city backdrop, dramatic lighting
+        Option B - 3-PANEL NOIR: Street-level story with film noir influences
+
+        For 3-panel layout:
+        Panel 1: Night scene, vehicle breakdown under harsh streetlight
+        Panel 2: Mechanic as street hero, determined expression, urban backdrop
+        Panel 3: Dawn breaking, vehicle restored, neighborhood saved`,
+      colorPalette: `BRONZE AGE URBAN PALETTE:
+        - Street Brown (#8B4513) - gritty, real, working class
+        - Urban Gray (#4A4A4A) - concrete, steel, city life
+        - Warning Orange (#FF6600) - streetlights, danger, highlights
+        - Shadow Black (#1C1C1C) - noir shadows, drama, mystery
+
+        Earthier, more subdued than Silver Age but with PUNCH.
+        Strategic use of bright colors for impact moments.`,
+      typography: `BRONZE AGE MATURE LETTERING:
+        - Less exclamation-heavy, more sophisticated
+        - Bold but grounded fonts, realistic text styling
+        - Narrative captions: serious, literary quality
+        - Sound effects: still bold but more integrated
+        - Title treatments: bold, urban, no-nonsense
+        - Speech: more natural dialogue patterns`,
+      elements: `BRONZE AGE STREET ELEMENTS:
+        - City streets with texture and character
+        - Dramatic streetlight pools and neon glows
+        - Urban decay details: graffiti hints, worn surfaces
+        - Chain link fences, brick walls, fire escapes
+        - Realistic vehicles in authentic urban settings
+        - Working class tools and environments
+        - Night scenes with film noir lighting`,
+      mood: `GRITTY, DETERMINED, STREET-LEVEL, REAL.
+        Your NEIGHBORHOOD mechanic fighting the good fight.
+        Blue collar heroism - honest work, real results.
+        The shop is a refuge in the urban jungle.
+        Authentic, tough, but ultimately hopeful.`,
     },
     textPrompt: {
-      tone: 'Gritty, realistic, determined',
-      vocabulary: ['street', 'tough', 'real', 'honest', 'fight', 'neighborhood'],
+      tone: 'Gritty, determined, street-wise, authentic',
+      vocabulary: ['street', 'tough', 'real', 'honest', 'fight', 'neighborhood', 'trusted', 'reliable'],
     },
-    carStyle: `1970s muscle car in urban setting, realistic rendering,
-      dramatic streetlight shadows. Working class hero vehicle.`,
-    composition: `Street-level perspective, urban backgrounds. Dramatic
-      lighting from streetlamps. More realistic proportions.`,
-    avoidList: `Bright cheerful colors, cosmic/fantasy elements, cute imagery,
-      clean suburban settings.`,
+    carStyle: `1970s MUSCLE CAR as street hero vehicle:
+      - Realistic rendering with dramatic urban lighting
+      - Streetlight reflections on chrome and paint
+      - Working class hero vehicle: powerful but accessible
+      - Night scenes with pools of light and deep shadows
+      - Authentic urban environment (parking lots, streets)
+      - Some wear and character showing - this car has stories`,
+    composition: `BRONZE AGE STREET COMPOSITION:
+      COVER FORMAT: Street-level perspective, urban backdrop visible.
+      Dramatic lighting from streetlamps creating pools and shadows.
+      More realistic proportions, film noir influences.
+
+      3-PANEL FORMAT: Cinematic storytelling like a graphic novel.
+      Wide establishing shots mixed with close character moments.
+      Lighting tells the emotional story across panels.`,
+    avoidList: `ABSOLUTELY AVOID:
+      - Bright, cheerful, suburban imagery
+      - Cosmic or fantasy elements
+      - Cute or cartoonish rendering
+      - Clean, sterile environments
+      - Daytime-only settings
+      - Unrealistic lighting`,
     eraVehicles: ['challenger-71', 'trans-am-77', 'cuda-70', 'el-camino-72'],
-    mockupScenes: ['urban newsstand', 'city street', 'warehouse'],
-    compatibleTools: ['promo_flyer', 'instant_pack', 'campaign'],
-  },
-  {
-    id: 'comic-70s-kung-fu',
-    name: 'Kung Fu Comics',
-    category: 'nostalgic',
-    era: '1970s',
-    style: 'comic-book',
-    shortDescription: 'Martial arts action and Eastern motifs',
-    previewColors: ['#FF0000', '#FFD700', '#000000', '#FFFFFF'],
-    imagePrompt: {
-      style: `1970s Kung Fu Comics style. Martial arts action with Eastern influences.
-        Dynamic action poses with speed lines. Asian-inspired design elements.
-        High-kicking action and philosophy combined.`,
-      colorPalette: `Dragon red (#FF0000), gold (#FFD700), ink black (#000000),
-        paper white (#FFFFFF). Asian brush painting influences.
-        Bold contrasts.`,
-      typography: `Asian-inspired brush stroke lettering mixed with action comics fonts.
-        Sound effects in martial arts style. Dynamic, angular arrangements.`,
-      elements: `Action speed lines, martial arts poses, dragon motifs,
-        yin-yang symbols, bamboo, Asian architecture hints. Flying kicks.`,
-      mood: `Powerful, disciplined, honorable. Master mechanics with
-        ancient automotive wisdom. Precision and power combined.`,
-    },
-    textPrompt: {
-      tone: 'Powerful, disciplined, wise',
-      vocabulary: ['master', 'precision', 'honor', 'power', 'skill', 'warrior'],
-    },
-    carStyle: `1970s car in dynamic action pose, as if performing martial arts.
-      Speed lines showing movement. Dragon decal possibilities.`,
-    composition: `Dynamic diagonal action lines. Central subject in powerful pose.
-      Asian-inspired border elements.`,
-    avoidList: `Static compositions, soft imagery, realistic rendering,
-      non-action themes.`,
-    eraVehicles: ['datsun-z', 'challenger-71', 'trans-am-77'],
-    mockupScenes: ['martial arts school', 'action display', 'dojo wall'],
-    compatibleTools: ['promo_flyer', 'instant_pack', 'campaign'],
-  },
-  {
-    id: 'comic-70s-heavy-metal',
-    name: 'Heavy Metal Magazine',
-    category: 'nostalgic',
-    era: '1970s',
-    style: 'comic-book',
-    shortDescription: 'Epic fantasy and airbrushed art',
-    previewColors: ['#4B0082', '#00CED1', '#FF6347', '#C0C0C0'],
-    imagePrompt: {
-      style: `Heavy Metal Magazine style. Adult fantasy illustration with
-        airbrushed perfection. Epic scope, sensual curves, chrome and flesh.
-        Moebius and Frazetta influences. Otherworldly and epic.`,
-      colorPalette: `Deep purple (#4B0082), cosmic teal (#00CED1), sunset orange (#FF6347),
-        metallic chrome (#C0C0C0). Airbrushed gradients. Otherworldly colors.`,
-      typography: `Elegant, futuristic fonts with chrome effects. Airbrushed
-        3D letters. Epic, cinematic title treatments. Sophisticated layout.`,
-      elements: `Cosmic landscapes, chrome surfaces, mysterious atmospheres,
-        alien skies, epic vistas. Airbrushed perfection on surfaces.`,
-      mood: `Epic, otherworldly, sophisticated adult fantasy. Your car enters
-        a realm of legendary automotive care. Transcendent experience.`,
-    },
-    textPrompt: {
-      tone: 'Epic, sophisticated, transcendent',
-      vocabulary: ['legendary', 'epic', 'realm', 'transcend', 'ultimate', 'journey'],
-    },
-    carStyle: `1970s car rendered with airbrushed perfection, chrome gleaming,
-      in otherworldly landscape. Almost alive, sensual curves emphasized.`,
-    composition: `Epic landscape format. Car as hero in vast setting.
-      Dramatic lighting from multiple alien suns or moons.`,
-    avoidList: `Cartoonish rendering, mundane settings, amateur artwork,
-      cheap printing aesthetic.`,
-    eraVehicles: ['trans-am-77', 'corvette-73', 'challenger-71'],
-    mockupScenes: ['art gallery', 'collector frame', 'adult bookstore'],
-    compatibleTools: ['promo_flyer', 'instant_pack', 'personal_card'],
-  },
-  {
-    id: 'comic-70s-blaxploitation',
-    name: 'Blaxploitation Style',
-    category: 'nostalgic',
-    era: '1970s',
-    style: 'comic-book',
-    shortDescription: 'Urban cool and funky typography',
-    previewColors: ['#FF6600', '#800080', '#FFD700', '#000000'],
-    imagePrompt: {
-      style: `1970s Blaxploitation movie poster comic style. Bold, funky, urban cool.
-        Afros, platform shoes suggested in silhouette. Vibrant, bold design.
-        Street-smart and stylish.`,
-      colorPalette: `Funky orange (#FF6600), royal purple (#800080), gold bling (#FFD700),
-        soul black (#000000). Bold, vibrant combinations. Gradient backgrounds.`,
-      typography: `Funky display fonts, groovy curves. 3D block letters with
-        bold outlines. Stylized, urban typography. Big and bold titles.`,
-      elements: `Urban skylines, disco balls, funky patterns, gold chains,
-        platform silhouettes. 70s fashion hints. Muscle cars prominent.`,
-      mood: `Cool, confident, street-smart. The baddest auto shop in town.
-        Funky fresh automotive service. Right on!`,
-    },
-    textPrompt: {
-      tone: 'Cool, confident, funky',
-      vocabulary: ['cool', 'smooth', 'bad', 'righteous', 'solid', 'funky'],
-    },
-    carStyle: `1970s muscle car or Cadillac, low rider stance, gleaming chrome,
-      urban backdrop. Cool and confident. Rolling art.`,
-    composition: `Bold central composition with funky border elements.
-      Urban skyline backdrop. Diagonal energy lines.`,
-    avoidList: `Stereotypical imagery, offensive content, suburban themes,
-      conservative design.`,
-    eraVehicles: ['el-camino-72', 'challenger-71', 'trans-am-77'],
-    mockupScenes: ['urban record shop', '70s barbershop', 'soul food restaurant'],
+    mockupScenes: ['urban newsstand', 'city street', 'warehouse wall'],
     compatibleTools: ['promo_flyer', 'instant_pack', 'campaign'],
   },
 
-  // 1980s Comic Book Styles
+  // 1980s Dark Knight Style
   {
     id: 'comic-80s-dark-knight',
     name: 'Dark Knight Returns',
     category: 'nostalgic',
     era: '1980s',
     style: 'comic-book',
-    shortDescription: 'Heavy shadows and noir style',
+    shortDescription: 'Frank Miller noir with dramatic shadows',
     previewColors: ['#1a1a2e', '#16213e', '#FFD700', '#8B0000'],
     imagePrompt: {
-      style: `Frank Miller's Dark Knight Returns style. Heavy black inks,
-        stark contrast between light and shadow. Dramatic noir lighting with
-        rain-soaked streets. Bold, angular compositions. Gritty urban atmosphere.`,
-      colorPalette: `Deep blacks (#1a1a2e, #16213e) dominate. Accent with
-        lightning yellow (#FFD700) and blood red (#8B0000). Minimal color,
-        mostly monochromatic with strategic pops.`,
-      typography: `Bold condensed sans-serif headlines, slightly tilted.
-        Hand-lettered appearance with rough edges. Text boxes with sharp corners.
-        Sound effects in angular, explosive letterforms.`,
-      elements: `Rain streaks, lightning bolts, city skyline silhouettes,
-        dramatic spotlights, cracked concrete, urban decay details.`,
-      mood: `Intense, dramatic, powerful, brooding. A sense of urban justice
-        and unstoppable force. Dark but heroic.`,
+      style: `Frank Miller's Dark Knight Returns style - the comic that changed everything.
+        Heavy black inks, stark light/shadow contrast, rain-soaked urban noir.
+        PREMIUM AGENCY QUALITY - bold, cinematic, unforgettable.
+
+        VISUAL TECHNIQUE:
+        - HEAVY black ink dominates - 60-70% of image can be shadow
+        - Stark contrast: pure white highlights against deep blacks
+        - Rain streaks rendered as white lines against dark
+        - Lightning provides dramatic backlighting moments
+        - Angular, aggressive panel compositions
+        - Minimal color with maximum impact
+        - Silhouettes against dramatic light sources
+
+        COMPOSITION OPTIONS:
+        Option A - NOIR COVER: Silhouette composition with dramatic backlighting
+        Option B - 3-PANEL DARK STORY: Noir narrative with Miller's signature style
+
+        For 3-panel layout:
+        Panel 1: Storm gathering, vehicle in shadow, sense of dread
+        Panel 2: LIGHTNING STRIKE moment - action revealed in flash
+        Panel 3: Aftermath - calm after storm, vehicle triumphant in new light`,
+      colorPalette: `DARK KNIGHT MINIMAL PALETTE:
+        - Deep Black (#1a1a2e, #16213e) - DOMINANT, pooling shadows
+        - Lightning Yellow (#FFD700) - STRATEGIC accent, lightning, hope
+        - Blood Red (#8B0000) - danger, power, dramatic moments
+        - Stark White - lightning, rain, highlights only
+
+        90% of the image should be blacks and near-blacks.
+        Color is RARE and therefore POWERFUL when used.`,
+      typography: `DARK KNIGHT BOLD LETTERING:
+        - Bold condensed sans-serif, slightly tilted for tension
+        - Hand-lettered appearance with ROUGH edges
+        - Text boxes: sharp corners, no rounded edges, stark
+        - Sound effects: angular, explosive, debris-like
+        - Minimal text - let the images speak
+        - Title treatment: bold, simple, ICONIC`,
+      elements: `DARK KNIGHT NOIR ELEMENTS:
+        - Rain streaks: white lines against dark backgrounds
+        - Lightning bolts providing dramatic illumination
+        - City skyline silhouettes against stormy sky
+        - Dramatic spotlights cutting through darkness
+        - Cracked concrete, urban decay textures
+        - Wet surfaces reflecting light pools
+        - Stark silhouettes with minimal detail`,
+      mood: `INTENSE, DRAMATIC, POWERFUL, NOIR.
+        A sense of urban JUSTICE and unstoppable FORCE.
+        Dark but ultimately HEROIC - the light always breaks through.
+        The storm represents problems; the vehicle emerges VICTORIOUS.
+        Cinematic drama in every frame.`,
     },
     textPrompt: {
-      tone: 'Intense, dramatic, powerful',
-      vocabulary: ['justice', 'power', 'unstoppable', 'legendary', 'returns', 'darkness'],
+      tone: 'Intense, dramatic, powerful, redemptive',
+      vocabulary: ['justice', 'power', 'unstoppable', 'legendary', 'returns', 'rises', 'darkness', 'light'],
     },
-    carStyle: `Aggressive muscle car silhouette emerging from shadows.
-      Menacing headlights cutting through rain. Low angle, powerful stance.
-      The car as a weapon.`,
-    composition: `Dutch angles, dramatic low angles looking up.
-      Strong diagonal compositions. Silhouettes against lightning or spotlight.`,
-    avoidList: `Bright cheerful colors, cute elements, rounded fonts,
-      daytime scenes, pastoral settings.`,
+    carStyle: `1980s VEHICLE as Dark Knight machine:
+      - Aggressive silhouette emerging from shadows
+      - Menacing headlights cutting through rain/darkness
+      - Low angle making the car look like a WEAPON
+      - Wet surfaces reflecting dramatic light sources
+      - Angular, aggressive stance
+      - The car should feel DANGEROUS and POWERFUL`,
+    composition: `DARK KNIGHT NOIR COMPOSITION:
+      COVER FORMAT: Silhouette-heavy with dramatic backlighting.
+      Lightning or spotlight providing the key light source.
+      Strong diagonal compositions creating tension.
+
+      3-PANEL FORMAT: Cinematic pacing like a film sequence.
+      Light and shadow tell the story. Minimal text needed.
+      Each panel a dramatic photograph in ink.`,
+    avoidList: `ABSOLUTELY AVOID:
+      - Bright cheerful colors
+      - Cute or friendly elements
+      - Rounded, soft fonts
+      - Daytime sunny scenes
+      - Pastoral or suburban settings
+      - Busy, cluttered compositions
+      - Light-dominant images`,
     eraVehicles: ['gnx-87', 'corvette-85', 'countach'],
     mockupScenes: ['rain-soaked street', 'dark alley', 'urban noir'],
     compatibleTools: ['promo_flyer', 'instant_pack', 'campaign'],
   },
+
+  // 1980s Neon Action Comics
   {
     id: 'comic-80s-neon-action',
     name: 'Neon Action',
     category: 'nostalgic',
     era: '1980s',
     style: 'comic-book',
-    shortDescription: 'Bright neons and chrome accents',
+    shortDescription: 'Explosive neon and chrome 80s action',
     previewColors: ['#FF00FF', '#00FFFF', '#FF6600', '#1C1C1C'],
     imagePrompt: {
-      style: `1980s Neon Action Comics style. Bright neon colors on dark backgrounds.
-        Chrome effects, laser beams, high-tech gadgets. Action movie comic adaptations
-        aesthetic. Bold and explosive.`,
-      colorPalette: `Hot neon pink (#FF00FF), electric cyan (#00FFFF), action orange (#FF6600),
-        black backgrounds (#1C1C1C). Neon glow effects. Chrome reflections.`,
-      typography: `Chrome 3D letters with neon glow. Bold italics suggesting speed.
-        Explosive sound effects. Movie poster style titles.`,
-      elements: `Laser beams, explosions, chrome surfaces, neon signs,
-        action poses, speed lines. High-tech gadgetry.`,
-      mood: `High-octane action, explosive excitement. Your car gets
-        blockbuster treatment. Maximum power!`,
+      style: `1980s Neon Action Comics style - action movie adaptations, G.I. Joe, Transformers era.
+        Bright neons on dark backgrounds, chrome effects, EXPLOSIVE action.
+        PREMIUM AGENCY QUALITY - maximum impact, blockbuster energy.
+
+        VISUAL TECHNIQUE:
+        - NEON colors glowing against dark backgrounds
+        - Chrome and metallic effects on vehicles and text
+        - Laser beams, explosions, speed effects
+        - High contrast: dark shadows with neon highlights
+        - Action movie comic adaptation aesthetic
+        - Everything moving, nothing static
+
+        COMPOSITION OPTIONS:
+        Option A - EXPLOSIVE COVER: Neon-drenched action shot with chrome title
+        Option B - 3-PANEL BLOCKBUSTER: Movie-style action sequence
+
+        For 3-panel layout:
+        Panel 1: Vehicle in trouble, dramatic neon lighting, tension building
+        Panel 2: EXPLOSIVE ACTION - sparks, tools, neon energy everywhere
+        Panel 3: Victory pose, chrome gleaming, neon celebration effects`,
+      colorPalette: `80s NEON ACTION PALETTE:
+        - Hot Neon Pink (#FF00FF) - electric, exciting, 80s energy
+        - Electric Cyan (#00FFFF) - cool neon, tech, speed
+        - Action Orange (#FF6600) - explosions, sparks, heat
+        - Night Black (#1C1C1C) - dark backgrounds for neon contrast
+        - Chrome Silver - metallic reflections, 80s luxury
+
+        Neons should GLOW against dark backgrounds.
+        Chrome effects on text and vehicle highlights.`,
+      typography: `80s ACTION LETTERING:
+        - Chrome 3D letters with NEON GLOW outlines
+        - Bold italics suggesting SPEED and motion
+        - Explosive sound effects: "MAXIMUM!" "TURBO!" "POWER!"
+        - Movie poster style titles with metallic sheen
+        - Text that looks like it could be on an action figure box
+        - Laser-style underlines and accents`,
+      elements: `NEON ACTION ELEMENTS:
+        - Laser beams and neon light trails
+        - Explosions with orange/yellow centers
+        - Chrome surfaces catching neon reflections
+        - Speed lines in neon colors
+        - Sparks and debris flying
+        - Tech/gadget aesthetic hints
+        - 80s grid patterns as backgrounds`,
+      mood: `HIGH-OCTANE, EXPLOSIVE, MAXIMUM, TURBO.
+        Your car gets BLOCKBUSTER treatment!
+        Every service is an ACTION SEQUENCE.
+        EXTREME excitement, MAXIMUM power, ULTIMATE results.
+        This is the 80s turned up to ELEVEN.`,
     },
     textPrompt: {
-      tone: 'Explosive, exciting, maximum',
-      vocabulary: ['maximum', 'turbo', 'power', 'action', 'extreme', 'blast'],
+      tone: 'Explosive, extreme, maximum, turbo',
+      vocabulary: ['maximum', 'turbo', 'power', 'action', 'extreme', 'blast', 'ultimate', 'mega'],
     },
-    carStyle: `1980s sports car in action pose, neon lights reflecting off
-      chrome and paint. Speed lines and explosions around it.`,
-    composition: `Dynamic diagonal action. Explosions in background.
-      Neon light trails. Speed blur effects.`,
-    avoidList: `Muted colors, static poses, quiet compositions,
-      vintage/nostalgic softness.`,
+    carStyle: `1980s SPORTS CAR as action hero vehicle:
+      - Neon lights reflecting off chrome and glossy paint
+      - Speed lines and motion blur suggesting movement
+      - Explosions or sparks in background
+      - Dynamic angle with aggressive stance
+      - Chrome and glass catching dramatic light
+      - The car should look like it's FROM an action movie`,
+    composition: `NEON ACTION COMPOSITION:
+      COVER FORMAT: Dynamic diagonal with neon energy flowing.
+      Explosions in background, vehicle BURSTING forward.
+      Chrome title treatment at top or bottom.
+
+      3-PANEL FORMAT: Movie storyboard pacing.
+      Each panel escalates the action intensity.
+      Neon effects connect panels visually.`,
+    avoidList: `ABSOLUTELY AVOID:
+      - Muted, desaturated colors
+      - Static, posed compositions
+      - Quiet, calm imagery
+      - Vintage nostalgic softness
+      - Minimal design aesthetic
+      - Slow or peaceful feeling`,
     eraVehicles: ['testarossa', 'countach', 'corvette-85', 'gnx-87'],
     mockupScenes: ['arcade', 'video store', 'action figure display'],
     compatibleTools: ['promo_flyer', 'instant_pack', 'campaign'],
   },
-  {
-    id: 'comic-80s-manga',
-    name: 'Manga Influence',
-    category: 'nostalgic',
-    era: '1980s',
-    style: 'comic-book',
-    shortDescription: 'Speed lines and dynamic angles',
-    previewColors: ['#FFFFFF', '#000000', '#FF0000', '#0000FF'],
-    imagePrompt: {
-      style: `1980s Manga-influenced American comics style. Akira and Speed Racer
-        influences. Dynamic speed lines, expressive effects, dramatic angles.
-        High contrast black and white with spot color.`,
-      colorPalette: `Primarily black and white with strategic spot colors:
-        action red (#FF0000) and cool blue (#0000FF). Screentone patterns.
-        High contrast.`,
-      typography: `Dynamic manga-style sound effects. Bold katakana-influenced
-        English letters. Speed lines through text. Explosive arrangements.`,
-      elements: `Speed lines (concentrated and radiating), motion blur,
-        dramatic zoom effects, screentone patterns, impact frames.`,
-      mood: `Fast, dynamic, intense. Every service is a high-speed chase.
-        Dramatic and exciting like a manga action scene.`,
-    },
-    textPrompt: {
-      tone: 'Fast, intense, dynamic',
-      vocabulary: ['speed', 'maximum', 'intense', 'power', 'ultimate', 'racing'],
-    },
-    carStyle: `1980s car in extreme dynamic angle, speed lines radiating,
-      as if from anime chase scene. Dramatic foreshortening.`,
-    composition: `Extreme angles, radiating speed lines, impact frames.
-      Manga panel-style dramatic breakouts.`,
-    avoidList: `Static poses, realistic rendering, muted colors,
-      slow/calm imagery.`,
-    eraVehicles: ['delorean', 'testarossa', 'gnx-87'],
-    mockupScenes: ['manga shop', 'anime display', 'import store'],
-    compatibleTools: ['promo_flyer', 'instant_pack', 'campaign'],
-  },
-  {
-    id: 'comic-80s-indie',
-    name: 'Indie Comics',
-    category: 'nostalgic',
-    era: '1980s',
-    style: 'comic-book',
-    shortDescription: 'Black & white with spot color',
-    previewColors: ['#000000', '#FFFFFF', '#FF4500', '#4A4A4A'],
-    imagePrompt: {
-      style: `1980s Independent Comics style. Black and white with occasional
-        spot color. More personal, artistic vision. Love and Rockets, Cerebus
-        influenced. Detailed linework, alternative aesthetic.`,
-      colorPalette: `Primarily black and white. Single spot color for emphasis:
-        often orange-red (#FF4500). Gray tones (#4A4A4A) for depth.
-        Artistic, limited palette.`,
-      typography: `Hand-lettered appearance, personal style. Alternative fonts.
-        Text integrated into art. Less commercial, more artistic.`,
-      elements: `Detailed linework, cross-hatching, stippling. Personal,
-        slice-of-life details. Urban environments. Thoughtful compositions.`,
-      mood: `Personal, authentic, artistic. The indie mechanic who truly
-        cares about your car. Real craftsmanship.`,
-    },
-    textPrompt: {
-      tone: 'Authentic, personal, crafted',
-      vocabulary: ['real', 'craft', 'care', 'honest', 'quality', 'personal'],
-    },
-    carStyle: `1980s car rendered with detailed linework, cross-hatching
-      for shadows. Artistic, personal interpretation. Character over flash.`,
-    composition: `Thoughtful, artistic composition. Not flashy but meaningful.
-      Strong use of negative space. Detailed textures.`,
-    avoidList: `Flashy commercial styling, bright colors, bombastic action,
-      corporate feeling.`,
-    eraVehicles: ['corvette-85', 'delorean', 'gnx-87'],
-    mockupScenes: ['indie bookstore', 'coffee shop', 'art gallery'],
-    compatibleTools: ['promo_flyer', 'instant_pack', 'personal_card'],
-  },
 ];
 
 // ============================================================================
-// MOVIE POSTER STYLES (16 themes)
+// AUTOMOTIVE MOVIE POSTER STYLES (7 themes - car-focused films only)
 // ============================================================================
 
 export const moviePosterThemes: NostalgicThemeDefinition[] = [
-  // 1950s Movie Poster Styles
+  // 1950s Drive-In
   {
     id: 'poster-50s-drive-in',
-    name: 'Drive-In B-Movie',
+    name: 'Drive-In Double Feature',
     category: 'nostalgic',
     era: '1950s',
     style: 'movie-poster',
-    shortDescription: 'Lurid colors and screaming text',
+    shortDescription: 'Classic drive-in movie poster excitement',
     previewColors: ['#FF0000', '#FFFF00', '#000000', '#00FF00'],
     imagePrompt: {
-      style: `1950s Drive-In B-Movie poster style. Lurid, exaggerated colors.
-        Screaming headlines. Over-the-top dramatic imagery. Cheap but
-        charming aesthetic. Attack of the killer everything!`,
-      colorPalette: `Screaming red (#FF0000), warning yellow (#FFFF00), night black (#000000),
-        radioactive green (#00FF00). Clashing, attention-grabbing combinations.`,
-      typography: `Screaming all-caps headlines, often at angles. Dripping
-        or shaking letters. Multiple fonts competing for attention.
-        "THEY CAME FROM..." style.`,
-      elements: `Dramatic beams of light, screaming (implied) figures,
-        giant objects, city destruction hints, classic cars prominently featured.`,
-      mood: `Over-the-top dramatic, campy fun, cult classic vibes. Your car
-        faces THE ATTACK OF ENGINE PROBLEMS! Theatrical drama.`,
+      style: `1950s Drive-In Movie poster style - the golden age of car culture cinema.
+        Hot rods, teenage rebellion, AUTOMOTIVE DRAMA. PREMIUM AGENCY QUALITY.
+
+        VISUAL TECHNIQUE:
+        - Hand-painted illustration style with confident brushwork
+        - Lurid, saturated colors that POP in outdoor theater lighting
+        - Dramatic beams of light (car headlights, spotlights)
+        - Cars as STARS of the movie, prominently featured
+        - Theatrical staging with multiple dramatic elements
+        - Classic movie poster composition with billing block
+
+        AUTOMOTIVE FOCUS:
+        - The CAR is the main attraction
+        - Hot rods, custom cars, racing machines
+        - Dramatic automotive action: races, chases, burnouts
+        - Car culture as EXCITING and DRAMATIC`,
+      colorPalette: `DRIVE-IN DRAMATIC PALETTE:
+        - Screaming Red (#FF0000) - danger, excitement, hot rods
+        - Warning Yellow (#FFFF00) - headlights, attention, drama
+        - Night Black (#000000) - outdoor theater sky, shadows
+        - Chrome highlights and flame effects
+
+        Colors should be SATURATED to read at distance.
+        High contrast for outdoor visibility.`,
+      typography: `DRIVE-IN POSTER LETTERING:
+        - Screaming ALL-CAPS headlines at dramatic angles
+        - Multiple fonts competing for attention (period authentic)
+        - 3D shadow effects on titles
+        - "SEE!" "THRILL!" "EXPERIENCE!" callouts
+        - Billing block at bottom with credits
+        - Taglines that DEMAND attention`,
+      elements: `DRIVE-IN POSTER ELEMENTS:
+        - Dramatic headlight beams cutting through darkness
+        - Classic cars prominently featured as heroes
+        - Racing/action scenes suggested
+        - Multiple dramatic moments composed together
+        - Stars/credits in classic billing block style
+        - "IN BLAZING COLOR!" type badges`,
+      mood: `DRAMATIC, EXCITING, AUTOMOTIVE PASSION.
+        The thrill of hot rods and open roads!
+        Car culture as ADVENTURE and ROMANCE.
+        Your shop: where automotive dreams come true.`,
     },
     textPrompt: {
-      tone: 'Dramatic, campy, over-the-top',
-      vocabulary: ['attack', 'terror', 'incredible', 'amazing', 'giant', 'monster'],
+      tone: 'Dramatic, thrilling, automotive excitement',
+      vocabulary: ['thrill', 'incredible', 'amazing', 'speed', 'power', 'see', 'experience'],
     },
-    carStyle: `1950s car prominently featured, either as hero vehicle or
-      dramatically lit centerpiece. Drive-in screen aesthetic.`,
-    composition: `Dramatic diagonal compositions, multiple competing focal points,
-      theatrical staging. Movie poster format with billing block area.`,
-    avoidList: `Subtle design, minimal text, sophisticated aesthetic,
-      modern vehicles.`,
-    eraVehicles: ['chevy-57', 'cadillac-59', 'tbird-55'],
+    carStyle: `1950s CAR as movie star:
+      - Hero shot with dramatic lighting
+      - Hot rod or custom car aesthetic
+      - Flames, chrome, lowered stance
+      - Dramatic angles suggesting speed and power
+      - The car should look like a MOVIE STAR`,
+    composition: `DRIVE-IN POSTER COMPOSITION:
+      Classic movie poster layout with dramatic central image.
+      Title at top with shadow and dimension.
+      Billing block at bottom. Multiple elements composed for drama.`,
+    avoidList: `Minimal design, subtle colors, modern vehicles,
+      corporate sterility, small quiet text.`,
+    eraVehicles: ['chevy-57', 'cadillac-59', 'tbird-55', 'mercury-49'],
     mockupScenes: ['drive-in screen', 'movie theater lobby', 'vintage poster display'],
     compatibleTools: ['promo_flyer', 'instant_pack', 'campaign'],
   },
-  {
-    id: 'poster-50s-hitchcock',
-    name: 'Hitchcock Thriller',
-    category: 'nostalgic',
-    era: '1950s',
-    style: 'movie-poster',
-    shortDescription: 'Vertigo spirals and elegant danger',
-    previewColors: ['#FF4500', '#2F4F4F', '#FFD700', '#FFFFFF'],
-    imagePrompt: {
-      style: `Alfred Hitchcock movie poster style. Saul Bass influenced design.
-        Vertigo spirals, silhouettes, sophisticated danger. Elegant but menacing.
-        Graphic design masterwork.`,
-      colorPalette: `Vertigo orange (#FF4500), dark teal (#2F4F4F), elegant gold (#FFD700),
-        stark white (#FFFFFF). Bold, limited palette. High contrast.`,
-      typography: `Elegant sans-serif, often Futura or similar. Sophisticated
-        arrangement. Text as design element. Saul Bass inspired layouts.`,
-      elements: `Spiral patterns, silhouettes, fragmented images, mysterious
-        figures, elegant danger, graphic shapes.`,
-      mood: `Sophisticated suspense, elegant danger. Something isn't quite right
-        with your car... but we'll solve the mystery. Thrilling service.`,
-    },
-    textPrompt: {
-      tone: 'Sophisticated, suspenseful, elegant',
-      vocabulary: ['mystery', 'suspense', 'discover', 'reveal', 'secret', 'intrigue'],
-    },
-    carStyle: `1950s car as silhouette or fragmented Saul Bass style imagery.
-      Mysterious, elegant. Part of larger graphic composition.`,
-    composition: `Saul Bass inspired graphic design. Spirals, fragments,
-      silhouettes. Sophisticated layout with intentional negative space.`,
-    avoidList: `Cluttered design, cheap aesthetic, bright cheerful colors,
-      obvious imagery.`,
-    eraVehicles: ['tbird-55', 'corvette-58', 'cadillac-59'],
-    mockupScenes: ['art house theater', 'design museum', 'sophisticated lobby'],
-    compatibleTools: ['promo_flyer', 'instant_pack', 'personal_card'],
-  },
+
+  // 1950s Rebel
   {
     id: 'poster-50s-rebel',
-    name: 'Rebel Without a Cause',
+    name: 'Rebel Hot Rod',
     category: 'nostalgic',
     era: '1950s',
     style: 'movie-poster',
-    shortDescription: 'James Dean cool and leather jackets',
+    shortDescription: 'James Dean cool meets hot rod culture',
     previewColors: ['#DC143C', '#000000', '#F5F5DC', '#4169E1'],
     imagePrompt: {
-      style: `1950s teenage rebel movie poster style. James Dean, Marlon Brando
-        cool. Leather jacket silhouettes, brooding poses. Red and blue dramatic
-        lighting. Teen angst meets automotive passion.`,
-      colorPalette: `Rebel red (#DC143C), leather black (#000000), cream (#F5F5DC),
-        denim blue (#4169E1). Dramatic, moody colors.`,
-      typography: `Bold dramatic titles with casual, rebellious energy.
-        Hand-painted movie poster style. Stars' names prominent.`,
-      elements: `Leather jacket suggestions, pompadour hair silhouettes,
-        cigarette smoke hints, classic cars, brooding poses.`,
-      mood: `Cool, rebellious, misunderstood. The auto shop for those who
-        don't follow the crowd. Authentic rebel spirit.`,
+      style: `1950s Teenage Rebel movie poster - Rebel Without a Cause meets hot rod culture.
+        James Dean cool, leather jacket silhouettes, AUTOMOTIVE REBELLION.
+        PREMIUM AGENCY QUALITY - iconic and timeless.
+
+        VISUAL TECHNIQUE:
+        - Moody, dramatic lighting with strong shadows
+        - Red and blue gels creating tension
+        - Silhouettes and brooding poses
+        - Hand-painted movie poster illustration
+        - The car as symbol of FREEDOM and REBELLION
+
+        AUTOMOTIVE FOCUS:
+        - Hot rods and custom cars as rebellion symbols
+        - Chicken run drama (cars racing toward cliff)
+        - Night racing scenes
+        - The car represents ESCAPE and IDENTITY`,
+      colorPalette: `REBEL MOODY PALETTE:
+        - Rebel Red (#DC143C) - passion, danger, hot rod flames
+        - Leather Black (#000000) - jackets, night, rebellion
+        - Cream (#F5F5DC) - T-shirts, innocence, contrast
+        - Denim Blue (#4169E1) - jeans, sky, melancholy
+
+        Dramatic, moody color with high contrast.
+        The palette of a restless generation.`,
+      typography: `REBEL POSTER LETTERING:
+        - Bold dramatic titles with rebellious energy
+        - Hand-painted movie poster style
+        - Stars' names in elegant dramatic placement
+        - Taglines with attitude: "They live fast..."
+        - Slightly rough, imperfect letter edges`,
+      elements: `REBEL POSTER ELEMENTS:
+        - Leather jacket silhouettes (no detailed faces)
+        - Pompadour hair shadows
+        - Classic hot rods and customs
+        - Night racing scenes
+        - Cliff edges and danger
+        - Street light pools`,
+      mood: `COOL, REBELLIOUS, MISUNDERSTOOD, FREE.
+        The auto shop for those who don't follow the crowd.
+        Authentic rebel spirit - real service, no pretense.
+        Your car is your FREEDOM.`,
     },
     textPrompt: {
-      tone: 'Cool, rebellious, authentic',
-      vocabulary: ['rebel', 'real', 'cool', 'ride', 'wild', 'free'],
+      tone: 'Cool, rebellious, authentic, free',
+      vocabulary: ['rebel', 'real', 'cool', 'ride', 'wild', 'free', 'live', 'fast'],
     },
-    carStyle: `1950s hot rod or muscle car, low and mean. Dramatic lighting,
-      possibly in chicken run stance. Symbol of rebellion.`,
-    composition: `Dramatic portrait style with car as co-star.
-      Moody lighting, figure in silhouette. Classic movie poster layout.`,
+    carStyle: `1950s HOT ROD as rebellion symbol:
+      - Low and mean stance
+      - Dramatic moody lighting
+      - Flames or custom paint
+      - The car as ESCAPE vehicle
+      - Positioned for action (racing, chicken run)`,
+    composition: `REBEL POSTER COMPOSITION:
+      Dramatic portrait style with car as co-star.
+      Moody lighting with figure silhouettes.
+      Classic movie poster layout with attitude.`,
     avoidList: `Happy family imagery, corporate feeling, bright cheerful colors,
-      conservative design.`,
+      conservative design, safe messaging.`,
     eraVehicles: ['mercury-49', 'chevy-57', 'tbird-55'],
     mockupScenes: ['teen hangout', 'malt shop', 'drive-in'],
     compatibleTools: ['promo_flyer', 'instant_pack', 'campaign'],
   },
+
+  // 1960s Racing Film
   {
-    id: 'poster-50s-creature',
-    name: 'Creature Feature',
+    id: 'poster-60s-racing',
+    name: 'Grand Prix Racing',
     category: 'nostalgic',
-    era: '1950s',
+    era: '1960s',
     style: 'movie-poster',
-    shortDescription: 'Classic monsters and dramatic lighting',
-    previewColors: ['#006400', '#1C1C1C', '#FFD700', '#8B4513'],
+    shortDescription: 'Le Mans and Grand Prix racing drama',
+    previewColors: ['#DC143C', '#FFFFFF', '#000000', '#FFD700'],
     imagePrompt: {
-      style: `1950s Creature Feature movie poster style. Creature from the Black Lagoon,
-        Godzilla aesthetic. Dramatic lighting, mysterious creatures (implied),
-        classic monsters. Painted illustration style.`,
-      colorPalette: `Creature green (#006400), shadow black (#1C1C1C), spotlight gold (#FFD700),
-        swamp brown (#8B4513). Moody, mysterious colors.`,
-      typography: `Dramatic 3D titles, often with texture (scales, dripping).
-        Classic monster movie fonts. Theatrical billing block.`,
-      elements: `Mysterious shadows, creature silhouettes, spotlights,
-        dramatic landscapes, fog, water reflections.`,
-      mood: `Mysterious, dramatic, thrilling. What creature lurks in your
-        engine? We'll find and defeat it! Monster-slaying mechanics.`,
+      style: `1960s Racing Movie poster - Le Mans, Grand Prix, Winning era.
+        International racing glamour, speed, danger, victory.
+        PREMIUM AGENCY QUALITY - cinematic and prestigious.
+
+        VISUAL TECHNIQUE:
+        - Cinematic widescreen composition feeling
+        - Speed blur and motion effects
+        - Racing stripe graphics integrated into design
+        - Painted illustration with photographic realism hints
+        - Multiple racing scenes composed together
+        - Victory and danger both present
+
+        AUTOMOTIVE FOCUS:
+        - Racing cars as heroes (GT40, Ferrari, etc. style)
+        - Track action: straightaways, corners, pit stops
+        - Checkered flag victory moments
+        - The drama of professional motorsport`,
+      colorPalette: `RACING PRESTIGIOUS PALETTE:
+        - Racing Red (#DC143C) - Ferrari, speed, passion
+        - Pure White (#FFFFFF) - racing stripes, purity, excellence
+        - Night Black (#000000) - tires, shadows, drama
+        - Trophy Gold (#FFD700) - victory, champagne, achievement
+
+        Clean, prestigious colors of international racing.`,
+      typography: `RACING FILM LETTERING:
+        - Elegant, prestigious fonts befitting international cinema
+        - Title with speed lines or racing stripe integration
+        - European film poster sophistication
+        - Cast names with international flair
+        - Taglines about speed, danger, victory`,
+      elements: `RACING POSTER ELEMENTS:
+        - Racing cars in dynamic action shots
+        - Checkered flags and victory podiums
+        - Track elements: corners, straightaways
+        - Speed blur and motion lines
+        - International racing atmosphere
+        - Pit crew action hints`,
+      mood: `PRESTIGIOUS, THRILLING, VICTORIOUS, INTERNATIONAL.
+        Racing-bred service and precision.
+        The drama of competition, the glory of victory.
+        Your car receives CHAMPIONSHIP-level care.`,
     },
     textPrompt: {
-      tone: 'Mysterious, thrilling, dramatic',
-      vocabulary: ['creature', 'lurking', 'discover', 'battle', 'defeat', 'mysterious'],
+      tone: 'Prestigious, thrilling, victorious, professional',
+      vocabulary: ['racing', 'victory', 'champion', 'speed', 'precision', 'excellence', 'winner'],
     },
-    carStyle: `1950s car dramatically lit, possibly with mysterious shadow
-      lurking nearby. Spotlight on the hero vehicle.`,
-    composition: `Dramatic lighting from below or behind. Mysterious shadows.
-      Classic creature feature staging. Theatrical composition.`,
-    avoidList: `Actual monsters shown clearly, gore, child-unfriendly content,
-      modern horror aesthetic.`,
-    eraVehicles: ['cadillac-59', 'chevy-57', 'mercury-49'],
-    mockupScenes: ['monster movie marathon', 'creature double feature', 'late night show'],
+    carStyle: `1960s RACING CAR as champion:
+      - Dynamic speed shot with motion blur
+      - Racing livery and numbers
+      - Low angle emphasizing speed and power
+      - Track environment surrounding
+      - Victory pose or racing action`,
+    composition: `RACING POSTER COMPOSITION:
+      Widescreen cinematic feeling. Racing action central.
+      Multiple moments of drama composed together.
+      Prestigious international film poster layout.`,
+    avoidList: `Casual street scenes, slow imagery, non-racing vehicles,
+      amateur aesthetic, static compositions.`,
+    eraVehicles: ['corvette-63', 'mustang-67', 'gto-65', 'camaro-69'],
+    mockupScenes: ['racing museum', 'dealership', 'motorsport event'],
     compatibleTools: ['promo_flyer', 'instant_pack', 'campaign'],
   },
 
-  // 1960s Movie Poster Styles
-  {
-    id: 'poster-60s-bond',
-    name: 'Bond/Spy Film',
-    category: 'nostalgic',
-    era: '1960s',
-    style: 'movie-poster',
-    shortDescription: 'Gun barrels and international glamour',
-    previewColors: ['#FFD700', '#000000', '#DC143C', '#C0C0C0'],
-    imagePrompt: {
-      style: `James Bond movie poster style. Robert McGinnis inspired. Glamorous,
-        dangerous, international. Silhouettes, action poses, exotic locations
-        implied. Sophisticated cool.`,
-      colorPalette: `Bond gold (#FFD700), tuxedo black (#000000), danger red (#DC143C),
-        gun metal (#C0C0C0). Elegant, high-contrast.`,
-      typography: `Elegant gold typography, often with gun barrel O's.
-        Sophisticated sans-serif. International feeling. 007 style numbers.`,
-      elements: `Gun barrel motifs, silhouettes, action poses, gadget hints,
-        playing cards, dice, martini suggestions. Exotic luxury.`,
-      mood: `Sophisticated, dangerous, glamorous. Licensed to change your oil.
-        Secret agent level automotive care.`,
-    },
-    textPrompt: {
-      tone: 'Sophisticated, dangerous, glamorous',
-      vocabulary: ['licensed', 'secret', 'agent', 'mission', 'elite', 'exclusive'],
-    },
-    carStyle: `1960s sports car (Aston Martin style), sleek and dangerous.
-      Gun barrel framing option. Gadget-equipped appearance.`,
-    composition: `Classic Bond poster layout with figure silhouettes,
-      gun barrel framing, montage of action elements.`,
-    avoidList: `Casual imagery, cheap aesthetic, family-friendly cuteness,
-      non-premium feeling.`,
-    eraVehicles: ['corvette-63', 'mustang-67', 'charger-68'],
-    mockupScenes: ['casino entrance', 'luxury hotel', 'international airport'],
-    compatibleTools: ['promo_flyer', 'instant_pack', 'personal_card'],
-  },
-  {
-    id: 'poster-60s-beach',
-    name: 'Beach Party',
-    category: 'nostalgic',
-    era: '1960s',
-    style: 'movie-poster',
-    shortDescription: 'Surfboards and fun in the sun',
-    previewColors: ['#FFD700', '#00CED1', '#FF6347', '#FFFFFF'],
-    imagePrompt: {
-      style: `1960s Beach Party movie poster style. Frankie and Annette vibes.
-        Surfboards, bikinis (suggested), fun in the sun. Bright, cheerful,
-        innocent fun. Beach Blanket Bingo aesthetic.`,
-      colorPalette: `Sunshine yellow (#FFD700), ocean turquoise (#00CED1),
-        sunset coral (#FF6347), sand white (#FFFFFF). Bright, cheerful.`,
-      typography: `Fun, bouncy fonts. Often with surfboard or wave motifs.
-        Casual, friendly, party vibes. Exclamation points!`,
-      elements: `Surfboards, beach umbrellas, waves, palm trees, classic cars
-        on the beach, tiki elements. Summer fun imagery.`,
-      mood: `Fun, carefree, sunny. Summer automotive care is a beach party!
-        Good vibes and great service.`,
-    },
-    textPrompt: {
-      tone: 'Fun, sunny, carefree',
-      vocabulary: ['summer', 'fun', 'beach', 'party', 'surf', 'cool'],
-    },
-    carStyle: `1960s convertible on the beach, surfboards nearby.
-      Sunny, cheerful lighting. Summer road trip ready.`,
-    composition: `Bright, cheerful composition. Beach setting.
-      Multiple fun elements. Party poster layout.`,
-    avoidList: `Dark moody colors, serious themes, winter imagery,
-      corporate feeling.`,
-    eraVehicles: ['mustang-67', 'corvette-63', 'camaro-69'],
-    mockupScenes: ['beach boardwalk', 'surf shop', 'summer vacation'],
-    compatibleTools: ['promo_flyer', 'instant_pack', 'campaign'],
-  },
-  {
-    id: 'poster-60s-giallo',
-    name: 'Italian Giallo',
-    category: 'nostalgic',
-    era: '1960s',
-    style: 'movie-poster',
-    shortDescription: 'Bold reds and artistic mystery',
-    previewColors: ['#8B0000', '#000000', '#FFD700', '#4B0082'],
-    imagePrompt: {
-      style: `1960s Italian Giallo movie poster style. Bold, artistic, mysterious.
-        Blood reds, artistic compositions, fashion-forward. Dario Argento
-        aesthetic. High art meets thriller.`,
-      colorPalette: `Giallo red (#8B0000), shadow black (#000000), gold accent (#FFD700),
-        mysterious purple (#4B0082). Bold, artistic palette.`,
-      typography: `Elegant Italian typography, often with dramatic angles.
-        Artistic arrangement. Fashion magazine meets thriller.`,
-      elements: `Mysterious gloved hands, dramatic eyes, artistic blood splashes,
-        fashion elements, Italian style. Sophisticated danger.`,
-      mood: `Artistic, mysterious, fashionable danger. Italian automotive artistry.
-        Style and substance combined.`,
-    },
-    textPrompt: {
-      tone: 'Artistic, mysterious, sophisticated',
-      vocabulary: ['mysterious', 'elegant', 'artistic', 'style', 'danger', 'fashion'],
-    },
-    carStyle: `1960s Italian sports car (Alfa Romeo, Ferrari style) in
-      artistic composition. Dramatic lighting, mysterious atmosphere.`,
-    composition: `Artistic, fashion-forward layout. Dramatic angles.
-      Sophisticated European design sensibility.`,
-    avoidList: `Gore, cheap horror aesthetic, American mainstream style,
-      casual imagery.`,
-    eraVehicles: ['corvette-63', 'mustang-67', 'gto-65'],
-    mockupScenes: ['Italian cinema', 'art gallery', 'fashion boutique'],
-    compatibleTools: ['promo_flyer', 'instant_pack', 'personal_card'],
-  },
-  {
-    id: 'poster-60s-psychedelic',
-    name: 'Psychedelic Trip',
-    category: 'nostalgic',
-    era: '1960s',
-    style: 'movie-poster',
-    shortDescription: 'Swirling colors and flower power',
-    previewColors: ['#FF00FF', '#FFFF00', '#00FF00', '#FF6600'],
-    imagePrompt: {
-      style: `1960s Psychedelic movie poster style. Yellow Submarine, Easy Rider
-        influences. Swirling colors, trippy patterns, flower power.
-        Mind-expanding visual experience.`,
-      colorPalette: `Psychedelic pink (#FF00FF), acid yellow (#FFFF00),
-        electric green (#00FF00), orange (#FF6600). Swirling gradients.`,
-      typography: `Flowing, organic psychedelic lettering. Bubble letters
-        that morph and flow. Art Nouveau meets acid trip.`,
-      elements: `Swirling patterns, peace signs, flowers, mushrooms,
-        cosmic imagery, melting forms. Mind-expansion visuals.`,
-      mood: `Trippy, expansive, far out. A mind-blowing automotive experience.
-        Tune in, turn on, drive on.`,
-    },
-    textPrompt: {
-      tone: 'Trippy, expansive, groovy',
-      vocabulary: ['cosmic', 'groovy', 'trip', 'peace', 'mind', 'expand'],
-    },
-    carStyle: `1960s car (or VW Bus) with psychedelic paint job,
-      melting into swirling background patterns.`,
-    composition: `Swirling, organic composition. No rigid structure.
-      Elements flow into each other. Cosmic expansion.`,
-    avoidList: `Corporate rigidity, conservative colors, structured layouts,
-      mainstream aesthetic.`,
-    eraVehicles: ['corvette-63', 'mustang-67', 'camaro-69'],
-    mockupScenes: ['head shop', 'record store', 'concert poster wall'],
-    compatibleTools: ['promo_flyer', 'instant_pack', 'campaign'],
-  },
-
-  // 1970s Movie Poster Styles
-  {
-    id: 'poster-70s-grindhouse',
-    name: 'Grindhouse',
-    category: 'nostalgic',
-    era: '1970s',
-    style: 'movie-poster',
-    shortDescription: 'Exploitation style and scratched film',
-    previewColors: ['#FF4500', '#FFD700', '#000000', '#8B0000'],
-    imagePrompt: {
-      style: `1970s Grindhouse exploitation movie poster style. Scratched, worn film aesthetic.
-        Bold, trashy, attention-grabbing. Missing reels, age damage.
-        Pulpy, lurid, unforgettable.`,
-      colorPalette: `Exploitation orange (#FF4500), grindhouse gold (#FFD700),
-        film black (#000000), blood red (#8B0000). Worn, faded colors.`,
-      typography: `Bold, screaming headlines. Multiple competing fonts.
-        Wear and tear on letters. "THEY CALL HIM..." style.`,
-      elements: `Film scratches, reel marks, age spots, torn edges.
-        Action poses, car chases implied. Exploitation aesthetic.`,
-      mood: `Raw, gritty, unforgettable. The auto shop experience you'll
-        never forget. No holds barred automotive care.`,
-    },
-    textPrompt: {
-      tone: 'Raw, bold, unforgettable',
-      vocabulary: ['raw', 'real', 'wild', 'unforgettable', 'extreme', 'legendary'],
-    },
-    carStyle: `1970s muscle car in action, possibly mid-chase or stunt.
-      Scratched film overlay. Exploitation movie hero vehicle.`,
-    composition: `Worn movie poster with scratches and damage.
-      Bold, attention-grabbing layout. Grindhouse aesthetic.`,
-    avoidList: `Clean polished look, corporate aesthetic, family-friendly,
-      subtle design.`,
-    eraVehicles: ['challenger-71', 'trans-am-77', 'cuda-70', 'el-camino-72'],
-    mockupScenes: ['42nd street theater', 'drive-in', 'video rental'],
-    compatibleTools: ['promo_flyer', 'instant_pack', 'campaign'],
-  },
-  {
-    id: 'poster-70s-disco',
-    name: 'Disco Fever',
-    category: 'nostalgic',
-    era: '1970s',
-    style: 'movie-poster',
-    shortDescription: 'Glitter and mirror ball glamour',
-    previewColors: ['#FFD700', '#C0C0C0', '#FF1493', '#4B0082'],
-    imagePrompt: {
-      style: `1970s Disco movie poster style. Saturday Night Fever, Thank God It's Friday.
-        Glitter, mirror balls, dance floor glamour. Polyester suits and
-        platform shoes suggested in silhouette.`,
-      colorPalette: `Disco gold (#FFD700), mirror ball silver (#C0C0C0),
-        hot pink (#FF1493), deep purple (#4B0082). Glitter effects.`,
-      typography: `Glamorous disco fonts, often with glitter or chrome effect.
-        Funky, stylized letters. Dance floor ready.`,
-      elements: `Mirror ball reflections, dance floor patterns, glitter,
-        disco lights, funky silhouettes. Night fever atmosphere.`,
-      mood: `Glamorous, fun, fever-pitch excitement. Saturday night automotive
-        service. Disco inferno of great deals!`,
-    },
-    textPrompt: {
-      tone: 'Glamorous, funky, fever-pitch',
-      vocabulary: ['fever', 'dance', 'night', 'groove', 'funky', 'boogie'],
-    },
-    carStyle: `1970s car (Lincoln, Cadillac) with disco ball reflections,
-      glitter effects. Night club parking lot glamour.`,
-    composition: `Dance floor inspired layout. Mirror ball lighting effects.
-      Glamorous, nightlife composition.`,
-    avoidList: `Daytime imagery, work clothes, conservative aesthetic,
-      suburban normalcy.`,
-    eraVehicles: ['el-camino-72', 'trans-am-77', 'challenger-71'],
-    mockupScenes: ['disco entrance', 'nightclub', 'roller rink'],
-    compatibleTools: ['promo_flyer', 'instant_pack', 'campaign'],
-  },
+  // 1970s Road Movie
   {
     id: 'poster-70s-road-movie',
-    name: 'Road Movie',
+    name: 'Open Road',
     category: 'nostalgic',
     era: '1970s',
     style: 'movie-poster',
-    shortDescription: 'Open highways and dusty freedom',
+    shortDescription: 'Easy Rider freedom and highway adventure',
     previewColors: ['#DAA520', '#87CEEB', '#8B4513', '#F5F5DC'],
     imagePrompt: {
-      style: `1970s Road Movie poster style. Easy Rider, Vanishing Point, Two-Lane Blacktop.
-        Open highways, desert freedom, dust and sun. Counter-culture journey.
-        Freedom on four wheels.`,
-      colorPalette: `Desert gold (#DAA520), open sky blue (#87CEEB),
-        road dust brown (#8B4513), cream (#F5F5DC). Natural, earthy.`,
-      typography: `Free-spirited fonts, often hand-painted appearance.
-        Road sign influences. Journey-focused text.`,
-      elements: `Open highways, desert landscapes, gas stations, motels,
-        road signs, dust clouds. Freedom imagery.`,
-      mood: `Free, adventurous, soul-searching. The open road calls.
-        Your car's journey to ultimate freedom and performance.`,
+      style: `1970s Road Movie poster - Easy Rider, Vanishing Point, Two-Lane Blacktop.
+        Open highways, desert freedom, American soul searching.
+        PREMIUM AGENCY QUALITY - cinematic and iconic.
+
+        VISUAL TECHNIQUE:
+        - Wide landscape format feeling
+        - Golden hour lighting (sunset/sunrise)
+        - Dust and atmosphere creating depth
+        - Natural, earthy color palette
+        - The CAR as freedom symbol
+        - Vanishing point highway compositions
+
+        AUTOMOTIVE FOCUS:
+        - Muscle cars on open highways
+        - Desert roads stretching to horizon
+        - The car as ESCAPE and FREEDOM
+        - Road trip romance and adventure`,
+      colorPalette: `ROAD MOVIE NATURAL PALETTE:
+        - Desert Gold (#DAA520) - sunset, sand, warmth
+        - Open Sky Blue (#87CEEB) - freedom, endless sky
+        - Road Dust Brown (#8B4513) - earth, authenticity
+        - Cream (#F5F5DC) - clouds, light, hope
+
+        Natural, earthy, cinematic warmth.
+        The palette of the American Southwest.`,
+      typography: `ROAD MOVIE LETTERING:
+        - Free-spirited fonts, often hand-painted appearance
+        - Road sign influences and highway marker styles
+        - Journey-focused text with open spacing
+        - Taglines about freedom, roads, journeys
+        - Organic, natural letter forms`,
+      elements: `ROAD MOVIE ELEMENTS:
+        - Open highways stretching to horizon
+        - Desert landscapes and rock formations
+        - Vintage gas stations and motels
+        - Dust clouds trailing behind vehicles
+        - Big sky country panoramas
+        - Freedom imagery: birds, open spaces`,
+      mood: `FREE, ADVENTUROUS, SOUL-SEARCHING, AUTHENTIC.
+        The open road calls. Your car's journey to freedom.
+        Road trip ready service.
+        The romance of the American highway.`,
     },
     textPrompt: {
-      tone: 'Free, adventurous, soul-searching',
-      vocabulary: ['freedom', 'road', 'journey', 'ride', 'open', 'horizon'],
+      tone: 'Free, adventurous, authentic, journeying',
+      vocabulary: ['freedom', 'road', 'journey', 'ride', 'open', 'horizon', 'soul', 'escape'],
     },
-    carStyle: `1970s muscle car on open highway, dust trailing,
-      sun setting. Symbol of freedom and rebellion.`,
-    composition: `Wide landscape format. Open road stretching to horizon.
-      Car as symbol of freedom. Big sky country.`,
+    carStyle: `1970s MUSCLE CAR as freedom machine:
+      - On open highway, dust trailing
+      - Golden hour lighting
+      - Low angle emphasizing power and freedom
+      - Desert or rural landscape setting
+      - The car is ESCAPE personified`,
+    composition: `ROAD MOVIE COMPOSITION:
+      Wide landscape format. Open road stretching to horizon.
+      Car as symbol of freedom in vast landscape.
+      Big sky country panoramic feeling.`,
     avoidList: `Urban settings, corporate imagery, confined spaces,
-      mainstream commercial look.`,
-    eraVehicles: ['challenger-71', 'trans-am-77', 'el-camino-72'],
+      mainstream commercial aesthetic, claustrophobic compositions.`,
+    eraVehicles: ['challenger-71', 'trans-am-77', 'el-camino-72', 'cuda-70'],
     mockupScenes: ['roadside diner', 'gas station', 'motel office'],
     compatibleTools: ['promo_flyer', 'instant_pack', 'campaign'],
   },
+
+  // 1970s Trucker Film
   {
-    id: 'poster-70s-disaster',
-    name: 'Disaster Epic',
+    id: 'poster-70s-trucker',
+    name: 'Trucker Legend',
     category: 'nostalgic',
     era: '1970s',
     style: 'movie-poster',
-    shortDescription: 'Towering infernos and star-studded casts',
-    previewColors: ['#FF4500', '#FFD700', '#000000', '#4169E1'],
+    shortDescription: 'Smokey and the Bandit highway action',
+    previewColors: ['#000000', '#FFD700', '#DC143C', '#4169E1'],
     imagePrompt: {
-      style: `1970s Disaster Movie poster style. The Towering Inferno, Earthquake,
-        The Poseidon Adventure. Epic scale, multiple storylines, star-studded.
-        Dramatic destruction and heroism.`,
-      colorPalette: `Disaster orange (#FF4500), gold (#FFD700), smoke black (#000000),
-        water blue (#4169E1). Dramatic, intense colors.`,
-      typography: `Epic disaster movie fonts, large and imposing. Star names
-        prominently displayed. Multiple storyline suggestions.`,
-      elements: `Flames, explosions, dramatic rescues (implied), falling debris,
-        heroic figures, multiple vignettes.`,
-      mood: `Epic, dramatic, heroic. When automotive disaster strikes,
-        we're the heroes who save the day! All-star service.`,
+      style: `1970s Trucker Movie poster - Smokey and the Bandit, Convoy, White Line Fever.
+        Highway outlaws, CB radio culture, American trucking adventure.
+        PREMIUM AGENCY QUALITY - fun, rebellious, iconic.
+
+        VISUAL TECHNIQUE:
+        - Action-packed highway scenes
+        - Chrome and lights gleaming
+        - CB radio culture visual elements
+        - The Trans Am and the Truck as heroes
+        - Highway pursuit drama
+        - Southern United States atmosphere
+
+        AUTOMOTIVE FOCUS:
+        - Trans Am style vehicles as outlaw heroes
+        - Big rigs as supporting characters
+        - Highway chase scenes
+        - Smokey (police) as antagonist hints`,
+      colorPalette: `TRUCKER OUTLAW PALETTE:
+        - Bandit Black (#000000) - Trans Am, rebellion, cool
+        - Screaming Eagle Gold (#FFD700) - Trans Am bird, chrome, glory
+        - Red (#DC143C) - tail lights, Coors, action
+        - Highway Blue (#4169E1) - sky, police lights, contrast
+
+        Bold, fun, American highway colors.`,
+      typography: `TRUCKER MOVIE LETTERING:
+        - Bold, fun, slightly playful fonts
+        - CB radio handle style text treatments
+        - Southern flair in lettering
+        - "Eastbound and down..." tagline style
+        - Stars' names in prominent placement
+        - Action movie excitement in typography`,
+      elements: `TRUCKER POSTER ELEMENTS:
+        - Trans Am with golden eagle
+        - Big rig trucks in pursuit/convoy
+        - Highway bridges and overpasses
+        - Police cars in chase formation
+        - CB radio antenna hints
+        - Southern landscape elements`,
+      mood: `FUN, REBELLIOUS, OUTLAW COOL, AMERICAN.
+        Highway heroes who play by their own rules.
+        Fast service with a smile and a story.
+        The legend of the open highway.`,
     },
     textPrompt: {
-      tone: 'Epic, heroic, dramatic',
-      vocabulary: ['epic', 'disaster', 'hero', 'save', 'survive', 'rescue'],
+      tone: 'Fun, rebellious, legendary, fast',
+      vocabulary: ['legend', 'outlaw', 'highway', 'fast', 'eastbound', 'convoy', 'bandit', 'ride'],
     },
-    carStyle: `1970s car being heroically saved or dramatically centered
-      amid epic scenes. Multiple car stories suggested.`,
-    composition: `Multi-panel disaster movie layout. Multiple storylines.
-      Epic scale with dramatic elements.`,
-    avoidList: `Small scale, quiet imagery, minimal cast, subtle drama,
-      single-focus composition.`,
-    eraVehicles: ['trans-am-77', 'cuda-70', 'challenger-71'],
-    mockupScenes: ['movie premiere', 'theater lobby', 'Hollywood opening'],
+    carStyle: `1970s TRANS AM as outlaw hero:
+      - Black and gold glory
+      - Action shot: jumping, speeding, sliding
+      - Highway setting with drama
+      - Chrome and lights gleaming
+      - The coolest car on the road`,
+    composition: `TRUCKER POSTER COMPOSITION:
+      Action-packed highway scene. Trans Am as star.
+      Pursuit elements create tension and excitement.
+      Fun, blockbuster energy throughout.`,
+    avoidList: `Serious/dark tone, non-American settings, slow imagery,
+      corporate sterility, non-automotive focus.`,
+    eraVehicles: ['trans-am-77', 'challenger-71', 'el-camino-72'],
+    mockupScenes: ['truck stop', 'diner', 'highway rest area'],
     compatibleTools: ['promo_flyer', 'instant_pack', 'campaign'],
   },
 
-  // 1980s Movie Poster Styles
+  // 1970s Car Chase Film
+  {
+    id: 'poster-70s-chase',
+    name: 'Car Chase Cinema',
+    category: 'nostalgic',
+    era: '1970s',
+    style: 'movie-poster',
+    shortDescription: 'Bullitt and Vanishing Point chase drama',
+    previewColors: ['#2F4F4F', '#000000', '#FFD700', '#DC143C'],
+    imagePrompt: {
+      style: `1970s Car Chase Movie poster - Bullitt, The French Connection, Vanishing Point.
+        Urban or highway chase drama, serious automotive action.
+        PREMIUM AGENCY QUALITY - gritty, real, intense.
+
+        VISUAL TECHNIQUE:
+        - Gritty, realistic action feeling
+        - Urban streets or desert highways
+        - Motion blur and speed effects
+        - Serious, adult tone
+        - The car as protagonist in life-or-death drama
+        - San Francisco hills or desolate highways
+
+        AUTOMOTIVE FOCUS:
+        - Muscle cars in SERIOUS pursuit
+        - Driving skill as heroism
+        - Real stunts, real danger feeling
+        - The car chase as ART form`,
+      colorPalette: `CHASE FILM GRITTY PALETTE:
+        - Highland Green (#2F4F4F) - Bullitt Mustang, sophistication
+        - Asphalt Black (#000000) - tires, streets, danger
+        - Chrome Gold (#FFD700) - badges, trim, quality
+        - Tail Light Red (#DC143C) - brake lights, danger, stop
+
+        Sophisticated, gritty, realistic tones.
+        Adult crime drama palette.`,
+      typography: `CHASE FILM LETTERING:
+        - Sophisticated, serious fonts
+        - Thriller movie typography
+        - Stars' names prominently placed
+        - Minimal, impactful taglines
+        - No cartoonish elements
+        - Quality thriller aesthetic`,
+      elements: `CHASE POSTER ELEMENTS:
+        - Muscle cars at speed through city/desert
+        - San Francisco hills or desert highways
+        - Motion blur suggesting dangerous speed
+        - Urban architecture or open landscapes
+        - Gun metal and chrome details
+        - Serious, adult drama tone`,
+      mood: `INTENSE, SKILLED, SERIOUS, LEGENDARY.
+        When you need serious automotive expertise.
+        Professional-grade service for serious drivers.
+        The precision that saves lives.`,
+    },
+    textPrompt: {
+      tone: 'Intense, professional, serious, expert',
+      vocabulary: ['precision', 'skill', 'professional', 'expert', 'chase', 'pursuit', 'legendary'],
+    },
+    carStyle: `1970s MUSCLE CAR in serious pursuit:
+      - Motion blur and speed
+      - Urban or highway chase setting
+      - Highland green, white, or other classic chase film colors
+      - Serious, not playful
+      - The car as instrument of survival`,
+    composition: `CHASE POSTER COMPOSITION:
+      Dynamic speed composition. Car in motion central.
+      Urban or highway environment creating tension.
+      Adult thriller sophistication throughout.`,
+    avoidList: `Cartoonish action, family-friendly tone, static poses,
+      non-automotive focus, amateur aesthetic.`,
+    eraVehicles: ['challenger-71', 'cuda-70', 'trans-am-77', 'el-camino-72'],
+    mockupScenes: ['theater lobby', 'urban street', 'sophisticated office'],
+    compatibleTools: ['promo_flyer', 'instant_pack', 'campaign'],
+  },
+
+  // 1980s Blockbuster Action
   {
     id: 'poster-80s-blockbuster',
     name: 'Blockbuster Action',
     category: 'nostalgic',
     era: '1980s',
     style: 'movie-poster',
-    shortDescription: 'Explosions and hero poses',
+    shortDescription: 'Schwarzenegger-era explosions and chrome',
     previewColors: ['#FF6600', '#000000', '#FFD700', '#DC143C'],
     imagePrompt: {
-      style: `1980s Blockbuster Action movie poster style. Schwarzenegger, Stallone era.
-        Explosions, hero poses, one-liners implied. Drew Struzan painted style.
-        Muscles and machines.`,
-      colorPalette: `Action orange (#FF6600), shadow black (#000000),
-        hero gold (#FFD700), blood red (#DC143C). Bold, saturated.`,
-      typography: `Bold chrome or metallic 3D titles. Action movie fonts
-        with explosions in letters. Taglines prominent.`,
-      elements: `Explosions, fire, hero poses, weapons (tools as weapons),
-        action montage. Sweat and steel.`,
-      mood: `Explosive, powerful, unstoppable. Consider this service your
-        termination of car problems. I'll be back... with your car fixed!`,
+      style: `1980s Blockbuster Action Movie poster - Schwarzenegger, Stallone, Die Hard era.
+        Explosions, muscles, machines, PURE ACTION. Drew Struzan painted style.
+        PREMIUM AGENCY QUALITY - maximum impact, summer blockbuster energy.
+
+        VISUAL TECHNIQUE:
+        - Drew Struzan influenced painted illustration
+        - Explosions and fire as background elements
+        - Chrome and metallic title treatments
+        - Hero poses with vehicles
+        - Action montage composition
+        - Bold, saturated colors that POP
+
+        AUTOMOTIVE FOCUS:
+        - Sports cars and trucks as action hero vehicles
+        - Vehicles jumping, crashing through explosions
+        - Chrome and muscle aesthetic
+        - The car as WEAPON and TOOL`,
+      colorPalette: `BLOCKBUSTER ACTION PALETTE:
+        - Explosion Orange (#FF6600) - fire, explosions, action
+        - Shadow Black (#000000) - dramatic contrast, night scenes
+        - Hero Gold (#FFD700) - chrome, titles, victory
+        - Blood Red (#DC143C) - danger, power, intensity
+
+        Bold, saturated SUMMER BLOCKBUSTER colors.`,
+      typography: `BLOCKBUSTER LETTERING:
+        - Bold CHROME or METALLIC 3D titles
+        - Action movie fonts with fire/explosion effects
+        - Taglines that sound like one-liners
+        - Stars' names in powerful placement
+        - "CONSIDER THIS SERVICE TERMINATED" energy`,
+      elements: `BLOCKBUSTER POSTER ELEMENTS:
+        - Explosions (MANDATORY)
+        - Fire and smoke effects
+        - Hero vehicles in action poses
+        - Muscular, powerful aesthetic
+        - Action montage composition
+        - Sweat, steel, and chrome`,
+      mood: `EXPLOSIVE, POWERFUL, UNSTOPPABLE, MAXIMUM.
+        Consider your car problems TERMINATED.
+        I'll be back... with your car FIXED.
+        Action hero level automotive service.`,
     },
     textPrompt: {
-      tone: 'Explosive, powerful, one-liner ready',
-      vocabulary: ['terminate', 'unstoppable', 'power', 'action', 'maximum', 'ultimate'],
+      tone: 'Explosive, powerful, unstoppable, legendary',
+      vocabulary: ['terminate', 'unstoppable', 'power', 'action', 'maximum', 'ultimate', 'legend'],
     },
-    carStyle: `1980s sports car or truck, action hero vehicle, explosions behind.
-      Muscles and machines aesthetic.`,
-    composition: `Drew Struzan style painted montage. Hero vehicle central.
-      Explosions and action surrounding.`,
+    carStyle: `1980s ACTION HERO VEHICLE:
+      - Sports car or truck as action star
+      - Explosions in background
+      - Dynamic action pose
+      - Chrome gleaming through smoke
+      - The car should look DANGEROUS and POWERFUL`,
+    composition: `BLOCKBUSTER POSTER COMPOSITION:
+      Drew Struzan style painted montage.
+      Hero vehicle central with explosions surrounding.
+      Action elements filling every corner.`,
     avoidList: `Quiet scenes, subtle imagery, minimal action,
-      non-heroic positioning.`,
+      non-heroic positioning, muted colors.`,
     eraVehicles: ['gnx-87', 'testarossa', 'corvette-85', 'countach'],
-    mockupScenes: ['movie theater', 'video store', 'bedroom poster'],
-    compatibleTools: ['promo_flyer', 'instant_pack', 'campaign'],
-  },
-  {
-    id: 'poster-80s-teen',
-    name: 'Teen Comedy',
-    category: 'nostalgic',
-    era: '1980s',
-    style: 'movie-poster',
-    shortDescription: 'John Hughes vibes and bright colors',
-    previewColors: ['#FF69B4', '#00BFFF', '#FFFF00', '#FF6347'],
-    imagePrompt: {
-      style: `1980s Teen Comedy movie poster style. John Hughes, Fast Times.
-        Bright colors, fun poses, high school vibes. Locker room humor,
-        prom dreams, teenage adventures.`,
-      colorPalette: `Teen pink (#FF69B4), cool blue (#00BFFF), sunshine yellow (#FFFF00),
-        fun coral (#FF6347). Bright, youthful, optimistic.`,
-      typography: `Fun, youthful fonts. Often handwritten or casual style.
-        Bright colors. Exclamation points and fun punctuation!`,
-      elements: `High school imagery, fun poses, bright backgrounds,
-        youthful energy. Cars as freedom symbols.`,
-      mood: `Fun, youthful, memorable. The totally awesome auto shop experience.
-        Ferris Bueller would approve!`,
-    },
-    textPrompt: {
-      tone: 'Fun, awesome, memorable',
-      vocabulary: ['awesome', 'totally', 'fun', 'cool', 'best', 'amazing'],
-    },
-    carStyle: `1980s car (Ferrari 308, Porsche, or family station wagon)
-      as symbol of freedom and adventure. Teen dream vehicle.`,
-    composition: `Fun, youthful layout. Bright colors, casual poses.
-      High school yearbook meets movie poster.`,
-    avoidList: `Dark themes, adult content, serious imagery,
-      corporate feeling.`,
-    eraVehicles: ['testarossa', 'corvette-85', 'delorean'],
-    mockupScenes: ['mall theater', 'bedroom wall', 'school hallway'],
-    compatibleTools: ['promo_flyer', 'instant_pack', 'campaign'],
-  },
-  {
-    id: 'poster-80s-synth-scifi',
-    name: 'Sci-Fi Synth',
-    category: 'nostalgic',
-    era: '1980s',
-    style: 'movie-poster',
-    shortDescription: 'Tron grids and laser beams',
-    previewColors: ['#00FFFF', '#FF00FF', '#000000', '#0000FF'],
-    imagePrompt: {
-      style: `1980s Sci-Fi Synth movie poster style. Tron, Blade Runner, The Last Starfighter.
-        Grid lines, laser beams, computer graphics aesthetic. Neon on black.
-        Digital frontier.`,
-      colorPalette: `Cyan glow (#00FFFF), magenta (#FF00FF), void black (#000000),
-        electric blue (#0000FF). Neon glows on dark backgrounds.`,
-      typography: `Digital fonts, grid-based letters, neon glow effects.
-        Computer terminal aesthetic. Futuristic sans-serif.`,
-      elements: `Grid patterns, laser beams, digital landscapes, neon outlines,
-        computer graphics, wireframe objects.`,
-      mood: `Futuristic, digital, cutting-edge. Your car enters the grid
-        for next-level service. End of line... problems.`,
-    },
-    textPrompt: {
-      tone: 'Futuristic, digital, cutting-edge',
-      vocabulary: ['digital', 'grid', 'future', 'program', 'system', 'laser'],
-    },
-    carStyle: `1980s car (especially DeLorean) rendered in Tron-style wireframe
-      or neon outline. Digital frontier aesthetic.`,
-    composition: `Grid-based composition. Neon elements on black void.
-      Digital landscape. Wireframe styling.`,
-    avoidList: `Organic imagery, natural colors, traditional aesthetics,
-      non-digital appearance.`,
-    eraVehicles: ['delorean', 'testarossa', 'countach', 'corvette-85'],
-    mockupScenes: ['arcade', 'computer store', 'sci-fi convention'],
-    compatibleTools: ['promo_flyer', 'instant_pack', 'campaign'],
-  },
-  {
-    id: 'poster-80s-slasher',
-    name: 'Slasher Horror',
-    category: 'nostalgic',
-    era: '1980s',
-    style: 'movie-poster',
-    shortDescription: 'Dark woods and masked figures',
-    previewColors: ['#8B0000', '#000000', '#C0C0C0', '#228B22'],
-    imagePrompt: {
-      style: `1980s Slasher Horror movie poster style. Friday the 13th, Halloween,
-        Nightmare on Elm Street. Dark woods, mysterious figures, blood red text.
-        Teen terror (implied, not shown).`,
-      colorPalette: `Blood red (#8B0000), night black (#000000), knife silver (#C0C0C0),
-        forest green (#228B22). Dark, ominous.`,
-      typography: `Dripping horror fonts, blood-red text. Slasher movie titles.
-        Ominous taglines. Date prominently featured.`,
-      elements: `Dark forests, mysterious shadows, knife/tool silhouettes,
-        full moon, abandoned buildings. Menacing atmosphere.`,
-      mood: `Suspenseful, ominous, thrilling. The nightmare of car problems
-        ends here. We slay automotive demons.`,
-    },
-    textPrompt: {
-      tone: 'Suspenseful, ominous, thrilling',
-      vocabulary: ['nightmare', 'fear', 'survive', 'terror', 'final', 'slay'],
-    },
-    carStyle: `1980s car in dark, ominous setting. Headlights cutting through
-      fog. Mysterious, cinematic lighting.`,
-    composition: `Ominous horror poster layout. Mysterious central figure/car.
-      Dark woods or suburban setting.`,
-    avoidList: `Gore, explicit violence, child-unfriendly content,
-      bright cheerful colors.`,
-    eraVehicles: ['gnx-87', 'corvette-85', 'delorean'],
-    mockupScenes: ['video rental horror section', 'midnight movie', 'Halloween display'],
+    mockupScenes: ['movie theater', 'video store', 'bedroom poster wall'],
     compatibleTools: ['promo_flyer', 'instant_pack', 'campaign'],
   },
 ];
 
 // ============================================================================
-// CAR MAGAZINE STYLES (16 themes)
+// CLASSIC AUTO ADVERTISING STYLES (4 themes - NEW CATEGORY)
+// ============================================================================
+
+export const advertisingThemes: NostalgicThemeDefinition[] = [
+  // 1950s Service Station Ad
+  {
+    id: 'ad-50s-service-station',
+    name: 'Vintage Service Station',
+    category: 'nostalgic',
+    era: '1950s',
+    style: 'advertising',
+    shortDescription: 'Texaco-style friendly attendant service',
+    previewColors: ['#FF0000', '#FFFFFF', '#228B22', '#FFD700'],
+    imagePrompt: {
+      style: `1950s Service Station Advertisement - Texaco, Shell, Gulf Oil era.
+        Friendly uniformed attendants, full service gasoline, TRUST and RELIABILITY.
+        PREMIUM AGENCY QUALITY - warm, professional, nostalgic excellence.
+
+        VISUAL TECHNIQUE:
+        - Warm, inviting illustration style
+        - Clean, professional service imagery
+        - Friendly attendant figures (stylized, not photorealistic faces)
+        - Retro gas pumps and service station architecture
+        - "Full Service" premium care aesthetic
+        - Classic automotive advertising illustration quality
+
+        ADVERTISING FOCUS:
+        - The SERVICE EXPERIENCE is the hero
+        - Trust, reliability, neighborhood care
+        - "Your friendly neighborhood" warmth
+        - Clean uniforms, clean facilities, quality work`,
+      colorPalette: `SERVICE STATION TRUSTWORTHY PALETTE:
+        - Service Red (#FF0000) - Texaco star, energy, attention
+        - Clean White (#FFFFFF) - uniforms, cleanliness, trust
+        - Success Green (#228B22) - go, money savings, reliability
+        - Premium Gold (#FFD700) - quality, premium service, chrome
+
+        Warm, trustworthy, professional colors.
+        The palette of American SERVICE excellence.`,
+      typography: `VINTAGE AD LETTERING:
+        - Clean, professional vintage advertising fonts
+        - Trust-building headlines
+        - "Your Friendly..." "Full Service..." "Trust..."
+        - Price points in bold, clear presentation
+        - Taglines emphasizing quality and care
+        - Period-accurate advertising copy style`,
+      elements: `SERVICE STATION ELEMENTS:
+        - Retro gas pumps with globe lights
+        - Service bay architecture
+        - Uniformed attendant figures (stylized)
+        - Classic cars receiving care
+        - "Full Service" signage
+        - Clean, organized facilities
+        - Oil cans and service equipment`,
+      mood: `TRUSTWORTHY, FRIENDLY, PROFESSIONAL, RELIABLE.
+        Your neighborhood service station that CARES.
+        Full service with a smile and expertise.
+        The way service USED to be (and should be).`,
+    },
+    textPrompt: {
+      tone: 'Friendly, trustworthy, professional, caring',
+      vocabulary: ['friendly', 'trust', 'service', 'care', 'quality', 'neighborhood', 'full service'],
+    },
+    carStyle: `1950s CAR receiving premium service:
+      - At service station being cared for
+      - Attendant checking under hood (stylized)
+      - Clean, well-maintained appearance
+      - The car is being PAMPERED`,
+    composition: `SERVICE STATION AD COMPOSITION:
+      Warm, inviting scene with service station prominent.
+      Car receiving care as central focus.
+      Clean typography with service messaging.`,
+    avoidList: `Modern gas stations, self-service imagery,
+      grimy mechanics, unfriendly aesthetics, rushed feeling.`,
+    eraVehicles: ['chevy-57', 'tbird-55', 'cadillac-59', 'corvette-58'],
+    mockupScenes: ['vintage gas station', 'service station wall', 'waiting room'],
+    compatibleTools: ['promo_flyer', 'instant_pack', 'personal_card'],
+  },
+
+  // 1950s-60s Auto Dealer Ad
+  {
+    id: 'ad-50s-auto-dealer',
+    name: 'Classic Auto Advertisement',
+    category: 'nostalgic',
+    era: '1950s',
+    style: 'advertising',
+    shortDescription: 'See the USA in your Chevrolet glamour',
+    previewColors: ['#DC143C', '#1E3A5F', '#F5F5DC', '#FFD700'],
+    imagePrompt: {
+      style: `1950s-60s Classic Automobile Advertisement - "See the USA in your Chevrolet" era.
+        Glamorous lifestyle, American dream, automotive aspiration.
+        PREMIUM AGENCY QUALITY - Madison Avenue sophistication.
+
+        VISUAL TECHNIQUE:
+        - Glamorous illustration with lifestyle aspiration
+        - The car as gateway to the American Dream
+        - Beautiful settings: suburbs, vacations, success
+        - Family happiness centered on the automobile
+        - Magazine advertisement quality illustration
+        - Aspirational messaging with emotional appeal
+
+        ADVERTISING FOCUS:
+        - The CAR enables the LIFESTYLE
+        - American Dream imagery
+        - Success, family, happiness through automotive ownership
+        - "Your family deserves the best" messaging`,
+      colorPalette: `AMERICAN DREAM PALETTE:
+        - American Red (#DC143C) - patriotic, confident, bold
+        - Patriotic Blue (#1E3A5F) - trustworthy, established, reliable
+        - Dream Cream (#F5F5DC) - warmth, home, comfort
+        - Success Gold (#FFD700) - achievement, quality, premium
+
+        Warm, aspirational, American prosperity colors.`,
+      typography: `CLASSIC AUTO AD LETTERING:
+        - Elegant, aspirational advertising fonts
+        - "See the USA..." "The American way..." style headlines
+        - Persuasive copy with lifestyle benefits
+        - Model names in distinctive script
+        - Price and feature callouts clean and confident
+        - Madison Avenue copywriting sophistication`,
+      elements: `AUTO AD LIFESTYLE ELEMENTS:
+        - Suburban homes and white picket fences
+        - Vacation destinations and open roads
+        - Happy family silhouettes (stylized)
+        - American flag hints and patriotic elements
+        - Success symbols: nice homes, nice clothes
+        - The automobile as centerpiece of the good life`,
+      mood: `ASPIRATIONAL, AMERICAN DREAM, FAMILY, SUCCESS.
+        Your family deserves the BEST automotive care.
+        The service that keeps the American Dream running.
+        Trust and tradition, quality and care.`,
+    },
+    textPrompt: {
+      tone: 'Aspirational, American, family-oriented, quality',
+      vocabulary: ['family', 'American', 'quality', 'trust', 'dream', 'best', 'tradition'],
+    },
+    carStyle: `1950s-60s DREAM CAR in aspirational setting:
+      - Gleaming in front of nice home
+      - Family vacation ready
+      - Symbol of success achieved
+      - The car as lifestyle enabler`,
+    composition: `AUTO AD LIFESTYLE COMPOSITION:
+      Aspirational lifestyle scene with car as hero.
+      Family/success elements surrounding.
+      Elegant advertising layout with quality copywriting.`,
+    avoidList: `Cynical messaging, urban grit, counter-culture,
+      non-aspirational imagery, modern skepticism.`,
+    eraVehicles: ['chevy-57', 'cadillac-59', 'tbird-55', 'corvette-58'],
+    mockupScenes: ['living room', 'dealership', 'suburban setting'],
+    compatibleTools: ['promo_flyer', 'instant_pack', 'personal_card'],
+  },
+
+  // 1970s Working Class Mechanic Hero
+  {
+    id: 'ad-70s-mechanic-hero',
+    name: 'Working Class Mechanic',
+    category: 'nostalgic',
+    era: '1970s',
+    style: 'advertising',
+    shortDescription: 'Blue collar pride and honest work',
+    previewColors: ['#4169E1', '#8B4513', '#F5F5DC', '#FF6600'],
+    imagePrompt: {
+      style: `1970s Working Class Hero imagery - blue collar pride, honest mechanics.
+        Real people, real work, AUTHENTIC service.
+        PREMIUM AGENCY QUALITY - dignified, authentic, respectful.
+
+        VISUAL TECHNIQUE:
+        - Dignified portrayal of working class expertise
+        - Workshop environments with authentic details
+        - Tools as instruments of skilled craft
+        - Natural, honest lighting (not glamorized)
+        - The mechanic as HERO of honest work
+        - Period-accurate shop aesthetics
+
+        ADVERTISING FOCUS:
+        - Honest work by honest people
+        - Skill and expertise celebrated
+        - Your neighborhood mechanic WHO CARES
+        - Real people, real quality`,
+      colorPalette: `WORKING CLASS HERO PALETTE:
+        - Denim Blue (#4169E1) - work clothes, reliability, honest
+        - Shop Brown (#8B4513) - oil, wood, authentic materials
+        - Work Cream (#F5F5DC) - clean rags, invoices, honesty
+        - Safety Orange (#FF6600) - shop equipment, energy, attention
+
+        Authentic, honest, working class dignity colors.`,
+      typography: `WORKING CLASS AD LETTERING:
+        - Honest, straightforward fonts
+        - No-nonsense headlines
+        - "Honest Work" "Real Quality" messaging
+        - Clear, readable pricing
+        - Trustworthy, not flashy
+        - Local business authenticity`,
+      elements: `WORKING CLASS ELEMENTS:
+        - Workshop/garage environments
+        - Professional tools arranged with care
+        - Clean work uniforms with name patches
+        - Completed quality work showcased
+        - Certifications and expertise badges
+        - Community connection imagery`,
+      mood: `HONEST, SKILLED, AUTHENTIC, PRIDEFUL.
+        Blue collar expertise you can trust.
+        Real mechanics doing real work.
+        The pride of craftsmanship in every job.`,
+    },
+    textPrompt: {
+      tone: 'Honest, skilled, authentic, trustworthy',
+      vocabulary: ['honest', 'skilled', 'real', 'quality', 'trust', 'craft', 'pride', 'expert'],
+    },
+    carStyle: `1970s CAR in working class context:
+      - In shop receiving expert care
+      - Hood up with skilled hands working
+      - Authentic garage environment
+      - The car is in GOOD HANDS`,
+    composition: `WORKING CLASS AD COMPOSITION:
+      Dignified workshop scene with expertise on display.
+      Tools and skills prominent.
+      Honest, authentic advertising layout.`,
+    avoidList: `Glamorized imagery, corporate sterility,
+      disrespectful portrayals, flashy marketing.`,
+    eraVehicles: ['challenger-71', 'cuda-70', 'trans-am-77', 'el-camino-72'],
+    mockupScenes: ['auto shop', 'garage', 'neighborhood street'],
+    compatibleTools: ['promo_flyer', 'instant_pack', 'personal_card'],
+  },
+
+  // 1980s DIY Garage Culture
+  {
+    id: 'ad-80s-garage-culture',
+    name: 'DIY Garage Culture',
+    category: 'nostalgic',
+    era: '1980s',
+    style: 'advertising',
+    shortDescription: 'Weekend warrior and Haynes manual spirit',
+    previewColors: ['#FFD700', '#DC143C', '#1C1C1C', '#4169E1'],
+    imagePrompt: {
+      style: `1980s DIY Garage Culture - Haynes manual spirit, weekend warrior mechanics.
+        Home garage heroes, project cars, DIY satisfaction.
+        PREMIUM AGENCY QUALITY - empowering, enthusiastic, achievable.
+
+        VISUAL TECHNIQUE:
+        - Home garage environment with personal touches
+        - Project car in progress showing achievable results
+        - Tool organization and DIY setup
+        - Natural weekend lighting through garage doors
+        - The satisfaction of DOING IT YOURSELF
+        - Haynes manual aesthetic influences
+
+        ADVERTISING FOCUS:
+        - We support DIY enthusiasts
+        - Parts, advice, expertise for home mechanics
+        - The joy of working on your own car
+        - Expert backup when you need it`,
+      colorPalette: `DIY GARAGE PALETTE:
+        - Project Gold (#FFD700) - achievement, quality parts, success
+        - Tool Red (#DC143C) - tool boxes, enthusiasm, energy
+        - Garage Black (#1C1C1C) - oil, tires, serious work
+        - Weekend Blue (#4169E1) - jeans, sky through garage door
+
+        Enthusiast energy with home garage authenticity.`,
+      typography: `DIY GARAGE LETTERING:
+        - Enthusiastic, accessible fonts
+        - "You CAN do it" empowering messaging
+        - How-to style headlines
+        - Part numbers and specs clearly displayed
+        - Enthusiast magazine influences
+        - Approachable, not intimidating`,
+      elements: `DIY GARAGE ELEMENTS:
+        - Home garage setup with personal touches
+        - Project car in progress
+        - Tool boxes and organized equipment
+        - Haynes/Chilton manuals visible
+        - Parts organized for installation
+        - Weekend project atmosphere`,
+      mood: `EMPOWERING, ENTHUSIASTIC, ACHIEVABLE, SATISFYING.
+        Supporting the DIY enthusiast in everyone.
+        Your project, our expertise and parts.
+        The satisfaction of doing it yourself.`,
+    },
+    textPrompt: {
+      tone: 'Empowering, enthusiastic, supportive, achievable',
+      vocabulary: ['DIY', 'project', 'weekend', 'build', 'learn', 'achieve', 'support', 'parts'],
+    },
+    carStyle: `1980s PROJECT CAR in home garage:
+      - Hood up, work in progress
+      - Achievable project (not concours)
+      - Real enthusiast environment
+      - The car is a LABOR OF LOVE`,
+    composition: `DIY GARAGE AD COMPOSITION:
+      Home garage scene with project car.
+      Tools and parts organized around.
+      Empowering, achievable messaging throughout.`,
+    avoidList: `Professional-only imagery, intimidating complexity,
+      pristine show cars, inaccessible messaging.`,
+    eraVehicles: ['gnx-87', 'corvette-85', 'testarossa', 'delorean'],
+    mockupScenes: ['home garage', 'auto parts store', 'car meet'],
+    compatibleTools: ['promo_flyer', 'instant_pack', 'seo_blog'],
+  },
+];
+
+// ============================================================================
+// CAR MAGAZINE STYLES (16 themes - ALL PRESERVED)
 // ============================================================================
 
 export const magazineThemes: NostalgicThemeDefinition[] = [
@@ -1763,6 +1883,7 @@ export const magazineThemes: NostalgicThemeDefinition[] = [
 export const NOSTALGIC_THEMES: NostalgicThemeDefinition[] = [
   ...comicBookThemes,
   ...moviePosterThemes,
+  ...advertisingThemes,
   ...magazineThemes,
 ];
 
@@ -1771,13 +1892,13 @@ export function getNostalgicThemesByEra(era: '1950s' | '1960s' | '1970s' | '1980
   return NOSTALGIC_THEMES.filter(theme => theme.era === era);
 }
 
-export function getNostalgicThemesByStyle(style: 'comic-book' | 'movie-poster' | 'magazine'): NostalgicThemeDefinition[] {
+export function getNostalgicThemesByStyle(style: 'comic-book' | 'movie-poster' | 'magazine' | 'advertising'): NostalgicThemeDefinition[] {
   return NOSTALGIC_THEMES.filter(theme => theme.style === style);
 }
 
 export function getNostalgicThemesByEraAndStyle(
   era: '1950s' | '1960s' | '1970s' | '1980s',
-  style: 'comic-book' | 'movie-poster' | 'magazine'
+  style: 'comic-book' | 'movie-poster' | 'magazine' | 'advertising'
 ): NostalgicThemeDefinition[] {
   return NOSTALGIC_THEMES.filter(theme => theme.era === era && theme.style === style);
 }
@@ -1791,7 +1912,7 @@ export function getRandomNostalgicThemeByEra(era: '1950s' | '1960s' | '1970s' | 
   return eraThemes[Math.floor(Math.random() * eraThemes.length)];
 }
 
-export function getRandomNostalgicThemeByStyle(style: 'comic-book' | 'movie-poster' | 'magazine'): NostalgicThemeDefinition {
+export function getRandomNostalgicThemeByStyle(style: 'comic-book' | 'movie-poster' | 'magazine' | 'advertising'): NostalgicThemeDefinition {
   const styleThemes = getNostalgicThemesByStyle(style);
   return styleThemes[Math.floor(Math.random() * styleThemes.length)];
 }

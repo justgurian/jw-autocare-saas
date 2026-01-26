@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, ChevronRight, ChevronLeft, Upload } from 'lucide-react';
+import { Check, ChevronRight, ChevronLeft, Upload, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { onboardingApi } from '../../services/api';
 
@@ -68,13 +68,70 @@ export default function OnboardingPage() {
     }
   };
 
-  const handleNext = () => {
-    if (currentStep < 6) {
-      setCurrentStep(currentStep + 1);
-    } else {
-      // Complete onboarding
-      toast.success('Setup complete! Welcome to JW Auto Care AI.');
-      navigate('/dashboard');
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleNext = async () => {
+    setIsSaving(true);
+    try {
+      // Save data for the current step before moving to next
+      if (currentStep === 1) {
+        // Step 1: Business Info
+        await onboardingApi.updateBusinessInfo({
+          businessName: formData.businessName,
+          phone: formData.phone,
+          address: formData.address,
+          city: formData.city,
+          state: formData.state,
+          website: formData.websiteUrl,
+        });
+      } else if (currentStep === 2) {
+        // Step 2: Logo & Colors - already saved on upload, just update colors
+        await onboardingApi.updateColors({
+          primaryColor: formData.primaryColor,
+        });
+      } else if (currentStep === 3) {
+        // Step 3: Services - THIS WAS MISSING!
+        if (formData.services.length > 0) {
+          const servicesData = formData.services.map(name => ({
+            name,
+            description: '',
+            category: 'General',
+          }));
+          await onboardingApi.addServices(servicesData);
+          toast.success(`${formData.services.length} services saved!`);
+        }
+      } else if (currentStep === 4) {
+        // Step 4: Brand Voice
+        await onboardingApi.updateBrandVoice(formData.brandVoice);
+      } else if (currentStep === 5) {
+        // Step 5: Specials
+        if (formData.specials.length > 0) {
+          const specialsData = formData.specials.map(s => ({
+            title: s.title,
+            description: s.description,
+            discountType: 'percentage',
+            discountValue: parseFloat(s.discount) || 10,
+          }));
+          await onboardingApi.addSpecials(specialsData);
+        }
+      } else if (currentStep === 6) {
+        // Step 6: Default Vehicle
+        await onboardingApi.setDefaultVehicle(formData.defaultVehicle);
+      }
+
+      if (currentStep < 6) {
+        setCurrentStep(currentStep + 1);
+      } else {
+        // Complete onboarding
+        await onboardingApi.complete();
+        toast.success('Setup complete! Welcome to JW Auto Care AI.');
+        navigate('/dashboard');
+      }
+    } catch (error) {
+      console.error('Failed to save step:', error);
+      toast.error('Failed to save. Please try again.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -482,10 +539,20 @@ export default function OnboardingPage() {
           </button>
           <button
             onClick={handleNext}
-            className="btn-retro-primary flex items-center gap-2"
+            disabled={isSaving}
+            className="btn-retro-primary flex items-center gap-2 disabled:opacity-50"
           >
-            {currentStep === 6 ? 'Complete Setup' : 'Next'}
-            <ChevronRight size={20} />
+            {isSaving ? (
+              <>
+                <Loader2 size={20} className="animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                {currentStep === 6 ? 'Complete Setup' : 'Next'}
+                <ChevronRight size={20} />
+              </>
+            )}
           </button>
         </div>
       </div>

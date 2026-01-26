@@ -78,7 +78,7 @@ model BrandKit {
   tenantId       String   @unique @map("tenant_id") @db.Uuid
 
   // Logo & Colors
-  logoUrl        String?  @map("logo_url") @db.VarChar(500)
+  logoUrl        String?  @map("logo_url") @db.Text
   logoPublicId   String?  @map("logo_public_id") @db.VarChar(255)
   primaryColor   String?  @map("primary_color") @db.VarChar(7)
   secondaryColor String?  @map("secondary_color") @db.VarChar(7)
