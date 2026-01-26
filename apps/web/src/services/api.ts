@@ -104,12 +104,47 @@ export const onboardingApi = {
 
 export const promoFlyerApi = {
   getThemes: () => api.get('/tools/promo-flyer/themes'),
+
+  // Nostalgic themes with filtering
+  getNostalgicThemes: (params?: { era?: string; style?: string }) =>
+    api.get('/tools/promo-flyer/nostalgic-themes', { params }),
+
+  // Get vehicles by era
+  getVehicles: (era?: string) =>
+    api.get('/tools/promo-flyer/vehicles', { params: era ? { era } : undefined }),
+
+  // Random theme (Surprise Me!)
+  getRandomTheme: (params?: { era?: string; style?: string; nostalgicOnly?: boolean }) =>
+    api.get('/tools/promo-flyer/random-theme', { params }),
+
   // Push to Start - instant one-click generation
   instant: () => api.post('/tools/promo-flyer/instant'),
-  generate: (data: { message: string; subject: string; details?: string; themeId: string; language?: string }) =>
-    api.post('/tools/promo-flyer/generate', data),
+
+  // Generate single flyer (enhanced with vehicle and language options)
+  generate: (data: {
+    message: string;
+    subject: string;
+    details?: string;
+    themeId: string;
+    vehicleId?: string;
+    language?: 'en' | 'es' | 'both';
+  }) => api.post('/tools/promo-flyer/generate', data),
+
+  // Generate pack of flyers
+  generatePack: (data: {
+    message: string;
+    subject: string;
+    details?: string;
+    packType: 'variety-3' | 'variety-5' | 'week-7' | 'era' | 'style';
+    era?: '1950s' | '1960s' | '1970s' | '1980s';
+    style?: 'comic-book' | 'movie-poster' | 'magazine';
+    vehicleId?: string;
+    language?: 'en' | 'es' | 'both';
+  }) => api.post('/tools/promo-flyer/generate-pack', data),
+
   generateMockup: (contentId: string, sceneIndex?: number) =>
     api.post('/tools/promo-flyer/mockup', { contentId, sceneIndex }),
+
   getPreview: (id: string) => api.get(`/tools/promo-flyer/preview/${id}`),
 };
 
