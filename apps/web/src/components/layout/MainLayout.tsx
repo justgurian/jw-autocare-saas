@@ -41,10 +41,10 @@ const navigationGroups = [
     description: 'Create social media content in seconds',
     items: [
       {
-        name: 'Make a Sale Post',
-        href: '/tools/promo-flyer',
+        name: 'Make Sale Posts',
+        href: '/tools/batch-flyer',
         icon: Image,
-        description: 'Eye-catching flyers that get customers in the door',
+        description: 'Generate 1-30 eye-catching flyers in minutes',
       },
       {
         name: 'Funny Meme',

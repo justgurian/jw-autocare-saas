@@ -1,0 +1,982 @@
+/**
+ * Batch Flyer Routes
+ * API endpoints for the batch flyer generation system
+ */
+
+import { Router, Request, Response, NextFunction } from 'express';
+import { authenticate } from '../../middleware/auth.middleware';
+import { tenantContext } from '../../middleware/tenant.middleware';
+import { generationRateLimiter } from '../../middleware/rate-limit.middleware';
+import { prisma } from '../../db/client';
+import { geminiService } from '../../services/gemini.service';
+import {
+  themeRegistry,
+  NOSTALGIC_THEMES,
+  NostalgicThemeDefinition,
+  EraVehicle,
+} from '../../prompts/themes';
+import { ValidationError } from '../../middleware/error.middleware';
+import { logger } from '../../utils/logger';
+import { v4 as uuidv4 } from 'uuid';
+import {
+  batchGenerateSchema,
+  approveFlyerSchema,
+  updateCaptionSchema,
+  inpaintSchema,
+  saveFavoriteSchema,
+  BatchFlyer,
+  BatchGenerateResponse,
+  BatchJobStatusResponse,
+  INPAINT_PRESETS,
+  InpaintPreset,
+} from './batch-flyer.types';
+import { getSmartSuggestions, getTopPerformingThemes } from './suggestions.service';
+
+const router = Router();
+
+router.use(authenticate);
+router.use(tenantContext);
+
+// ============================================================================
+// SUGGESTIONS
+// ============================================================================
+
+// Get smart AI suggestions for content
+router.get('/suggestions', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const tenantId = req.user!.tenantId;
+    const suggestions = await getSmartSuggestions(tenantId);
+
+    res.json(suggestions);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get top performing themes
+router.get('/top-themes', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const tenantId = req.user!.tenantId;
+    const themes = await getTopPerformingThemes(tenantId);
+
+    res.json({ themes });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ============================================================================
+// BATCH GENERATION
+// ============================================================================
+
+// Start batch generation job
+router.post('/generate', generationRateLimiter, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = batchGenerateSchema.safeParse(req.body);
+    if (!result.success) {
+      throw new ValidationError('Validation failed',
+        Object.fromEntries(result.error.errors.map(e => [e.path.join('.'), [e.message]]))
+      );
+    }
+
+    const {
+      mode,
+      count,
+      contentType,
+      serviceIds,
+      specialIds,
+      customContent,
+      themeStrategy,
+      singleThemeId,
+      themeMatrix,
+      language,
+      vehicleId,
+    } = result.data;
+
+    const tenantId = req.user!.tenantId;
+
+    // Create batch job record
+    const batchJob = await prisma.batchJob.create({
+      data: {
+        tenantId,
+        userId: req.user!.id,
+        jobType: 'batch_flyer',
+        totalItems: count,
+        completedItems: 0,
+        failedItems: 0,
+        status: 'processing',
+        mode,
+        themeStrategy,
+        selectedThemes: themeMatrix ? JSON.stringify(themeMatrix) : null,
+        metadata: {
+          contentType,
+          serviceIds,
+          specialIds,
+          language,
+          vehicleId,
+        },
+        startedAt: new Date(),
+      },
+    });
+
+    // Get brand kit for personalization
+    const brandKit = await prisma.brandKit.findUnique({
+      where: { tenantId },
+    });
+
+    const profileContext = {
+      businessName: brandKit?.businessName || undefined,
+      city: brandKit?.city || undefined,
+      state: brandKit?.state || undefined,
+      tagline: brandKit?.tagline || undefined,
+      specialties: brandKit?.specialties || [],
+      brandVoice: brandKit?.brandVoice || 'friendly',
+      primaryColor: brandKit?.primaryColor || undefined,
+      secondaryColor: brandKit?.secondaryColor || undefined,
+    };
+
+    // Build content items to generate
+    const contentItems = await buildContentItems(
+      tenantId,
+      count,
+      contentType,
+      serviceIds,
+      specialIds,
+      customContent
+    );
+
+    // Select themes for each flyer
+    const selectedThemes = selectThemes(count, themeStrategy, singleThemeId, themeMatrix);
+
+    // Generate flyers (async - don't await)
+    generateFlyers(
+      batchJob.id,
+      tenantId,
+      req.user!.id,
+      contentItems,
+      selectedThemes,
+      profileContext,
+      brandKit,
+      language,
+      vehicleId
+    ).catch(error => {
+      logger.error('Batch generation failed', { jobId: batchJob.id, error });
+    });
+
+    const response: BatchGenerateResponse = {
+      jobId: batchJob.id,
+      status: 'processing',
+      mode,
+      count,
+      message: `Generating ${count} flyer${count > 1 ? 's' : ''}...`,
+    };
+
+    res.status(202).json(response);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get batch job status and progress
+router.get('/jobs/:jobId', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const tenantId = req.user!.tenantId;
+    const { jobId } = req.params;
+
+    const job = await prisma.batchJob.findFirst({
+      where: {
+        id: jobId,
+        tenantId,
+      },
+    });
+
+    if (!job) {
+      res.status(404).json({ error: 'Job not found' });
+      return;
+    }
+
+    const progress = job.totalItems > 0
+      ? Math.round((job.completedItems / job.totalItems) * 100)
+      : 0;
+
+    const response: BatchJobStatusResponse = {
+      job: {
+        id: job.id,
+        status: job.status as 'pending' | 'processing' | 'completed' | 'failed',
+        mode: job.mode || 'quick',
+        themeStrategy: job.themeStrategy || 'auto',
+        totalItems: job.totalItems,
+        completedItems: job.completedItems,
+        failedItems: job.failedItems,
+        createdAt: job.createdAt.toISOString(),
+        startedAt: job.startedAt?.toISOString() || null,
+        completedAt: job.completedAt?.toISOString() || null,
+      },
+      progress,
+    };
+
+    res.json(response);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get generated flyers for a job
+router.get('/jobs/:jobId/flyers', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const tenantId = req.user!.tenantId;
+    const { jobId } = req.params;
+
+    const content = await prisma.content.findMany({
+      where: {
+        tenantId,
+        batchJobId: jobId,
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    const flyers: BatchFlyer[] = content.map((item, index) => ({
+      id: item.id,
+      imageUrl: item.imageUrl || '',
+      caption: item.caption || '',
+      captionSpanish: item.captionSpanish,
+      title: item.title || '',
+      theme: item.theme || '',
+      themeName: (item.metadata as { themeName?: string })?.themeName || item.theme || '',
+      vehicle: (item.metadata as { vehicleId?: string; vehicleName?: string })?.vehicleId
+        ? {
+            id: (item.metadata as { vehicleId: string }).vehicleId,
+            name: (item.metadata as { vehicleName?: string }).vehicleName || '',
+          }
+        : undefined,
+      approvalStatus: (item.approvalStatus || 'pending') as 'pending' | 'approved' | 'rejected',
+      scheduledFor: item.scheduledFor?.toISOString() || null,
+      status: item.status,
+      index,
+    }));
+
+    res.json({ flyers });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ============================================================================
+// FLYER ACTIONS
+// ============================================================================
+
+// Approve flyer and schedule
+router.post('/flyers/:id/approve', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const tenantId = req.user!.tenantId;
+    const { id } = req.params;
+
+    const result = approveFlyerSchema.safeParse(req.body);
+    const data = result.success ? result.data : {};
+
+    // Get tenant timezone for smart scheduling
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { timezone: true },
+    });
+
+    // Calculate scheduled time - default to 9am in tenant's timezone
+    let scheduledFor: Date | undefined;
+    if (data.scheduledFor) {
+      scheduledFor = new Date(data.scheduledFor);
+    } else {
+      // Default: next available 9am slot
+      scheduledFor = getNext9AM(tenant?.timezone || 'America/New_York');
+    }
+
+    const content = await prisma.content.update({
+      where: { id },
+      data: {
+        approvalStatus: 'approved',
+        scheduledFor,
+        ...(data.caption && { caption: data.caption }),
+      },
+    });
+
+    // Create calendar event for the scheduled post
+    await prisma.calendarEvent.create({
+      data: {
+        tenantId,
+        contentId: content.id,
+        scheduledDate: scheduledFor,
+        status: 'scheduled',
+        beatType: 'social_post',
+        suggestedTopic: content.title,
+        aiGenerated: true,
+      },
+    });
+
+    res.json({
+      success: true,
+      flyer: {
+        id: content.id,
+        approvalStatus: 'approved',
+        scheduledFor: scheduledFor.toISOString(),
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Reject flyer
+router.post('/flyers/:id/reject', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const tenantId = req.user!.tenantId;
+    const { id } = req.params;
+
+    await prisma.content.update({
+      where: { id },
+      data: {
+        approvalStatus: 'rejected',
+      },
+    });
+
+    res.json({
+      success: true,
+      flyer: {
+        id,
+        approvalStatus: 'rejected',
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Update flyer caption
+router.put('/flyers/:id/caption', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+
+    const result = updateCaptionSchema.safeParse(req.body);
+    if (!result.success) {
+      throw new ValidationError('Validation failed',
+        Object.fromEntries(result.error.errors.map(e => [e.path.join('.'), [e.message]]))
+      );
+    }
+
+    const { caption, captionSpanish } = result.data;
+
+    const content = await prisma.content.update({
+      where: { id },
+      data: {
+        caption,
+        ...(captionSpanish && { captionSpanish }),
+      },
+    });
+
+    res.json({
+      success: true,
+      caption: content.caption,
+      captionSpanish: content.captionSpanish,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Apply inpaint edit to flyer
+router.post('/flyers/:id/inpaint', generationRateLimiter, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const tenantId = req.user!.tenantId;
+    const { id } = req.params;
+
+    const result = inpaintSchema.safeParse(req.body);
+    if (!result.success) {
+      throw new ValidationError('Validation failed',
+        Object.fromEntries(result.error.errors.map(e => [e.path.join('.'), [e.message]]))
+      );
+    }
+
+    const { editType, preset, customPrompt } = result.data;
+
+    // Get the current content
+    const content = await prisma.content.findFirst({
+      where: { id, tenantId },
+    });
+
+    if (!content || !content.imageUrl) {
+      res.status(404).json({ error: 'Content not found' });
+      return;
+    }
+
+    // Build edit prompt
+    let editPrompt: string;
+    if (editType === 'preset' && preset) {
+      const presetDef = INPAINT_PRESETS[preset as InpaintPreset];
+      editPrompt = presetDef.prompt;
+    } else if (customPrompt) {
+      editPrompt = customPrompt;
+    } else {
+      throw new ValidationError('Either preset or customPrompt is required');
+    }
+
+    // For MVP: re-generate with adjusted prompt
+    // In production, this would use actual inpainting API
+    const originalPrompt = content.promptUsed || '';
+    const enhancedPrompt = `${originalPrompt}\n\nADDITIONAL EDIT: ${editPrompt}`;
+
+    logger.info('Applying inpaint edit', { contentId: id, editType, preset });
+
+    const imageResult = await geminiService.generateImage(enhancedPrompt, {
+      aspectRatio: '4:5',
+    });
+
+    if (imageResult.success && imageResult.imageData) {
+      const base64Data = imageResult.imageData.toString('base64');
+      const mimeType = imageResult.mimeType || 'image/png';
+      const newImageUrl = `data:${mimeType};base64,${base64Data}`;
+
+      // Update content with new image
+      await prisma.content.update({
+        where: { id },
+        data: {
+          imageUrl: newImageUrl,
+          metadata: {
+            ...(content.metadata as object),
+            lastEdit: {
+              type: editType,
+              preset,
+              customPrompt,
+              timestamp: new Date().toISOString(),
+            },
+          },
+        },
+      });
+
+      // Log usage
+      await prisma.usageLog.create({
+        data: {
+          tenantId,
+          userId: req.user!.id,
+          action: 'image_edit',
+          tool: 'batch_flyer_inpaint',
+          creditsUsed: 0.5,
+          metadata: { contentId: id, editType, preset },
+        },
+      });
+
+      res.json({
+        success: true,
+        imageUrl: newImageUrl,
+      });
+    } else {
+      res.json({
+        success: false,
+        error: 'Failed to apply edit',
+      });
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ============================================================================
+// FAVORITES
+// ============================================================================
+
+// Get favorites
+router.get('/favorites', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const tenantId = req.user!.tenantId;
+
+    const favorites = await prisma.favoriteTemplate.findMany({
+      where: { tenantId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        content: {
+          select: {
+            imageUrl: true,
+          },
+        },
+      },
+    });
+
+    res.json({
+      favorites: favorites.map(f => ({
+        id: f.id,
+        name: f.name,
+        themeId: f.themeId,
+        themeName: themeRegistry.getTheme(f.themeId)?.name || f.themeId,
+        serviceId: f.serviceId,
+        specialId: f.specialId,
+        customText: f.customText,
+        contentId: f.contentId,
+        previewUrl: f.content?.imageUrl || null,
+        createdAt: f.createdAt.toISOString(),
+      })),
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Save as favorite
+router.post('/favorites', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const tenantId = req.user!.tenantId;
+
+    const result = saveFavoriteSchema.safeParse(req.body);
+    if (!result.success) {
+      throw new ValidationError('Validation failed',
+        Object.fromEntries(result.error.errors.map(e => [e.path.join('.'), [e.message]]))
+      );
+    }
+
+    const { name, themeId, serviceId, specialId, customText, contentId } = result.data;
+
+    const favorite = await prisma.favoriteTemplate.create({
+      data: {
+        tenantId,
+        name,
+        themeId,
+        serviceId,
+        specialId,
+        customText,
+        contentId,
+      },
+    });
+
+    res.status(201).json({
+      success: true,
+      favorite: {
+        id: favorite.id,
+        name: favorite.name,
+        themeId: favorite.themeId,
+        createdAt: favorite.createdAt.toISOString(),
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Delete favorite
+router.delete('/favorites/:id', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const tenantId = req.user!.tenantId;
+    const { id } = req.params;
+
+    await prisma.favoriteTemplate.delete({
+      where: { id },
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+interface ContentItem {
+  message: string;
+  subject: string;
+  details?: string;
+  sourceType: 'service' | 'special' | 'custom';
+  sourceId?: string;
+}
+
+async function buildContentItems(
+  tenantId: string,
+  count: number,
+  contentType: string,
+  serviceIds?: string[],
+  specialIds?: string[],
+  customContent?: Array<{ message: string; subject: string; details?: string }>
+): Promise<ContentItem[]> {
+  const items: ContentItem[] = [];
+
+  // Get services if needed
+  if ((contentType === 'services' || contentType === 'mixed') && serviceIds?.length) {
+    const services = await prisma.service.findMany({
+      where: { tenantId, id: { in: serviceIds } },
+    });
+
+    const promoMessages = [
+      'Time for a Check-Up!',
+      'Keep Your Ride Running Smooth',
+      "Don't Wait - Book Today!",
+      'Expert Service You Can Trust',
+      'Quality Care for Your Vehicle',
+    ];
+
+    for (const service of services) {
+      items.push({
+        message: promoMessages[Math.floor(Math.random() * promoMessages.length)],
+        subject: service.name,
+        details: service.description || undefined,
+        sourceType: 'service',
+        sourceId: service.id,
+      });
+    }
+  }
+
+  // Get specials if needed
+  if ((contentType === 'specials' || contentType === 'mixed') && specialIds?.length) {
+    const specials = await prisma.special.findMany({
+      where: { tenantId, id: { in: specialIds } },
+    });
+
+    for (const special of specials) {
+      const discount = special.discountType === 'percentage'
+        ? `${special.discountValue}% OFF`
+        : special.discountType === 'fixed'
+        ? `$${special.discountValue} OFF`
+        : 'Special Offer';
+
+      items.push({
+        message: `${discount} ${special.title}`,
+        subject: special.title,
+        details: special.description || undefined,
+        sourceType: 'special',
+        sourceId: special.id,
+      });
+    }
+  }
+
+  // Add custom content
+  if ((contentType === 'custom' || contentType === 'mixed') && customContent?.length) {
+    for (const custom of customContent) {
+      items.push({
+        message: custom.message,
+        subject: custom.subject,
+        details: custom.details,
+        sourceType: 'custom',
+      });
+    }
+  }
+
+  // If we need more items than we have, cycle through
+  while (items.length < count && items.length > 0) {
+    const index = items.length % items.length;
+    items.push({ ...items[index] });
+  }
+
+  // If still no items, create generic
+  if (items.length === 0) {
+    for (let i = 0; i < count; i++) {
+      items.push({
+        message: 'Quality Auto Care You Can Trust',
+        subject: 'Full Service Auto Repair',
+        details: 'Expert mechanics, honest prices',
+        sourceType: 'custom',
+      });
+    }
+  }
+
+  return items.slice(0, count);
+}
+
+function selectThemes(
+  count: number,
+  strategy: string,
+  singleThemeId?: string,
+  themeMatrix?: Array<{ index: number; themeId: string }>
+): NostalgicThemeDefinition[] {
+  const themes: NostalgicThemeDefinition[] = [];
+
+  if (strategy === 'single' && singleThemeId) {
+    // All flyers use the same theme
+    const theme = themeRegistry.getNostalgicTheme(singleThemeId) ||
+                  NOSTALGIC_THEMES[0];
+    for (let i = 0; i < count; i++) {
+      themes.push(theme);
+    }
+  } else if (strategy === 'matrix' && themeMatrix?.length) {
+    // User-specified theme for each slot
+    for (let i = 0; i < count; i++) {
+      const entry = themeMatrix.find(e => e.index === i);
+      if (entry) {
+        const theme = themeRegistry.getNostalgicTheme(entry.themeId);
+        themes.push(theme || NOSTALGIC_THEMES[Math.floor(Math.random() * NOSTALGIC_THEMES.length)]);
+      } else {
+        themes.push(NOSTALGIC_THEMES[Math.floor(Math.random() * NOSTALGIC_THEMES.length)]);
+      }
+    }
+  } else {
+    // Auto: AI picks varied themes
+    const available = [...NOSTALGIC_THEMES];
+    for (let i = 0; i < count; i++) {
+      if (available.length === 0) {
+        // Reset pool if we need more themes than available
+        available.push(...NOSTALGIC_THEMES);
+      }
+      const randomIndex = Math.floor(Math.random() * available.length);
+      themes.push(available.splice(randomIndex, 1)[0]);
+    }
+  }
+
+  return themes;
+}
+
+async function generateFlyers(
+  jobId: string,
+  tenantId: string,
+  userId: string,
+  contentItems: ContentItem[],
+  themes: NostalgicThemeDefinition[],
+  profileContext: {
+    businessName?: string;
+    city?: string;
+    state?: string;
+    tagline?: string;
+    specialties: string[];
+    brandVoice: string;
+    primaryColor?: string;
+    secondaryColor?: string;
+  },
+  brandKit: { logoUrl?: string | null } | null,
+  language: 'en' | 'es' | 'both',
+  vehicleId?: string
+): Promise<void> {
+  try {
+    for (let i = 0; i < contentItems.length; i++) {
+      const content = contentItems[i];
+      const theme = themes[i];
+
+      try {
+        // Select vehicle
+        let selectedVehicle: EraVehicle | undefined;
+        if (vehicleId === 'random') {
+          selectedVehicle = themeRegistry.getRandomVehicleByEra(theme.era);
+        } else if (vehicleId) {
+          selectedVehicle = themeRegistry.getVehicleById(vehicleId);
+        }
+
+        // Build vehicle prompt
+        let vehiclePromptAddition = '';
+        if (selectedVehicle) {
+          vehiclePromptAddition = `\n\nFEATURE THIS VEHICLE: ${themeRegistry.getVehicleImagePrompt(selectedVehicle)}`;
+        }
+
+        // Build image prompt
+        const imagePrompt = buildNostalgicImagePrompt(theme, {
+          headline: content.message,
+          subject: content.subject,
+          details: content.details,
+          businessName: profileContext.businessName,
+          logoInstructions: brandKit?.logoUrl
+            ? 'Incorporate the business logo aesthetically into the design'
+            : undefined,
+          vehiclePrompt: vehiclePromptAddition,
+        });
+
+        const contentId = uuidv4();
+
+        // Generate image
+        logger.info('Batch generation: Creating flyer', {
+          jobId,
+          index: i,
+          themeId: theme.id,
+        });
+
+        const imageResult = await geminiService.generateImage(imagePrompt, {
+          aspectRatio: '4:5',
+        });
+
+        let imageUrl: string;
+        if (imageResult.success && imageResult.imageData) {
+          const base64Data = imageResult.imageData.toString('base64');
+          const mimeType = imageResult.mimeType || 'image/png';
+          imageUrl = `data:${mimeType};base64,${base64Data}`;
+        } else {
+          const colorHex = theme.previewColors?.[0]?.replace('#', '') || 'C53030';
+          imageUrl = `https://placehold.co/800x1000/${colorHex}/FFF?text=${encodeURIComponent(content.message.substring(0, 20))}`;
+        }
+
+        // Generate varied caption
+        const captionPromises: Promise<string>[] = [];
+        if (language === 'en' || language === 'both') {
+          captionPromises.push(
+            geminiService.generateMarketingCopyWithProfile({
+              type: 'caption',
+              topic: `${content.subject} - ${content.message}`,
+              profile: profileContext,
+              language: 'en',
+            })
+          );
+        }
+        if (language === 'es' || language === 'both') {
+          captionPromises.push(
+            geminiService.generateMarketingCopyWithProfile({
+              type: 'caption',
+              topic: `${content.subject} - ${content.message}`,
+              profile: profileContext,
+              language: 'es',
+            })
+          );
+        }
+
+        const captions = await Promise.all(captionPromises);
+        const caption = language === 'es' ? captions[0] : captions[0];
+        const captionSpanish = language === 'both' ? captions[1] : (language === 'es' ? captions[0] : null);
+
+        // Save to database
+        await prisma.content.create({
+          data: {
+            id: contentId,
+            tenantId,
+            userId,
+            batchJobId: jobId,
+            tool: 'batch_flyer',
+            contentType: 'image',
+            title: content.subject,
+            promptUsed: imagePrompt,
+            theme: theme.id,
+            imageUrl,
+            caption,
+            captionSpanish,
+            approvalStatus: 'pending',
+            metadata: {
+              message: content.message,
+              subject: content.subject,
+              details: content.details,
+              language,
+              vehicleId: selectedVehicle?.id,
+              vehicleName: selectedVehicle?.name,
+              themeName: theme.name,
+              isNostalgic: true,
+              era: theme.era,
+              style: theme.style,
+              sourceType: content.sourceType,
+              sourceId: content.sourceId,
+              aiGenerated: imageResult.success,
+            },
+            status: 'draft',
+            moderationStatus: 'pending',
+          },
+        });
+
+        // Update job progress
+        await prisma.batchJob.update({
+          where: { id: jobId },
+          data: { completedItems: { increment: 1 } },
+        });
+
+      } catch (error) {
+        logger.error('Failed to generate flyer in batch', { jobId, index: i, error });
+
+        // Update failed count
+        await prisma.batchJob.update({
+          where: { id: jobId },
+          data: { failedItems: { increment: 1 } },
+        });
+      }
+    }
+
+    // Mark job as complete
+    await prisma.batchJob.update({
+      where: { id: jobId },
+      data: {
+        status: 'completed',
+        completedAt: new Date(),
+      },
+    });
+
+    // Log usage
+    await prisma.usageLog.create({
+      data: {
+        tenantId,
+        userId,
+        action: 'batch_gen',
+        tool: 'batch_flyer',
+        creditsUsed: contentItems.length,
+        metadata: { jobId, count: contentItems.length },
+      },
+    });
+
+    logger.info('Batch generation completed', { jobId, total: contentItems.length });
+
+  } catch (error) {
+    logger.error('Batch generation failed', { jobId, error });
+
+    await prisma.batchJob.update({
+      where: { id: jobId },
+      data: { status: 'failed' },
+    });
+  }
+}
+
+function buildNostalgicImagePrompt(
+  theme: NostalgicThemeDefinition,
+  content: {
+    headline: string;
+    subject: string;
+    details?: string;
+    businessName?: string;
+    logoInstructions?: string;
+    vehiclePrompt?: string;
+  }
+): string {
+  return `You are an expert graphic designer creating a STUNNING promotional image for an auto repair shop's social media marketing.
+
+=== CREATIVE DIRECTION ===
+Create a promotional flyer in the "${theme.name}" style from the ${theme.era}.
+This is a ${theme.style === 'comic-book' ? 'COMIC BOOK' : theme.style === 'movie-poster' ? 'MOVIE POSTER' : 'CAR MAGAZINE'} style design.
+
+=== VISUAL STYLE SPECIFICATIONS ===
+${theme.imagePrompt.style}
+
+=== COLOR PALETTE ===
+${theme.imagePrompt.colorPalette}
+
+=== TYPOGRAPHY ===
+${theme.imagePrompt.typography}
+
+=== DESIGN ELEMENTS ===
+${theme.imagePrompt.elements}
+
+=== MOOD & ATMOSPHERE ===
+${theme.imagePrompt.mood}
+
+=== CAR/VEHICLE STYLING ===
+${theme.carStyle}
+${content.vehiclePrompt || ''}
+
+=== COMPOSITION & LAYOUT ===
+${theme.composition}
+
+=== CONTENT TO FEATURE ===
+HEADLINE (feature prominently): "${content.headline}"
+SUBJECT/SERVICE: ${content.subject}
+${content.details ? `DETAILS: ${content.details}` : ''}
+${content.businessName ? `BUSINESS NAME: "${content.businessName}" - include as branding` : ''}
+${content.logoInstructions ? `LOGO: ${content.logoInstructions}` : ''}
+
+=== QUALITY STANDARDS ===
+- Professional marketing agency quality
+- Scroll-stopping visual impact
+- Clean, polished, impressive design
+- Auto repair industry appropriate
+- Authentic ${theme.era} ${theme.style} aesthetic
+
+=== MUST AVOID ===
+${theme.avoidList}
+- Realistic human faces
+- Copyrighted logos or characters
+- Tiny, unreadable text
+- Cluttered layouts
+- Amateur or low-quality appearance
+
+Create ONE stunning 4:5 aspect ratio promotional image that an auto repair shop would proudly post on Instagram/Facebook.`;
+}
+
+function getNext9AM(timezone: string): Date {
+  // Simple implementation - get tomorrow at 9am
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(9, 0, 0, 0);
+  return tomorrow;
+}
+
+export default router;

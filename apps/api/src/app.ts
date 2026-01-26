@@ -40,6 +40,7 @@ import blogGeneratorRoutes from './modules/blog-generator/blog-generator.routes'
 import businessCardsRoutes from './modules/business-cards/business-cards.routes';
 import photoTunerRoutes from './modules/photo-tuner/photo-tuner.routes';
 import settingsRoutes from './modules/settings/settings.routes';
+import batchFlyerRoutes from './modules/batch-flyer/batch-flyer.routes';
 
 // Initialize Express app
 const app: Express = express();
@@ -132,6 +133,7 @@ apiV1.use('/tools/blog-generator', blogGeneratorRoutes);
 apiV1.use('/tools/business-cards', businessCardsRoutes);
 apiV1.use('/tools/photo-tuner', photoTunerRoutes);
 apiV1.use('/settings', settingsRoutes);
+apiV1.use('/batch-flyer', batchFlyerRoutes);
 
 app.use('/api/v1', apiV1);
 

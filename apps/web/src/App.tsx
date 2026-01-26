@@ -13,6 +13,7 @@ import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import DashboardPage from './pages/dashboard/DashboardPage';
 import OnboardingPage from './pages/onboarding/OnboardingPage';
 import PromoFlyerPage from './pages/tools/promo-flyer/PromoFlyerPage';
+import BatchFlyerPage from './pages/tools/batch-flyer/BatchFlyerPage';
 import InstantPackPage from './pages/tools/instant-pack/InstantPackPage';
 import CampaignPage from './pages/tools/CampaignPage';
 import MemeGeneratorPage from './pages/tools/meme-generator/MemeGeneratorPage';
@@ -87,6 +88,7 @@ function App() {
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/tools/promo-flyer" element={<PromoFlyerPage />} />
+        <Route path="/tools/batch-flyer" element={<BatchFlyerPage />} />
         <Route path="/tools/instant-pack" element={<InstantPackPage />} />
         <Route path="/tools/meme-generator" element={<MemeGeneratorPage />} />
         <Route path="/tools/check-in" element={<CheckInPage />} />

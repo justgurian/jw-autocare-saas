@@ -403,6 +403,56 @@ export const socialApi = {
   cancelScheduledPost: (id: string) => api.delete(`/social/scheduled/${id}`),
 };
 
+export const batchFlyerApi = {
+  // Smart AI suggestions
+  getSuggestions: () => api.get('/batch-flyer/suggestions'),
+  getTopThemes: () => api.get('/batch-flyer/top-themes'),
+
+  // Batch generation
+  generate: (data: {
+    mode: 'quick' | 'week' | 'month';
+    count: number;
+    contentType: 'services' | 'specials' | 'custom' | 'mixed';
+    serviceIds?: string[];
+    specialIds?: string[];
+    customContent?: Array<{ message: string; subject: string; details?: string }>;
+    themeStrategy: 'auto' | 'single' | 'matrix';
+    singleThemeId?: string;
+    themeMatrix?: Array<{ index: number; themeId: string }>;
+    language: 'en' | 'es' | 'both';
+    vehicleId?: string;
+  }) => api.post('/batch-flyer/generate', data),
+
+  // Job status
+  getJob: (jobId: string) => api.get(`/batch-flyer/jobs/${jobId}`),
+  getJobFlyers: (jobId: string) => api.get(`/batch-flyer/jobs/${jobId}/flyers`),
+
+  // Flyer actions
+  approveFlyer: (id: string, data?: { scheduledFor?: string; caption?: string }) =>
+    api.post(`/batch-flyer/flyers/${id}/approve`, data || {}),
+  rejectFlyer: (id: string) =>
+    api.post(`/batch-flyer/flyers/${id}/reject`),
+  updateCaption: (id: string, data: { caption: string; captionSpanish?: string }) =>
+    api.put(`/batch-flyer/flyers/${id}/caption`, data),
+  inpaint: (id: string, data: {
+    editType: 'preset' | 'custom';
+    preset?: 'brighten' | 'darken' | 'more-contrast' | 'less-contrast' | 'warmer' | 'cooler' | 'vintage' | 'sharpen';
+    customPrompt?: string;
+  }) => api.post(`/batch-flyer/flyers/${id}/inpaint`, data),
+
+  // Favorites
+  getFavorites: () => api.get('/batch-flyer/favorites'),
+  saveFavorite: (data: {
+    name: string;
+    themeId: string;
+    serviceId?: string;
+    specialId?: string;
+    customText?: string;
+    contentId?: string;
+  }) => api.post('/batch-flyer/favorites', data),
+  deleteFavorite: (id: string) => api.delete(`/batch-flyer/favorites/${id}`),
+};
+
 export const downloadApi = {
   downloadSingle: (contentId: string) =>
     api.get(`/download/${contentId}`, { responseType: 'blob' }),

@@ -22,6 +22,7 @@ model Tenant {
   settings             Json     @default("{}")
   onboardingCompleted  Boolean  @default(false) @map("onboarding_completed")
   onboardingStep       Int      @default(1) @map("onboarding_step")
+  timezone             String   @default("America/New_York") @db.VarChar(50)
   createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt            DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
@@ -37,6 +38,7 @@ model Tenant {
   socialAccounts      SocialAccount[]
   checkInSubmissions  CheckInSubmission[]
   prizeConfiguration  PrizeConfiguration?
+  favoriteTemplates   FavoriteTemplate[]
 
   @@map("tenants")
 }
@@ -169,36 +171,42 @@ model Special {
 // ============================================================================
 
 model Content {
-  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId         String   @map("tenant_id") @db.Uuid
-  userId           String?  @map("user_id") @db.Uuid
-  batchJobId       String?  @map("batch_job_id") @db.Uuid
-  tool             String   @db.VarChar(50)
-  contentType      String   @map("content_type") @db.VarChar(20)
-  title            String?  @db.VarChar(255)
-  promptUsed       String?  @map("prompt_used") @db.Text
-  theme            String?  @db.VarChar(100)
-  imageUrl         String?  @map("image_url") @db.Text
-  pdfUrl           String?  @map("pdf_url") @db.VarChar(500)
-  thumbnailUrl     String?  @map("thumbnail_url") @db.VarChar(500)
-  mockupUrl        String?  @map("mockup_url") @db.VarChar(500)
-  caption          String?  @db.Text
-  captionSpanish   String?  @map("caption_spanish") @db.Text
-  metadata         Json     @default("{}")
-  status           String   @default("draft") @db.VarChar(20)
-  moderationStatus String   @default("pending") @map("moderation_status") @db.VarChar(20)
-  moderationNotes  String?  @map("moderation_notes") @db.Text
-  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId         String    @map("tenant_id") @db.Uuid
+  userId           String?   @map("user_id") @db.Uuid
+  batchJobId       String?   @map("batch_job_id") @db.Uuid
+  tool             String    @db.VarChar(50)
+  contentType      String    @map("content_type") @db.VarChar(20)
+  title            String?   @db.VarChar(255)
+  promptUsed       String?   @map("prompt_used") @db.Text
+  theme            String?   @db.VarChar(100)
+  imageUrl         String?   @map("image_url") @db.Text
+  pdfUrl           String?   @map("pdf_url") @db.VarChar(500)
+  thumbnailUrl     String?   @map("thumbnail_url") @db.VarChar(500)
+  mockupUrl        String?   @map("mockup_url") @db.VarChar(500)
+  caption          String?   @db.Text
+  captionSpanish   String?   @map("caption_spanish") @db.Text
+  metadata         Json      @default("{}")
+  status           String    @default("draft") @db.VarChar(20)
+  moderationStatus String    @default("pending") @map("moderation_status") @db.VarChar(20)
+  moderationNotes  String?   @map("moderation_notes") @db.Text
+  // Batch Flyer fields
+  approvalStatus   String?   @map("approval_status") @db.VarChar(20) // 'pending' | 'approved' | 'rejected'
+  scheduledFor     DateTime? @map("scheduled_for") @db.Timestamptz
+  postedAt         DateTime? @map("posted_at") @db.Timestamptz
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz
 
   // Relations
-  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  user           User?           @relation(fields: [userId], references: [id])
-  batchJob       BatchJob?       @relation(fields: [batchJobId], references: [id])
-  calendarEvents CalendarEvent[]
+  tenant            Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user              User?              @relation(fields: [userId], references: [id])
+  batchJob          BatchJob?          @relation(fields: [batchJobId], references: [id])
+  calendarEvents    CalendarEvent[]
+  favoriteTemplates FavoriteTemplate[]
 
   @@index([tenantId, tool])
   @@index([tenantId, createdAt])
+  @@index([tenantId, approvalStatus])
   @@map("content")
 }
 
@@ -262,6 +270,10 @@ model BatchJob {
   failedItems    Int       @default(0) @map("failed_items")
   status         String    @default("pending") @db.VarChar(20)
   metadata       Json      @default("{}")
+  // Batch Flyer fields
+  mode           String?   @db.VarChar(20) // 'quick' | 'week' | 'month'
+  themeStrategy  String?   @map("theme_strategy") @db.VarChar(20) // 'auto' | 'single' | 'matrix'
+  selectedThemes String?   @map("selected_themes") @db.Text // JSON array of theme IDs
   startedAt      DateTime? @map("started_at") @db.Timestamptz
   completedAt    DateTime? @map("completed_at") @db.Timestamptz
   createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
@@ -392,4 +404,28 @@ model PrizeConfiguration {
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@map("prize_configurations")
+}
+
+// ============================================================================
+// FAVORITE TEMPLATES (Batch Flyer)
+// ============================================================================
+
+model FavoriteTemplate {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  name       String   @db.VarChar(255)
+  themeId    String   @map("theme_id") @db.VarChar(100)
+  serviceId  String?  @map("service_id") @db.Uuid
+  specialId  String?  @map("special_id") @db.Uuid
+  customText String?  @map("custom_text") @db.Text
+  contentId  String?  @map("content_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  tenant  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  content Content? @relation(fields: [contentId], references: [id])
+
+  @@index([tenantId])
+  @@map("favorite_templates")
 }
