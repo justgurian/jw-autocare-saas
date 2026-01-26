@@ -178,7 +178,7 @@ model Content {
   title            String?  @db.VarChar(255)
   promptUsed       String?  @map("prompt_used") @db.Text
   theme            String?  @db.VarChar(100)
-  imageUrl         String?  @map("image_url") @db.VarChar(500)
+  imageUrl         String?  @map("image_url") @db.Text
   pdfUrl           String?  @map("pdf_url") @db.VarChar(500)
   thumbnailUrl     String?  @map("thumbnail_url") @db.VarChar(500)
   mockupUrl        String?  @map("mockup_url") @db.VarChar(500)
