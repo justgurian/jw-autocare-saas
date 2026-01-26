@@ -52,11 +52,17 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
 }));
 
-// CORS configuration
+// CORS configuration - include all Railway web domains
 const allowedOrigins = [
   config.webUrl,
   'http://localhost:3000',
+  'http://localhost:5173', // Vite default port
+  // Production web
   'https://web-production-58966.up.railway.app',
+  // Development web
+  'https://web-development-3362.up.railway.app',
+  // Allow any Railway domains (for future deployments)
+  ...(process.env.CORS_ADDITIONAL_ORIGINS?.split(',') || []),
 ].filter(Boolean);
 
 app.use(cors({
