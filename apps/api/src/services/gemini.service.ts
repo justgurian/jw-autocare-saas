@@ -5,16 +5,21 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { getSeasonalEventsForMonth, getStateTips, getSeasonName } from '../prompts/calendar/seasonal-data';
 
-// Initialize Gemini client (build: 2026-01-21-v2)
-const genAI = new GoogleGenerativeAI(config.gemini.apiKey);
+// Initialize Gemini client (build: 2026-01-26-v1)
+const apiKey = config.gemini.apiKey;
+if (!apiKey) {
+  console.error('CRITICAL: GEMINI_API_KEY is not set!');
+}
+const genAI = new GoogleGenerativeAI(apiKey);
+console.log('Gemini API initialized with key:', apiKey ? `${apiKey.substring(0, 10)}...` : 'MISSING');
 
 // Models - using available Gemini models
 const textModel = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 const visionModel = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
-// Image generation model - Gemini 2.0 Flash with experimental image generation
+// Image generation model - Nano Banana Pro (Gemini 3 Pro Image Preview)
 const imageModel = genAI.getGenerativeModel({
-  model: 'gemini-2.0-flash-exp',
+  model: 'gemini-3-pro-image-preview',
   generationConfig: {
     // @ts-ignore - responseModalities is supported in newer versions
     responseModalities: ['TEXT', 'IMAGE'],
@@ -228,8 +233,12 @@ Generate a single, stunning marketing image that an auto repair shop would be pr
       logger.error('Nano Banana Pro image generation failed', {
         error: error.message,
         errorName: error.name,
+        errorCode: error.code,
+        errorStatus: error.status,
+        errorDetails: JSON.stringify(error.errorDetails || error.details || {}),
         errorStack: error.stack?.substring(0, 500),
       });
+      console.error('FULL ERROR:', error);
 
       // Check for specific errors
       if (error.message?.includes('SAFETY')) {
