@@ -1,5 +1,26 @@
 import { BRAND_STYLES, BrandStyle, getBrandStyle, buildBrandStyleImagePrompt } from './brand-styles';
 import { ADDITIONAL_THEMES } from './additional-themes';
+import {
+  NOSTALGIC_THEMES,
+  NostalgicThemeDefinition,
+  getNostalgicThemesByEra,
+  getNostalgicThemesByStyle,
+  getNostalgicThemesByEraAndStyle,
+  getRandomNostalgicTheme,
+  getRandomNostalgicThemeByEra,
+  getRandomNostalgicThemeByStyle,
+} from './nostalgic-themes';
+import {
+  ERA_VEHICLES,
+  ALL_VEHICLES,
+  EraVehicle,
+  getVehicleById,
+  getVehiclesByEra,
+  getRandomVehicle,
+  getRandomVehicleByEra,
+  getVehicleImagePrompt,
+  ERA_INFO,
+} from './era-vehicles';
 
 export interface ThemeImagePrompt {
   style: string;
@@ -311,7 +332,20 @@ const legacyThemes: ThemeDefinition[] = [
   },
 ];
 
-// Combined themes: brand styles first (premium), then legacy themes, then additional themes
+// Convert nostalgic themes to standard theme definitions
+const nostalgicAsThemes: ThemeDefinition[] = NOSTALGIC_THEMES.map(theme => ({
+  id: theme.id,
+  name: theme.name,
+  category: theme.category,
+  previewColors: theme.previewColors,
+  shortDescription: theme.shortDescription,
+  imagePrompt: theme.imagePrompt,
+  textPrompt: theme.textPrompt,
+  mockupScenes: theme.mockupScenes,
+  compatibleTools: theme.compatibleTools,
+}));
+
+// Combined themes: brand styles first (premium), then legacy themes, then additional themes, then nostalgic themes
 const themes: ThemeDefinition[] = [
   ...brandStyleThemes,
   ...legacyThemes.filter(lt => !brandStyleThemes.some(bt => bt.id === lt.id)), // Avoid duplicates
@@ -319,6 +353,11 @@ const themes: ThemeDefinition[] = [
     !brandStyleThemes.some(bt => bt.id === at.id) &&
     !legacyThemes.some(lt => lt.id === at.id)
   ), // Avoid duplicates with additional themes
+  ...nostalgicAsThemes.filter(nt =>
+    !brandStyleThemes.some(bt => bt.id === nt.id) &&
+    !legacyThemes.some(lt => lt.id === nt.id) &&
+    !ADDITIONAL_THEMES.some(at => at.id === nt.id)
+  ), // Avoid duplicates with nostalgic themes
 ];
 
 // Category definitions with display info
@@ -333,7 +372,23 @@ export const THEME_CATEGORIES = [
   { id: 'seasonal', name: 'Seasonal', icon: '🗓️', description: 'Time-based promotions' },
   { id: 'specialty', name: 'Specialty', icon: '🎯', description: 'Niche and specific services' },
   { id: 'retro', name: 'Retro', icon: '📼', description: '80s and 90s throwback' },
+  { id: 'nostalgic', name: 'Nostalgic', icon: '🎬', description: 'Comic, movie, and magazine styles from classic eras' },
   { id: 'general', name: 'General', icon: '🎨', description: 'All-purpose styles' },
+];
+
+// Era definitions for nostalgic themes
+export const NOSTALGIC_ERAS = [
+  { id: '1950s', name: 'The Fifties', icon: '🚀', description: 'Chrome, fins, and the American Dream' },
+  { id: '1960s', name: 'The Sixties', icon: '🏁', description: 'Muscle cars and the pony car revolution' },
+  { id: '1970s', name: 'The Seventies', icon: '🌅', description: 'Muscle car twilight and new directions' },
+  { id: '1980s', name: 'The Eighties', icon: '⚡', description: 'Technology, turbos, and exotic dreams' },
+];
+
+// Style definitions for nostalgic themes
+export const NOSTALGIC_STYLES = [
+  { id: 'comic-book', name: 'Comic Book', icon: '🦸', description: 'Bold colors and action panels' },
+  { id: 'movie-poster', name: 'Movie Poster', icon: '🎬', description: 'Cinematic drama and style' },
+  { id: 'magazine', name: 'Car Magazine', icon: '📰', description: 'Automotive publication aesthetics' },
 ];
 
 // Theme registry
@@ -483,6 +538,92 @@ Create ONE stunning 4:5 aspect ratio promotional image that an auto repair shop 
     return shuffled.slice(0, Math.min(count, shuffled.length));
   },
 
+  // ============================================================================
+  // NOSTALGIC THEME METHODS
+  // ============================================================================
+
+  // Get all nostalgic themes
+  getNostalgicThemes(): NostalgicThemeDefinition[] {
+    return NOSTALGIC_THEMES;
+  },
+
+  // Get nostalgic themes by era
+  getNostalgicThemesByEra(era: '1950s' | '1960s' | '1970s' | '1980s'): NostalgicThemeDefinition[] {
+    return getNostalgicThemesByEra(era);
+  },
+
+  // Get nostalgic themes by style
+  getNostalgicThemesByStyle(style: 'comic-book' | 'movie-poster' | 'magazine'): NostalgicThemeDefinition[] {
+    return getNostalgicThemesByStyle(style);
+  },
+
+  // Get nostalgic themes by era and style
+  getNostalgicThemesByEraAndStyle(
+    era: '1950s' | '1960s' | '1970s' | '1980s',
+    style: 'comic-book' | 'movie-poster' | 'magazine'
+  ): NostalgicThemeDefinition[] {
+    return getNostalgicThemesByEraAndStyle(era, style);
+  },
+
+  // Get a random nostalgic theme
+  getRandomNostalgicTheme(): NostalgicThemeDefinition {
+    return getRandomNostalgicTheme();
+  },
+
+  // Get a random nostalgic theme by era
+  getRandomNostalgicThemeByEra(era: '1950s' | '1960s' | '1970s' | '1980s'): NostalgicThemeDefinition {
+    return getRandomNostalgicThemeByEra(era);
+  },
+
+  // Get a random nostalgic theme by style
+  getRandomNostalgicThemeByStyle(style: 'comic-book' | 'movie-poster' | 'magazine'): NostalgicThemeDefinition {
+    return getRandomNostalgicThemeByStyle(style);
+  },
+
+  // Get a nostalgic theme by ID
+  getNostalgicTheme(id: string): NostalgicThemeDefinition | undefined {
+    return NOSTALGIC_THEMES.find(t => t.id === id);
+  },
+
+  // ============================================================================
+  // VEHICLE METHODS
+  // ============================================================================
+
+  // Get all vehicles
+  getAllVehicles(): EraVehicle[] {
+    return ALL_VEHICLES;
+  },
+
+  // Get vehicles by era
+  getVehiclesByEra(era: '1950s' | '1960s' | '1970s' | '1980s'): EraVehicle[] {
+    return getVehiclesByEra(era);
+  },
+
+  // Get a vehicle by ID
+  getVehicleById(id: string): EraVehicle | undefined {
+    return getVehicleById(id);
+  },
+
+  // Get a random vehicle
+  getRandomVehicle(): EraVehicle {
+    return getRandomVehicle();
+  },
+
+  // Get a random vehicle by era
+  getRandomVehicleByEra(era: '1950s' | '1960s' | '1970s' | '1980s'): EraVehicle {
+    return getRandomVehicleByEra(era);
+  },
+
+  // Get vehicle image prompt hint
+  getVehicleImagePrompt(vehicle: EraVehicle): string {
+    return getVehicleImagePrompt(vehicle);
+  },
+
+  // Get era info
+  getEraInfo(): typeof ERA_INFO {
+    return ERA_INFO;
+  },
+
   // Get random brand styles (premium styles only)
   getRandomBrandStyles(count: number, exclude: string[] = []): ThemeDefinition[] {
     const available = brandStyleThemes.filter(t => !exclude.includes(t.id));
@@ -499,5 +640,30 @@ Create ONE stunning 4:5 aspect ratio promotional image that an auto repair shop 
 // Re-export brand style types and helpers
 export { BrandStyle, getBrandStyle, buildBrandStyleImagePrompt, BRAND_STYLES };
 export { ADDITIONAL_THEMES } from './additional-themes';
+
+// Re-export nostalgic theme types and helpers
+export {
+  NOSTALGIC_THEMES,
+  NostalgicThemeDefinition,
+  getNostalgicThemesByEra,
+  getNostalgicThemesByStyle,
+  getNostalgicThemesByEraAndStyle,
+  getRandomNostalgicTheme,
+  getRandomNostalgicThemeByEra,
+  getRandomNostalgicThemeByStyle,
+} from './nostalgic-themes';
+
+// Re-export vehicle types and helpers
+export {
+  ERA_VEHICLES,
+  ALL_VEHICLES,
+  EraVehicle,
+  getVehicleById,
+  getVehiclesByEra,
+  getRandomVehicle,
+  getRandomVehicleByEra,
+  getVehicleImagePrompt,
+  ERA_INFO,
+} from './era-vehicles';
 
 export default themeRegistry;
