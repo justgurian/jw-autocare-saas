@@ -400,6 +400,78 @@ export const authService = {
     };
   },
 
+  // Request password reset
+  async forgotPassword(email: string): Promise<void> {
+    // Find user by email
+    const user = await prisma.user.findFirst({
+      where: { email: email.toLowerCase() },
+    });
+
+    // Always return success to prevent email enumeration attacks
+    if (!user) {
+      logger.info('Password reset requested for non-existent email', { email });
+      return;
+    }
+
+    // Generate a reset token
+    const resetToken = nanoid(32);
+    const resetTokenExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    // Store the reset token
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        resetToken,
+        resetTokenExpires,
+      },
+    });
+
+    // TODO: Send email with reset link
+    // For now, just log the token (in production, this would send an email)
+    logger.info('Password reset token generated', {
+      userId: user.id,
+      email,
+      // In production, never log the actual token - this is just for development
+      resetLink: `${config.webUrl}/auth/reset-password?token=${resetToken}`,
+    });
+  },
+
+  // Reset password with token
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    // Find user with valid reset token
+    const user = await prisma.user.findFirst({
+      where: {
+        resetToken: token,
+        resetTokenExpires: { gt: new Date() },
+      },
+    });
+
+    if (!user) {
+      throw new BadRequestError('Invalid or expired reset token');
+    }
+
+    // Hash new password
+    const passwordHash = await bcrypt.hash(newPassword, 12);
+
+    // Update password and clear reset token
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordHash,
+        resetToken: null,
+        resetTokenExpires: null,
+      },
+    });
+
+    // Revoke all existing refresh tokens for security
+    await prisma.refreshToken.updateMany({
+      where: { userId: user.id, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+
+    logger.info('Password reset successful', { userId: user.id });
+  },
+
   // Google OAuth callback
   async googleAuthCallback(user: {
     id: string;

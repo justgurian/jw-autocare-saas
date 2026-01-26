@@ -55,9 +55,14 @@ export default function LoginPage() {
         </div>
 
         <div>
-          <label className="block font-heading uppercase text-sm mb-2">
-            Password
-          </label>
+          <div className="flex justify-between items-center mb-2">
+            <label className="block font-heading uppercase text-sm">
+              Password
+            </label>
+            <Link to="/auth/forgot-password" className="text-sm text-retro-red hover:underline">
+              Forgot Password?
+            </Link>
+          </div>
           <input
             type="password"
             className="input-retro"
@@ -97,7 +102,7 @@ export default function LoginPage() {
         </div>
 
         <a
-          href="/api/v1/auth/google"
+          href={`${import.meta.env.VITE_API_URL}/auth/google`}
           className="mt-4 w-full flex items-center justify-center gap-3 py-3 border-2 border-black bg-white hover:bg-gray-50 transition-colors shadow-retro hover:translate-x-1 hover:translate-y-1 hover:shadow-none"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">

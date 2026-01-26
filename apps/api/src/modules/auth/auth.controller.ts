@@ -21,6 +21,15 @@ const refreshSchema = z.object({
   refreshToken: z.string().min(1, 'Refresh token is required'),
 });
 
+const forgotPasswordSchema = z.object({
+  email: z.string().email('Invalid email address'),
+});
+
+const resetPasswordSchema = z.object({
+  token: z.string().min(1, 'Reset token is required'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+});
+
 // Helper to validate request body
 function validate<T>(schema: z.Schema<T>, data: unknown): T {
   const result = schema.safeParse(data);
@@ -129,6 +138,35 @@ export const authController = {
       redirectUrl.searchParams.set('refreshToken', tokens.refreshToken);
 
       res.redirect(redirectUrl.toString());
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  // Request password reset
+  async forgotPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { email } = validate(forgotPasswordSchema, req.body);
+      await authService.forgotPassword(email);
+
+      // Always return success to prevent email enumeration
+      res.status(200).json({
+        message: 'If an account with that email exists, we sent password reset instructions.',
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  // Reset password with token
+  async resetPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { token, password } = validate(resetPasswordSchema, req.body);
+      await authService.resetPassword(token, password);
+
+      res.status(200).json({
+        message: 'Password reset successful. You can now log in with your new password.',
+      });
     } catch (error) {
       next(error);
     }

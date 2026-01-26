@@ -52,6 +52,8 @@ model User {
   googleId      String?  @map("google_id") @db.VarChar(255)
   emailVerified Boolean  @default(false) @map("email_verified")
   lastLoginAt   DateTime? @map("last_login_at") @db.Timestamptz
+  resetToken    String?  @map("reset_token") @db.VarChar(64)
+  resetTokenExpires DateTime? @map("reset_token_expires") @db.Timestamptz
   createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
