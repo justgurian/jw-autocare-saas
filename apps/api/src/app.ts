@@ -98,7 +98,7 @@ app.get('/health', (_req: Request, res: Response) => {
     status: 'healthy',
     timestamp: new Date().toISOString(),
     version: process.env.npm_package_version || '1.0.0',
-    build: 'cors-fix-v2',
+    build: 'cors-fix-v3-1769416088',
   });
 });
 
