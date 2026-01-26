@@ -25,6 +25,28 @@ export interface JargonResult {
   timeEstimate?: string;
 }
 
+export interface InvoiceAnalysisResult {
+  success: boolean;
+  workCompleted: Array<{
+    item: string;
+    simpleExplanation: string;
+    whyNeeded?: string;
+    cost?: string;
+  }>;
+  workRecommended: Array<{
+    item: string;
+    simpleExplanation: string;
+    urgency: 'immediate' | 'soon' | 'can-wait';
+    reason?: string;
+  }>;
+  totalCost?: string;
+  summary: string;
+  glossary: Array<{
+    term: string;
+    definition: string;
+  }>;
+}
+
 // Common auto repair terms and their translations
 export const AUTO_TERMS: Record<string, { simple: string; explanation: string; analogy?: string }> = {
   'timing belt': {

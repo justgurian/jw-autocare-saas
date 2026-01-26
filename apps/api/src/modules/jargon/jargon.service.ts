@@ -8,6 +8,7 @@ import { logger } from '../../utils/logger';
 import {
   JargonInput,
   JargonResult,
+  InvoiceAnalysisResult,
   AUTO_TERMS,
   buildTranslationPrompt,
 } from './jargon.types';
@@ -134,6 +135,101 @@ Keep it concise but thorough.`;
   lookupTerm(term: string): typeof AUTO_TERMS[string] | null {
     const lowerTerm = term.toLowerCase();
     return AUTO_TERMS[lowerTerm] || null;
+  },
+
+  /**
+   * Analyze an invoice/receipt image and translate to layman's terms
+   */
+  async analyzeInvoiceImage(
+    imageBase64: string,
+    mimeType: string
+  ): Promise<InvoiceAnalysisResult> {
+    const prompt = `You are an expert auto mechanic helping a customer understand their repair invoice or receipt.
+
+Analyze this auto repair invoice/receipt image and provide:
+
+1. **WORK COMPLETED** - List each repair or service that was performed, explaining in simple layman's terms:
+   - What the part/service is
+   - What it does for the vehicle
+   - Why it was needed
+
+2. **WORK RECOMMENDED** - If there are any recommended future services or repairs mentioned, explain:
+   - What each recommendation means
+   - Why it might be needed
+   - How urgent it is (immediate safety concern, soon, or can wait)
+
+3. **COST BREAKDOWN** - If prices are visible:
+   - Summarize the costs in a clear way
+   - Note if the pricing seems reasonable (without being judgmental)
+
+4. **KEY TERMS GLOSSARY** - Define any technical terms found on the invoice in simple language
+
+Format your response as a JSON object with this structure:
+{
+  "workCompleted": [
+    {
+      "item": "Name of the repair/service",
+      "simpleExplanation": "What this means in plain English",
+      "whyNeeded": "Why this repair was necessary",
+      "cost": "$XX.XX if visible"
+    }
+  ],
+  "workRecommended": [
+    {
+      "item": "Name of recommended service",
+      "simpleExplanation": "What this means",
+      "urgency": "immediate|soon|can-wait",
+      "reason": "Why it's recommended"
+    }
+  ],
+  "totalCost": "$XX.XX if visible",
+  "summary": "A friendly 2-3 sentence summary of what was done and the overall vehicle health",
+  "glossary": [
+    {
+      "term": "Technical term",
+      "definition": "Simple definition"
+    }
+  ]
+}
+
+Be friendly, reassuring, and focus on helping the customer understand their vehicle's needs without causing unnecessary worry.`;
+
+    try {
+      // Use Gemini's vision model to analyze the image
+      const analysisText = await geminiService.analyzeImage(
+        `data:${mimeType};base64,${imageBase64}`,
+        prompt
+      );
+
+      logger.info('Invoice image analysis completed');
+
+      // Try to parse the JSON response
+      try {
+        // Extract JSON from the response (might have markdown code blocks)
+        const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          return {
+            success: true,
+            ...parsed,
+          };
+        }
+      } catch (parseError) {
+        logger.warn('Could not parse structured response, returning raw text', { parseError });
+      }
+
+      // Fallback: return the raw analysis as a summary
+      return {
+        success: true,
+        workCompleted: [],
+        workRecommended: [],
+        summary: analysisText,
+        glossary: [],
+      };
+    } catch (error) {
+      logger.error('Invoice image analysis failed', { error });
+      throw error;
+    }
   },
 };
 

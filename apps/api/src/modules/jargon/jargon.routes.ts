@@ -118,4 +118,40 @@ router.get('/modes', async (_req: Request, res: Response) => {
   });
 });
 
+/**
+ * POST /analyze-image
+ * Analyze an invoice/receipt image and translate to layman's terms
+ */
+router.post('/analyze-image', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { image, mimeType } = req.body as {
+      image: string; // base64 encoded image data (without data URL prefix)
+      mimeType: string; // e.g., 'image/jpeg', 'image/png'
+    };
+
+    if (!image) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: 'Image data is required',
+      });
+    }
+
+    if (!mimeType || !mimeType.startsWith('image/')) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: 'Valid image mime type is required (e.g., image/jpeg, image/png)',
+      });
+    }
+
+    // Remove data URL prefix if present
+    const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
+
+    const result = await jargonService.analyzeInvoiceImage(base64Data, mimeType);
+
+    res.json({ result });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

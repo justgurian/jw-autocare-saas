@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { BookOpen, Zap, FileText, Mail, ArrowRight, Copy, Check, Search } from 'lucide-react';
+import { BookOpen, Zap, FileText, Mail, ArrowRight, Copy, Check, Search, Upload, Camera, X, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 import { api } from '../../../services/api';
+import toast from 'react-hot-toast';
 
 interface TranslationMode {
   id: string;
@@ -26,6 +27,28 @@ interface DictionaryTerm {
   analogy?: string;
 }
 
+interface InvoiceAnalysisResult {
+  success: boolean;
+  workCompleted: Array<{
+    item: string;
+    simpleExplanation: string;
+    whyNeeded?: string;
+    cost?: string;
+  }>;
+  workRecommended: Array<{
+    item: string;
+    simpleExplanation: string;
+    urgency: 'immediate' | 'soon' | 'can-wait';
+    reason?: string;
+  }>;
+  totalCost?: string;
+  summary: string;
+  glossary: Array<{
+    term: string;
+    definition: string;
+  }>;
+}
+
 const modeIcons: Record<string, React.ReactNode> = {
   simplify: <Zap size={18} />,
   explain: <BookOpen size={18} />,
@@ -40,6 +63,13 @@ export default function JargonPage() {
   const [copied, setCopied] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [showDictionary, setShowDictionary] = useState(false);
+
+  // Image upload state
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageAnalysis, setImageAnalysis] = useState<InvoiceAnalysisResult | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch available modes
   const { data: modesData } = useQuery<{ modes: TranslationMode[] }>({
@@ -73,6 +103,103 @@ export default function JargonPage() {
       setResult(data.result);
     },
   });
+
+  // Image analysis mutation
+  const analyzeImageMutation = useMutation({
+    mutationFn: async (imageData: { base64: string; mimeType: string }) => {
+      const response = await api.post('/tools/jargon/analyze-image', {
+        image: imageData.base64,
+        mimeType: imageData.mimeType,
+      });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      setImageAnalysis(data.result);
+      toast.success('Invoice analyzed successfully!');
+    },
+    onError: () => {
+      toast.error('Failed to analyze image. Please try again.');
+    },
+  });
+
+  // File handling functions
+  const handleFileSelect = useCallback((file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file (JPG, PNG, etc.)');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Image must be less than 10MB');
+      return;
+    }
+
+    setImageFile(file);
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      setUploadedImage(dataUrl);
+
+      // Extract base64 and mime type for API
+      const base64 = dataUrl.split(',')[1];
+      const mimeType = file.type;
+
+      analyzeImageMutation.mutate({ base64, mimeType });
+    };
+    reader.readAsDataURL(file);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      handleFileSelect(file);
+    }
+  }, [handleFileSelect]);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  }, []);
+
+  const clearImage = useCallback(() => {
+    setUploadedImage(null);
+    setImageFile(null);
+    setImageAnalysis(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  }, []);
+
+  const getUrgencyIcon = (urgency: 'immediate' | 'soon' | 'can-wait') => {
+    switch (urgency) {
+      case 'immediate':
+        return <AlertTriangle size={16} className="text-red-500" />;
+      case 'soon':
+        return <Clock size={16} className="text-yellow-500" />;
+      case 'can-wait':
+        return <CheckCircle size={16} className="text-green-500" />;
+    }
+  };
+
+  const getUrgencyLabel = (urgency: 'immediate' | 'soon' | 'can-wait') => {
+    switch (urgency) {
+      case 'immediate':
+        return 'Needs Attention Now';
+      case 'soon':
+        return 'Should Address Soon';
+      case 'can-wait':
+        return 'Can Wait';
+    }
+  };
 
   const handleTranslate = () => {
     if (!inputText.trim()) return;
@@ -126,6 +253,188 @@ export default function JargonPage() {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Image Upload */}
+          <div className="bg-white border-2 border-black p-4">
+            <h3 className="font-heading text-sm uppercase mb-3 flex items-center gap-2">
+              <Camera size={18} />
+              Upload Invoice or Receipt
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Upload a photo of your repair invoice or receipt to get a plain-English explanation of the work.
+            </p>
+
+            {!uploadedImage ? (
+              <div
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                className={`border-2 border-dashed p-8 text-center transition-colors ${
+                  isDragging
+                    ? 'border-retro-red bg-retro-red/5'
+                    : 'border-gray-300 hover:border-retro-navy'
+                }`}
+              >
+                <Upload size={32} className="mx-auto mb-3 text-gray-400" />
+                <p className="text-sm text-gray-600 mb-2">
+                  Drag and drop an image here, or
+                </p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleFileSelect(file);
+                  }}
+                  className="hidden"
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="px-4 py-2 bg-retro-navy text-white border-2 border-black text-sm hover:bg-retro-navy/90 transition-colors"
+                >
+                  Choose File
+                </button>
+                <p className="text-xs text-gray-500 mt-3">
+                  Supports JPG, PNG, HEIC up to 10MB
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* Image Preview */}
+                <div className="relative">
+                  <img
+                    src={uploadedImage}
+                    alt="Uploaded invoice"
+                    className="w-full max-h-64 object-contain border-2 border-black"
+                  />
+                  <button
+                    onClick={clearImage}
+                    className="absolute top-2 right-2 p-1 bg-white border-2 border-black hover:bg-red-50 transition-colors"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+
+                {/* Analysis Loading State */}
+                {analyzeImageMutation.isPending && (
+                  <div className="flex items-center justify-center gap-3 p-6 bg-retro-cream border-2 border-dashed border-retro-navy/30">
+                    <div className="animate-spin w-5 h-5 border-2 border-retro-navy border-t-transparent rounded-full" />
+                    <span className="text-sm">Analyzing your invoice...</span>
+                  </div>
+                )}
+
+                {/* Analysis Results */}
+                {imageAnalysis && (
+                  <div className="space-y-4">
+                    {/* Summary */}
+                    <div className="p-4 bg-retro-cream border-2 border-black">
+                      <h4 className="font-heading text-sm uppercase mb-2">Summary</h4>
+                      <p className="text-sm">{imageAnalysis.summary}</p>
+                      {imageAnalysis.totalCost && (
+                        <p className="mt-2 font-heading text-lg">
+                          Total: {imageAnalysis.totalCost}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Work Completed */}
+                    {imageAnalysis.workCompleted.length > 0 && (
+                      <div className="border-2 border-black">
+                        <div className="bg-green-600 text-white p-3">
+                          <h4 className="font-heading text-sm uppercase flex items-center gap-2">
+                            <CheckCircle size={16} />
+                            Work Completed
+                          </h4>
+                        </div>
+                        <div className="p-4 space-y-3">
+                          {imageAnalysis.workCompleted.map((item, idx) => (
+                            <div key={idx} className="p-3 bg-gray-50 border border-gray-200">
+                              <div className="flex justify-between items-start">
+                                <h5 className="font-heading text-sm">{item.item}</h5>
+                                {item.cost && (
+                                  <span className="text-sm font-heading text-gray-600">
+                                    {item.cost}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-sm text-gray-700 mt-1">
+                                {item.simpleExplanation}
+                              </p>
+                              {item.whyNeeded && (
+                                <p className="text-xs text-gray-500 mt-1 italic">
+                                  Why needed: {item.whyNeeded}
+                                </p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Work Recommended */}
+                    {imageAnalysis.workRecommended.length > 0 && (
+                      <div className="border-2 border-black">
+                        <div className="bg-yellow-500 text-white p-3">
+                          <h4 className="font-heading text-sm uppercase flex items-center gap-2">
+                            <AlertTriangle size={16} />
+                            Recommended Future Work
+                          </h4>
+                        </div>
+                        <div className="p-4 space-y-3">
+                          {imageAnalysis.workRecommended.map((item, idx) => (
+                            <div key={idx} className="p-3 bg-gray-50 border border-gray-200">
+                              <div className="flex justify-between items-start">
+                                <h5 className="font-heading text-sm">{item.item}</h5>
+                                <span className="flex items-center gap-1 text-xs">
+                                  {getUrgencyIcon(item.urgency)}
+                                  {getUrgencyLabel(item.urgency)}
+                                </span>
+                              </div>
+                              <p className="text-sm text-gray-700 mt-1">
+                                {item.simpleExplanation}
+                              </p>
+                              {item.reason && (
+                                <p className="text-xs text-gray-500 mt-1 italic">
+                                  Why recommended: {item.reason}
+                                </p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Glossary */}
+                    {imageAnalysis.glossary.length > 0 && (
+                      <div className="border-2 border-black">
+                        <div className="bg-retro-navy text-white p-3">
+                          <h4 className="font-heading text-sm uppercase flex items-center gap-2">
+                            <BookOpen size={16} />
+                            Terms Explained
+                          </h4>
+                        </div>
+                        <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-2">
+                          {imageAnalysis.glossary.map((item, idx) => (
+                            <div key={idx} className="p-2 bg-gray-50 text-sm">
+                              <strong>{item.term}:</strong> {item.definition}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Divider */}
+          <div className="flex items-center gap-4">
+            <div className="flex-1 border-t-2 border-dashed border-gray-300" />
+            <span className="text-sm text-gray-500 font-heading">OR TYPE TEXT</span>
+            <div className="flex-1 border-t-2 border-dashed border-gray-300" />
           </div>
 
           {/* Input */}
