@@ -10,10 +10,10 @@ export default function AuthLayout() {
 
         <div className="relative z-10 text-center">
           <h1 className="font-display text-6xl text-white tracking-wider mb-4">
-            JW AUTO CARE
+            BAYFILLER
           </h1>
           <p className="font-script text-3xl text-retro-mustard mb-8">
-            AI Marketing Platform
+            Auto Repair Sales & Marketing Engine
           </p>
 
           <div className="max-w-md mx-auto">

@@ -124,7 +124,7 @@ export default function OnboardingPage() {
       } else {
         // Complete onboarding
         await onboardingApi.complete();
-        toast.success('Setup complete! Welcome to JW Auto Care AI.');
+        toast.success('Setup complete! Welcome to Bayfiller.');
         navigate('/dashboard');
       }
     } catch (error) {

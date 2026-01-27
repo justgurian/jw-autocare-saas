@@ -95,7 +95,7 @@ export default function SocialPage() {
           Social Media Connections
         </h1>
         <p className="text-gray-600 mt-2">
-          Connect your Facebook and Instagram accounts to share content directly from JW Auto Care AI.
+          Connect your Facebook and Instagram accounts to share content directly from Bayfiller.
         </p>
       </div>
 

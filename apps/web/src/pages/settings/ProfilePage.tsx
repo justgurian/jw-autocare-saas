@@ -248,7 +248,7 @@ export default function ProfilePage() {
                 <input
                   {...register('businessName', { required: 'Business name is required' })}
                   className="input-retro"
-                  placeholder="JW Auto Care"
+                  placeholder="Your Shop Name"
                 />
                 {errors.businessName && (
                   <p className="text-red-500 text-sm mt-1">{errors.businessName.message}</p>

@@ -218,8 +218,8 @@ export default function MainLayout() {
           {/* Logo */}
           <div className="p-5 border-b-4 border-black bg-retro-navy">
             <Link to="/dashboard" className="block">
-              <h1 className="font-display text-2xl tracking-wider">JW AUTO CARE</h1>
-              <p className="font-script text-retro-mustard text-sm">AI Marketing Made Easy</p>
+              <h1 className="font-display text-2xl tracking-wider">BAYFILLER</h1>
+              <p className="font-script text-retro-mustard text-sm">Auto Repair Sales & Marketing Engine</p>
             </Link>
           </div>
 

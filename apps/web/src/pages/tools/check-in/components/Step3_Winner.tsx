@@ -174,7 +174,7 @@ export default function Step3_Winner({
               <p className="text-gray-600 mt-2">{displayedPrize.description}</p>
             )}
             <p className="font-heading text-gray-500 tracking-wider mt-2">
-              REDEEMABLE AT JW AUTO CARE
+              REDEEMABLE AT YOUR LOCATION
             </p>
           </div>
 

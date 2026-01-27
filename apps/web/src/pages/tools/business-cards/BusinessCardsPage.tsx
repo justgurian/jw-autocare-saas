@@ -358,7 +358,7 @@ export default function BusinessCardsPage() {
                     type="text"
                     value={shopName}
                     onChange={(e) => setShopName(e.target.value)}
-                    placeholder="JW Auto Care"
+                    placeholder="Your Shop Name"
                     className="w-full px-3 py-2 border-2 border-black"
                   />
                 </div>
