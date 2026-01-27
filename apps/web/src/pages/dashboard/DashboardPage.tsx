@@ -5,7 +5,6 @@ import {
   Zap,
   MessageSquare,
   Bell,
-  Sparkles,
   TrendingUp,
   Sun,
   Snowflake,
@@ -20,7 +19,7 @@ import {
   Target,
   Gift,
 } from 'lucide-react';
-import api, { promoFlyerApi } from '../../services/api';
+import api from '../../services/api';
 
 // Smart AI suggestions based on day/season
 function getSmartSuggestions(): Array<{
@@ -180,7 +179,6 @@ function calculateMarketingScore(stats: { contentGenerated: number; postsSchedul
 export default function DashboardPage() {
   const { user } = useAuthStore();
   const navigate = useNavigate();
-  const [isGenerating, setIsGenerating] = useState(false);
   const [stats, setStats] = useState({ contentGenerated: 0, postsScheduled: 0, reviewsReplied: 0 });
   const [recentContent, setRecentContent] = useState<Array<{ id: string; title: string; imageUrl: string }>>([]);
 
@@ -209,21 +207,9 @@ export default function DashboardPage() {
       .catch((err) => console.error('Failed to fetch content:', err));
   }, []);
 
-  // Magic Button: One-tap instant post generation
-  const handleInstantPost = async () => {
-    setIsGenerating(true);
-    try {
-      const response = await promoFlyerApi.instant();
-      if (response.data?.id) {
-        navigate(`/tools/promo-flyer?preview=${response.data.id}`);
-      }
-    } catch (error) {
-      console.error('Instant generation failed:', error);
-      // Fallback to the tool page
-      navigate('/tools/promo-flyer');
-    } finally {
-      setIsGenerating(false);
-    }
+  // Navigate directly to promo flyer page
+  const handleInstantPost = () => {
+    navigate('/tools/promo-flyer');
   };
 
   return (
@@ -241,27 +227,18 @@ export default function DashboardPage() {
         {/* Post Something Now - THE PRIMARY ACTION */}
         <button
           onClick={handleInstantPost}
-          disabled={isGenerating}
-          className="col-span-1 md:col-span-3 group relative overflow-hidden bg-gradient-to-r from-retro-red to-red-600 text-white p-8 md:p-10 border-4 border-black shadow-retro hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+          className="col-span-1 md:col-span-3 group relative overflow-hidden bg-gradient-to-r from-retro-red to-red-600 text-white p-8 md:p-10 border-4 border-black shadow-retro hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all"
         >
           <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8">
             <div className="w-20 h-20 md:w-24 md:h-24 bg-white/20 rounded-full flex items-center justify-center border-4 border-white/30">
-              {isGenerating ? (
-                <div className="animate-spin">
-                  <Sparkles size={40} />
-                </div>
-              ) : (
-                <Zap size={40} className="group-hover:scale-110 transition-transform" />
-              )}
+              <Zap size={40} className="group-hover:scale-110 transition-transform" />
             </div>
             <div className="text-center md:text-left">
               <h2 className="font-display text-2xl md:text-4xl tracking-wide">
-                {isGenerating ? 'CREATING YOUR POST...' : 'POST SOMETHING NOW'}
+                POST SOMETHING NOW
               </h2>
               <p className="text-white/80 text-lg mt-2">
-                {isGenerating
-                  ? 'AI is creating something awesome for you'
-                  : 'One tap = ready-to-share social media post'}
+                One tap = ready-to-share social media post
               </p>
             </div>
           </div>
