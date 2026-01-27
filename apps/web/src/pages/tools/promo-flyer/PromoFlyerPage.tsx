@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { promoFlyerApi, downloadApi } from '../../../services/api';
-import { Wand2, Download, Share2, Copy, Check, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
+import { Wand2, Download, Share2, Copy, Check, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ShareModal from '../../../components/features/ShareModal';
 import PushToStartButton from '../../../components/features/PushToStartButton';
@@ -29,7 +29,6 @@ const wizardSteps = ['Content', 'Style', 'Options', 'Generate'];
 export default function PromoFlyerPage() {
   const [searchParams] = useSearchParams();
   const [step, setStep] = useState(0);
-  const [showAdvanced, setShowAdvanced] = useState(searchParams.get('advanced') === 'true');
   const [useNostalgicThemes, setUseNostalgicThemes] = useState(true);
   const [formData, setFormData] = useState({
     message: '',
@@ -188,11 +187,16 @@ export default function PromoFlyerPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="heading-retro">Promo Flyer</h1>
-        <p className="text-gray-600 mt-2">
-          Create stunning promotional flyers with 48 nostalgic styles from the 1950s-1980s
+      <div className="text-center">
+        <h1 className="heading-retro text-5xl">NOSTALGIC FLYER CREATOR</h1>
+        <p className="text-gray-600 mt-2 text-lg">
+          48 stunning retro styles: Comic Books, Movie Posters, Magazine Covers from the 1950s-1980s
         </p>
+        <div className="flex flex-wrap justify-center gap-3 mt-4">
+          <span className="bg-retro-red text-white px-3 py-1 text-sm font-heading">COMICS</span>
+          <span className="bg-retro-teal text-white px-3 py-1 text-sm font-heading">MOVIES</span>
+          <span className="bg-retro-mustard text-retro-navy px-3 py-1 text-sm font-heading">MAGAZINES</span>
+        </div>
       </div>
 
       {/* PUSH TO START - Primary Action */}
@@ -206,19 +210,8 @@ export default function PromoFlyerPage() {
         <PushToStartButton />
       </div>
 
-      {/* Advanced Options Toggle */}
-      <button
-        onClick={() => setShowAdvanced(!showAdvanced)}
-        className="w-full flex items-center justify-center gap-2 py-3 text-gray-600 hover:text-gray-800 border-2 border-gray-200 hover:border-gray-300 transition-colors"
-      >
-        {showAdvanced ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-        <span className="font-heading text-sm uppercase">
-          {showAdvanced ? 'Hide' : 'Show'} Custom Flyer Builder
-        </span>
-      </button>
-
-      {/* Advanced Custom Builder - Collapsible */}
-      {showAdvanced && (
+      {/* Custom Flyer Builder - Always visible */}
+      {true && (
         <div className="space-y-6">
           {/* Wizard Progress */}
           <div className="flex items-center justify-between">

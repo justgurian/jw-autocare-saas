@@ -36,15 +36,21 @@ import { useState } from 'react';
 const navigationGroups = [
   {
     id: 'quick-post',
-    name: 'Quick Post',
+    name: 'Create Content',
     icon: Zap,
-    description: 'Create social media content in seconds',
+    description: 'Create amazing social media content',
     items: [
       {
-        name: 'Make Sale Posts',
+        name: 'Nostalgic Flyers',
+        href: '/tools/promo-flyer',
+        icon: Image,
+        description: '48 retro themes: Comics, Movies, Magazines (1950s-1980s)',
+      },
+      {
+        name: 'Batch Generator',
         href: '/tools/batch-flyer',
         icon: Image,
-        description: 'Generate 1-30 eye-catching flyers in minutes',
+        description: 'Generate multiple flyers at once',
       },
       {
         name: 'Funny Meme',
@@ -216,10 +222,14 @@ export default function MainLayout() {
       >
         <div className="h-full bg-retro-navy text-white border-r-4 border-black flex flex-col overflow-hidden">
           {/* Logo */}
-          <div className="p-5 border-b-4 border-black bg-retro-navy">
+          <div className="p-6 border-b-4 border-black bg-retro-navy">
             <Link to="/dashboard" className="block">
-              <h1 className="font-display text-2xl tracking-wider">BAYFILLER</h1>
-              <p className="font-script text-retro-mustard text-sm">Auto Repair Sales & Marketing Engine</p>
+              <img
+                src="/bayfiller-logo.png"
+                alt="Bayfiller"
+                className="w-full max-w-[220px] h-auto mx-auto"
+              />
+              <p className="font-heading text-white text-base text-center -mt-16 uppercase tracking-wide">We Keep Your Bays Full</p>
             </Link>
           </div>
 

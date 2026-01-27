@@ -9,11 +9,13 @@ export default function AuthLayout() {
         <div className="absolute inset-0 bg-checkerboard opacity-5" />
 
         <div className="relative z-10 text-center">
-          <h1 className="font-display text-6xl text-white tracking-wider mb-4">
-            BAYFILLER
-          </h1>
-          <p className="font-script text-3xl text-retro-mustard mb-8">
-            Auto Repair Sales & Marketing Engine
+          <img
+            src="/bayfiller-logo.png"
+            alt="Bayfiller"
+            className="h-32 w-auto mx-auto mb-4"
+          />
+          <p className="font-heading text-2xl text-retro-mustard mb-8 uppercase tracking-wider">
+            We Keep Your Bays Full
           </p>
 
           <div className="max-w-md mx-auto">
