@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { promoFlyerApi, downloadApi } from '../../../services/api';
-import { Wand2, Download, Share2, Copy, Check, Sparkles } from 'lucide-react';
+import { Wand2, Download, Share2, Copy, Check, Sparkles, Eye, EyeOff, PenTool } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ShareModal from '../../../components/features/ShareModal';
 import PushToStartButton from '../../../components/features/PushToStartButton';
@@ -10,6 +10,8 @@ import NostalgicThemeGrid from '../../../components/features/NostalgicThemeGrid'
 import VehiclePicker from '../../../components/features/VehiclePicker';
 import LanguageToggle from '../../../components/features/LanguageToggle';
 import PackSelector from '../../../components/features/PackSelector';
+import FirstFlyerCelebration, { hasSeenFirstFlyerCelebration } from '../../../components/features/FirstFlyerCelebration';
+import FunLoadingMessages from '../../../components/features/FunLoadingMessages';
 
 type PackType = 'variety-3' | 'variety-5' | 'week-7' | 'era' | 'style';
 
@@ -49,6 +51,8 @@ export default function PromoFlyerPage() {
   const [showShareModal, setShowShareModal] = useState(false);
   const [captionCopied, setCaptionCopied] = useState(false);
   const [activePackIndex, setActivePackIndex] = useState(0);
+  const [mobileShowPreview, setMobileShowPreview] = useState(false);
+  const [showFirstFlyerCelebration, setShowFirstFlyerCelebration] = useState(false);
 
   // Fetch themes for legacy selector
   const { data: themesData } = useQuery({
@@ -69,7 +73,14 @@ export default function PromoFlyerPage() {
         title: formData.subject,
       });
       setGeneratedPack([]);
-      toast.success('Flyer generated!');
+      setMobileShowPreview(true); // Auto-show preview on mobile
+
+      // Check if this is user's first flyer
+      if (!hasSeenFirstFlyerCelebration()) {
+        setShowFirstFlyerCelebration(true);
+      } else {
+        toast.success('Flyer generated!');
+      }
     },
     onError: () => {
       toast.error('Generation failed. Please try again.');
@@ -93,6 +104,7 @@ export default function PromoFlyerPage() {
       setGeneratedPack(res.data.flyers);
       setGeneratedContent(null);
       setActivePackIndex(0);
+      setMobileShowPreview(true); // Auto-show preview on mobile
       toast.success(`${res.data.totalGenerated} flyers generated!`);
     },
     onError: () => {
@@ -182,6 +194,7 @@ export default function PromoFlyerPage() {
     setPackType(null);
     setPackEra(null);
     setPackStyle(null);
+    setMobileShowPreview(false); // Back to form on mobile
   };
 
   return (
@@ -236,9 +249,39 @@ export default function PromoFlyerPage() {
             ))}
           </div>
 
+          {/* Mobile Toggle Button */}
+          <div className="lg:hidden sticky top-0 z-20 bg-retro-cream py-3 -mx-4 px-4 border-b border-gray-200 flex gap-2">
+            <button
+              onClick={() => setMobileShowPreview(false)}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 border-2 transition-all ${
+                !mobileShowPreview
+                  ? 'border-retro-red bg-retro-red text-white'
+                  : 'border-gray-300 bg-white text-gray-600'
+              }`}
+            >
+              <PenTool size={18} />
+              <span className="font-heading text-sm uppercase">Edit</span>
+            </button>
+            <button
+              onClick={() => setMobileShowPreview(true)}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 border-2 transition-all ${
+                mobileShowPreview
+                  ? 'border-retro-red bg-retro-red text-white'
+                  : 'border-gray-300 bg-white text-gray-600'
+              } ${currentFlyer ? '' : 'opacity-50'}`}
+              disabled={!currentFlyer}
+            >
+              <Eye size={18} />
+              <span className="font-heading text-sm uppercase">Preview</span>
+              {currentFlyer && (
+                <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+              )}
+            </button>
+          </div>
+
           <div className="grid lg:grid-cols-2 gap-8">
-            {/* Form */}
-            <div className="card-retro">
+            {/* Form - Hidden on mobile when preview is active */}
+            <div className={`card-retro ${mobileShowPreview ? 'hidden lg:block' : ''}`}>
               <h2 className="font-heading text-xl uppercase mb-4">
                 {wizardSteps[step]}
               </h2>
@@ -434,8 +477,8 @@ export default function PromoFlyerPage() {
               </div>
             </div>
 
-            {/* Preview */}
-            <div className="card-retro">
+            {/* Preview - Hidden on mobile when form is active */}
+            <div className={`card-retro ${!mobileShowPreview ? 'hidden lg:block' : ''}`}>
               <h2 className="font-heading text-xl uppercase mb-4">Preview</h2>
 
               {currentFlyer ? (
@@ -514,14 +557,22 @@ export default function PromoFlyerPage() {
                     )}
                   </div>
 
+                  {/* Primary Download Button - Most Important Action */}
+                  <button
+                    onClick={() => handleDownload(currentFlyer)}
+                    className="w-full py-4 bg-retro-teal text-white border-2 border-black shadow-retro hover:shadow-none transition-all flex items-center justify-center gap-3 font-heading text-lg uppercase"
+                  >
+                    <Download size={24} />
+                    Download Image
+                  </button>
+
+                  {/* Mobile hint */}
+                  <p className="text-center text-xs text-gray-500 md:hidden">
+                    Tip: Long-press on image above to save directly
+                  </p>
+
+                  {/* Secondary actions */}
                   <div className="grid grid-cols-2 gap-3">
-                    <button
-                      onClick={() => handleDownload(currentFlyer)}
-                      className="btn-retro-secondary flex items-center justify-center gap-2"
-                    >
-                      <Download size={18} />
-                      Download
-                    </button>
                     <button
                       onClick={() => setShowShareModal(true)}
                       className="btn-retro-primary flex items-center justify-center gap-2"
@@ -529,14 +580,17 @@ export default function PromoFlyerPage() {
                       <Share2 size={18} />
                       Share
                     </button>
+                    <button
+                      onClick={resetForm}
+                      className="btn-retro-outline flex items-center justify-center gap-2"
+                    >
+                      Create Another
+                    </button>
                   </div>
-
-                  <button
-                    onClick={resetForm}
-                    className="w-full mt-3 btn-retro-outline text-sm"
-                  >
-                    Create Another
-                  </button>
+                </div>
+              ) : isGenerating ? (
+                <div className="aspect-[4/5] bg-gradient-to-br from-gray-100 to-gray-200 border-2 border-retro-red flex items-center justify-center">
+                  <FunLoadingMessages isLoading={true} spinnerSize={48} />
                 </div>
               ) : (
                 <div className="aspect-[4/5] bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center">
@@ -564,6 +618,15 @@ export default function PromoFlyerPage() {
           }}
         />
       )}
+
+      {/* First Flyer Celebration */}
+      <FirstFlyerCelebration
+        isOpen={showFirstFlyerCelebration}
+        onClose={() => setShowFirstFlyerCelebration(false)}
+        flyerTitle={generatedContent?.title || formData.subject}
+        onShare={() => setShowShareModal(true)}
+        onDownload={() => generatedContent && handleDownload(generatedContent)}
+      />
     </div>
   );
 }

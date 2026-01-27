@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { promoFlyerApi, downloadApi } from '../../services/api';
 import { Power, Loader2, Download, Share2, RefreshCw, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ShareModal from './ShareModal';
+import { LOADING_MESSAGES } from './FunLoadingMessages';
 
 interface GeneratedContent {
   id: string;
@@ -18,6 +19,7 @@ export default function PushToStartButton() {
   const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
+  const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
 
   // Push to Start mutation
   const instantMutation = useMutation({
@@ -59,6 +61,20 @@ export default function PushToStartButton() {
     setGeneratedContent(null);
     instantMutation.mutate();
   };
+
+  // Cycle through loading messages
+  useEffect(() => {
+    if (!instantMutation.isPending) {
+      setLoadingMessageIndex(Math.floor(Math.random() * LOADING_MESSAGES.length));
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setLoadingMessageIndex((prev) => (prev + 1) % LOADING_MESSAGES.length);
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [instantMutation.isPending]);
 
   return (
     <div className="w-full">
@@ -145,11 +161,8 @@ export default function PushToStartButton() {
             </div>
           </div>
 
-          <p className="text-lg font-heading uppercase mt-6 text-red-600 animate-pulse">
-            Generating...
-          </p>
-          <p className="text-sm text-gray-500 mt-2">
-            Creating your on-brand flyer
+          <p className="text-sm font-heading uppercase mt-6 text-red-600 animate-pulse max-w-xs text-center">
+            {LOADING_MESSAGES[loadingMessageIndex]}
           </p>
         </div>
       )}
@@ -179,15 +192,22 @@ export default function PushToStartButton() {
             <p className="text-sm text-gray-900">{generatedContent.caption}</p>
           </div>
 
-          {/* Action Buttons */}
+          {/* Primary Download Button */}
+          <button
+            onClick={handleDownload}
+            className="w-full py-4 bg-retro-teal text-white border-2 border-black shadow-retro hover:shadow-none transition-all flex items-center justify-center gap-3 font-heading text-lg uppercase"
+          >
+            <Download size={24} />
+            Download Image
+          </button>
+
+          {/* Mobile hint */}
+          <p className="text-center text-xs text-gray-500 md:hidden">
+            Tip: Long-press on image above to save directly
+          </p>
+
+          {/* Secondary Actions */}
           <div className="grid grid-cols-2 gap-3">
-            <button
-              onClick={handleDownload}
-              className="btn-retro-secondary flex items-center justify-center gap-2"
-            >
-              <Download size={18} />
-              Download
-            </button>
             <button
               onClick={() => setShowShareModal(true)}
               className="btn-retro-primary flex items-center justify-center gap-2"
@@ -195,16 +215,14 @@ export default function PushToStartButton() {
               <Share2 size={18} />
               Share
             </button>
+            <button
+              onClick={handleGenerateAnother}
+              className="btn-retro-outline flex items-center justify-center gap-2"
+            >
+              <RefreshCw size={16} />
+              New Flyer
+            </button>
           </div>
-
-          {/* Generate Another Button */}
-          <button
-            onClick={handleGenerateAnother}
-            className="w-full btn-retro-outline flex items-center justify-center gap-2"
-          >
-            <RefreshCw size={16} />
-            Generate Another
-          </button>
         </div>
       )}
 

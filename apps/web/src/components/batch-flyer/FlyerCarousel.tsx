@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
@@ -9,8 +9,11 @@ import {
   Copy,
   Heart,
   Loader2,
+  ChevronDown,
+  Download,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { downloadApi } from '../../services/api';
 
 interface BatchFlyer {
   id: string;
@@ -52,8 +55,80 @@ export default function FlyerCarousel({
   const [editingCaption, setEditingCaption] = useState(false);
   const [captionText, setCaptionText] = useState('');
   const [copied, setCopied] = useState(false);
+  const [showJumpTo, setShowJumpTo] = useState(false);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const thumbnailRef = useRef<HTMLDivElement>(null);
 
   const currentFlyer = flyers[currentIndex];
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't handle if user is typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      if (e.key === 'ArrowLeft' && currentIndex > 0) {
+        onIndexChange(currentIndex - 1);
+      } else if (e.key === 'ArrowRight' && currentIndex < flyers.length - 1) {
+        onIndexChange(currentIndex + 1);
+      } else if (e.key === 'a' && currentFlyer?.approvalStatus === 'pending') {
+        // 'a' for approve
+        onApprove(currentFlyer.id);
+      } else if (e.key === 'r' && currentFlyer?.approvalStatus === 'pending') {
+        // 'r' for reject
+        onReject(currentFlyer.id);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentIndex, flyers.length, currentFlyer, onIndexChange, onApprove, onReject]);
+
+  // Auto-scroll thumbnail into view
+  useEffect(() => {
+    if (thumbnailRef.current) {
+      const container = thumbnailRef.current;
+      const thumbnail = container.children[currentIndex] as HTMLElement;
+      if (thumbnail) {
+        const containerRect = container.getBoundingClientRect();
+        const thumbRect = thumbnail.getBoundingClientRect();
+
+        if (thumbRect.left < containerRect.left || thumbRect.right > containerRect.right) {
+          thumbnail.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        }
+      }
+    }
+  }, [currentIndex]);
+
+  // Minimum swipe distance (in px)
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe && currentIndex < flyers.length - 1) {
+      onIndexChange(currentIndex + 1);
+    } else if (isRightSwipe && currentIndex > 0) {
+      onIndexChange(currentIndex - 1);
+    }
+  };
 
   if (!currentFlyer) return null;
 
@@ -75,6 +150,23 @@ export default function FlyerCarousel({
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleDownload = async () => {
+    try {
+      const response = await downloadApi.downloadSingle(currentFlyer.id);
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${currentFlyer.title || 'flyer'}-${currentIndex + 1}.png`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success('Download started!');
+    } catch {
+      toast.error('Failed to download');
+    }
+  };
+
   const startEditingCaption = () => {
     setCaptionText(currentFlyer.caption);
     setEditingCaption(true);
@@ -92,11 +184,23 @@ export default function FlyerCarousel({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" ref={carouselRef}>
+      {/* Keyboard Shortcuts Hint */}
+      <div className="hidden sm:flex items-center justify-center gap-4 text-xs text-gray-500">
+        <span><kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-300 rounded text-[10px]">←</kbd> <kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-300 rounded text-[10px]">→</kbd> Navigate</span>
+        <span><kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-300 rounded text-[10px]">A</kbd> Approve</span>
+        <span><kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-300 rounded text-[10px]">R</kbd> Reject</span>
+      </div>
+
       {/* Main Preview Area */}
-      <div className="flex gap-6">
-        {/* Image Preview */}
-        <div className="w-1/2 relative">
+      <div className="flex flex-col md:flex-row gap-6">
+        {/* Image Preview with touch handlers */}
+        <div
+          className="w-full md:w-1/2 relative"
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+        >
           <div className="aspect-[4/5] border-2 border-black overflow-hidden bg-gray-100">
             <img
               src={currentFlyer.imageUrl}
@@ -130,7 +234,7 @@ export default function FlyerCarousel({
         </div>
 
         {/* Caption & Actions */}
-        <div className="w-1/2 flex flex-col">
+        <div className="w-full md:w-1/2 flex flex-col">
           {/* Title */}
           <h3 className="font-heading text-lg uppercase mb-2">{currentFlyer.title}</h3>
 
@@ -228,8 +332,17 @@ export default function FlyerCarousel({
           )}
 
           {currentFlyer.approvalStatus === 'approved' && (
-            <div className="py-4 bg-green-50 border-2 border-green-500 text-green-700 text-center font-heading uppercase">
-              Approved & Scheduled
+            <div className="space-y-3">
+              <div className="py-3 bg-green-50 border-2 border-green-500 text-green-700 text-center font-heading uppercase text-sm">
+                Approved & Scheduled
+              </div>
+              <button
+                onClick={handleDownload}
+                className="w-full py-3 bg-retro-teal text-white border-2 border-black shadow-retro hover:shadow-none transition-all flex items-center justify-center gap-2 font-heading uppercase"
+              >
+                <Download size={20} />
+                Download Image
+              </button>
             </div>
           )}
 
@@ -238,6 +351,22 @@ export default function FlyerCarousel({
               Rejected
             </div>
           )}
+
+          {/* Download button for pending items too */}
+          {currentFlyer.approvalStatus === 'pending' && (
+            <button
+              onClick={handleDownload}
+              className="w-full mt-3 py-2 border-2 border-gray-300 text-gray-600 hover:bg-gray-50 flex items-center justify-center gap-2 text-sm"
+            >
+              <Download size={16} />
+              Download Preview
+            </button>
+          )}
+
+          {/* Mobile hint */}
+          <p className="text-center text-xs text-gray-400 md:hidden mt-2">
+            Long-press image to save directly
+          </p>
         </div>
       </div>
 
@@ -247,25 +376,65 @@ export default function FlyerCarousel({
           onClick={goToPrevious}
           disabled={currentIndex === 0}
           className="p-3 border-2 border-black bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Previous (← arrow key)"
         >
           <ChevronLeft size={24} />
         </button>
 
-        <span className="font-heading text-lg">
-          {currentIndex + 1} / {flyers.length}
-        </span>
+        {/* Jump to dropdown for large batches */}
+        {flyers.length > 5 ? (
+          <div className="relative">
+            <button
+              onClick={() => setShowJumpTo(!showJumpTo)}
+              className="flex items-center gap-2 px-4 py-2 border-2 border-black bg-white hover:bg-gray-50 font-heading"
+            >
+              <span className="text-lg">{currentIndex + 1} / {flyers.length}</span>
+              <ChevronDown size={16} className={`transition-transform ${showJumpTo ? 'rotate-180' : ''}`} />
+            </button>
+
+            {showJumpTo && (
+              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-white border-2 border-black shadow-retro z-20 max-h-48 overflow-y-auto min-w-[120px]">
+                {flyers.map((flyer, index) => (
+                  <button
+                    key={flyer.id}
+                    onClick={() => {
+                      onIndexChange(index);
+                      setShowJumpTo(false);
+                    }}
+                    className={`w-full px-3 py-2 text-left text-sm flex items-center justify-between hover:bg-gray-100 ${
+                      index === currentIndex ? 'bg-retro-red text-white hover:bg-retro-red' : ''
+                    }`}
+                  >
+                    <span>Flyer {index + 1}</span>
+                    <span className={`w-2 h-2 rounded-full ${getStatusColor(flyer.approvalStatus)}`} />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <span className="font-heading text-lg px-4">
+            {currentIndex + 1} / {flyers.length}
+          </span>
+        )}
 
         <button
           onClick={goToNext}
           disabled={currentIndex === flyers.length - 1}
           className="p-3 border-2 border-black bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Next (→ arrow key)"
         >
           <ChevronRight size={24} />
         </button>
       </div>
 
+      {/* Mobile swipe hint */}
+      <p className="text-center text-xs text-gray-400 md:hidden">
+        Swipe left/right on image to navigate
+      </p>
+
       {/* Thumbnail Strip */}
-      <div className="flex gap-2 overflow-x-auto pb-2">
+      <div ref={thumbnailRef} className="flex gap-2 overflow-x-auto pb-2 px-1">
         {flyers.map((flyer, index) => (
           <button
             key={flyer.id}
