@@ -26,7 +26,7 @@ logger.info('Gemini API initialized', { hasKey: !!apiKey });
 
 // Model names
 const TEXT_MODEL = 'gemini-2.0-flash';
-const IMAGE_MODEL = 'gemini-2.0-flash-preview-image-generation';
+const IMAGE_MODEL = 'gemini-3-pro-image-preview';
 
 interface TextGenerationOptions {
   maxTokens?: number;
