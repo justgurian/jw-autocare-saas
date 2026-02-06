@@ -110,7 +110,6 @@ function getCategoryFromStyle(styleId: string): string {
     'friendly-neighborhood': 'lifestyle',
     'desert-southwest': 'regional',
     'urban-industrial': 'professional',
-    'british-racing': 'premium',
   };
   return categoryMap[styleId] || 'general';
 }

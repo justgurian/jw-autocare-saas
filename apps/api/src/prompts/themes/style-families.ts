@@ -44,7 +44,6 @@ export const STYLE_FAMILIES: StyleFamily[] = [
     emoji: '🏁',
     previewImage: '/images/families/retro-racing.svg',
     themeIds: [
-      'british-racing',      // brand style
       'muscle-performance',  // brand style
       'vintage-racing',      // additional
       'sports-car',          // legacy
@@ -164,7 +163,6 @@ export const STYLE_FAMILIES: StyleFamily[] = [
     themeIds: [
       'anime-drift-hero',     // NEW
       'manga-mecha-shop',     // NEW
-      'anime-chibi-garage',   // NEW
       'manga-racing-spirit',  // NEW
     ],
     tags: ['anime', 'manga', 'japanese', 'animation', 'action'],
@@ -397,37 +395,6 @@ export const animeMangaNewThemes: ThemeDefinition[] = [
       vocabulary: ['unit', 'mission', 'deploy', 'maintenance bay', 'systems', 'optimal'],
     },
     mockupScenes: ['mecha hangar', 'command center display', 'launch pad'],
-    compatibleTools: ['promo_flyer', 'instant_pack'],
-  },
-  {
-    id: 'anime-chibi-garage',
-    name: 'Chibi Garage',
-    category: 'anime-manga',
-    shortDescription: 'Cute chibi characters working on adorable cartoon cars',
-    previewColors: ['#FF69B4', '#87CEEB', '#FFE4B5', '#98FB98'],
-    imagePrompt: {
-      style: `Kawaii chibi anime style — super cute, big-headed characters with tiny bodies
-        working on adorably rounded cartoon cars. Soft pastel color palette with
-        sparkle effects. Think Sanrio meets auto repair. Characters have oversized
-        expressive eyes and tiny tools. Everything is rounded and cute.`,
-      colorPalette: `Bubblegum pink (#FF69B4), sky blue (#87CEEB), peachy cream (#FFE4B5),
-        mint green (#98FB98), soft lavender, sunshine yellow.
-        Pastel and cheerful. Sparkle and star effects everywhere.`,
-      typography: `Rounded bubble font, playful and bouncy. Slight hand-drawn quality.
-        Kawaii-style text with heart dots on i's and star accents.
-        Friendly, approachable, and impossible not to smile at.`,
-      elements: `Chibi mechanic characters, rounded cartoon cars with faces, sparkle effects,
-        star bursts, heart shapes, tiny tools, oil drops with cute faces,
-        flower decorations, rainbow accents, cloud shapes.`,
-      mood: `Adorable, cheerful, approachable, heartwarming. This auto shop makes car repair
-        feel like a fun adventure. Perfect for family-friendly shops that want to stand out
-        with maximum cuteness and charm.`,
-    },
-    textPrompt: {
-      tone: 'Cheerful, cute, friendly, heartwarming',
-      vocabulary: ['super', 'happy', 'sparkle', 'friendly', 'wonderful', 'amazing'],
-    },
-    mockupScenes: ['kawaii shop front', 'pastel workshop', 'cute tool display'],
     compatibleTools: ['promo_flyer', 'instant_pack'],
   },
   {
