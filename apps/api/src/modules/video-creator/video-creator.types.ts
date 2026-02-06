@@ -1,6 +1,6 @@
 /**
  * Video Creator Types
- * Type definitions for AI-powered video generation using Sora 2
+ * Type definitions for AI-powered video generation using Veo 3.1
  */
 
 export type VideoStyle =
@@ -11,9 +11,11 @@ export type VideoStyle =
   | 'animated'
   | 'retro';
 
-export type VideoAspectRatio = '16:9' | '9:16' | '1:1' | '4:5';
+export type VideoAspectRatio = '16:9' | '9:16';
 
-export type VideoDuration = '5s' | '10s' | '15s' | '30s';
+export type VideoDuration = '4s' | '6s' | '8s';
+
+export type VideoResolution = '720p' | '1080p';
 
 export interface VideoTemplate {
   id: string;
@@ -41,6 +43,7 @@ export interface VideoGenerationInput {
   style: VideoStyle;
   aspectRatio: VideoAspectRatio;
   duration: VideoDuration;
+  resolution?: VideoResolution;
 
   // Branding
   includeLogoOverlay?: boolean;
@@ -82,6 +85,31 @@ export interface GeneratedVideo {
   metadata: Record<string, unknown>;
 }
 
+// Video Options (Veo 3.1 capabilities)
+export const VIDEO_OPTIONS = {
+  durations: [
+    { id: '4s', name: '4 seconds', description: 'Quick teaser' },
+    { id: '6s', name: '6 seconds', description: 'Short promo' },
+    { id: '8s', name: '8 seconds', description: 'Standard clip (supports HD/4K)' },
+  ],
+  resolutions: [
+    { id: '720p', name: '720p', description: 'Standard quality (all durations)' },
+    { id: '1080p', name: '1080p HD', description: 'High definition (8s only)' },
+  ],
+  aspectRatios: [
+    { id: '16:9', name: 'Landscape (16:9)', description: 'YouTube, Website' },
+    { id: '9:16', name: 'Portrait (9:16)', description: 'TikTok, Reels, Stories' },
+  ],
+  styles: [
+    { id: 'cinematic', name: 'Cinematic', description: 'Hollywood-style dramatic' },
+    { id: 'commercial', name: 'Commercial', description: 'Professional advertisement' },
+    { id: 'social-media', name: 'Social Media', description: 'TikTok/Reels optimized' },
+    { id: 'documentary', name: 'Documentary', description: 'Informative and educational' },
+    { id: 'animated', name: 'Animated', description: 'Motion graphics style' },
+    { id: 'retro', name: 'Retro', description: '1950s nostalgic style' },
+  ],
+};
+
 // Video Templates
 export const VIDEO_TEMPLATES: VideoTemplate[] = [
   {
@@ -89,7 +117,7 @@ export const VIDEO_TEMPLATES: VideoTemplate[] = [
     name: 'Special Offer Promo',
     description: 'Dynamic promo video for service specials and discounts',
     style: 'commercial',
-    duration: '15s',
+    duration: '8s',
     aspectRatio: '9:16',
     promptTemplate: `Create a dynamic promotional video for an auto repair shop.
 
@@ -112,7 +140,7 @@ END: Logo animation with call-to-action`,
     name: 'Service Spotlight',
     description: 'Educational video highlighting a specific service',
     style: 'documentary',
-    duration: '30s',
+    duration: '8s',
     aspectRatio: '16:9',
     promptTemplate: `Create an educational spotlight video for an auto repair service.
 
@@ -136,8 +164,8 @@ PACING: Moderate, allowing time to absorb information`,
     name: 'Car Reveal',
     description: 'Dramatic reveal video for Car of the Day or completed work',
     style: 'cinematic',
-    duration: '15s',
-    aspectRatio: '4:5',
+    duration: '8s',
+    aspectRatio: '16:9',
     promptTemplate: `Create a dramatic car reveal video.
 
 SUBJECT: {topic}
@@ -159,7 +187,7 @@ LIGHTING: Dramatic, studio-quality, highlight reflections`,
     name: 'Quick Tip',
     description: 'Short educational tip for social media',
     style: 'social-media',
-    duration: '10s',
+    duration: '6s',
     aspectRatio: '9:16',
     promptTemplate: `Create a quick car care tip video for social media.
 
@@ -182,8 +210,8 @@ TEXT: Bold, easy to read`,
     name: 'Customer Testimonial',
     description: 'Animated testimonial with customer quote',
     style: 'animated',
-    duration: '15s',
-    aspectRatio: '1:1',
+    duration: '8s',
+    aspectRatio: '16:9',
     promptTemplate: `Create an animated customer testimonial video.
 
 QUOTE: "{topic}"
@@ -205,8 +233,8 @@ TEXT: Elegant, readable typography`,
     name: 'Retro Commercial',
     description: '1950s-style nostalgic commercial',
     style: 'retro',
-    duration: '30s',
-    aspectRatio: '4:5',
+    duration: '8s',
+    aspectRatio: '16:9',
     promptTemplate: `Create a nostalgic 1950s-style auto shop commercial.
 
 MESSAGE: {topic}

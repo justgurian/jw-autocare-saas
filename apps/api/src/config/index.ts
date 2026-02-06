@@ -56,11 +56,6 @@ export const config = {
     apiKey: process.env.GEMINI_API_KEY || '',
   },
 
-  // Sora 2 (Video Generation)
-  sora: {
-    apiKey: process.env.SORA_API_KEY || '',
-    apiUrl: process.env.SORA_API_URL || 'https://api.openai.com/v1/videos/generations',
-  },
 
   // Stripe
   stripe: {

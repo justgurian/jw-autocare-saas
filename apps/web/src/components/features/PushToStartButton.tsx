@@ -9,11 +9,17 @@ import { useFileDownload } from '../../hooks/useFileDownload';
 import type { GeneratedContent } from '../../types/content';
 import FlyerFeedback from './FlyerFeedback';
 
-export default function PushToStartButton() {
+interface PushToStartButtonProps {
+  size?: 'default' | 'hero';
+}
+
+export default function PushToStartButton({ size = 'default' }: PushToStartButtonProps) {
   const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
   const download = useFileDownload();
+
+  const isHero = size === 'hero';
 
   // Push to Start mutation
   const instantMutation = useMutation({
@@ -48,7 +54,7 @@ export default function PushToStartButton() {
       {/* Push to Start Button - Engine Ignition Style */}
       {!generatedContent && !instantMutation.isPending && (
         <div className="flex flex-col items-center justify-center py-8">
-          <p className="text-gray-600 text-sm mb-6 text-center max-w-md">
+          <p className={`text-gray-600 mb-6 text-center max-w-md ${isHero ? 'text-base' : 'text-sm'}`}>
             One click creates a professional flyer based on your services and specials.
             No thinking required.
           </p>
@@ -57,14 +63,17 @@ export default function PushToStartButton() {
             onClick={handlePushToStart}
             aria-label="Generate content"
             className={`
-              relative w-40 h-40 rounded-full
+              relative rounded-full
               bg-gradient-to-b from-gray-800 to-gray-900
               border-8 border-gray-700
-              shadow-[0_0_0_8px_#1f2937,0_0_40px_rgba(0,0,0,0.5)]
               transition-all duration-100
-              hover:shadow-[0_0_0_8px_#1f2937,0_0_60px_rgba(239,68,68,0.3)]
               active:scale-95
+              ${isHero ? 'w-56 h-56' : 'w-40 h-40'}
               ${isPressed ? 'scale-95' : ''}
+              ${isHero
+                ? 'easy-button-pulse hover:shadow-[0_0_0_8px_#1f2937,0_0_80px_rgba(239,68,68,0.6)]'
+                : 'shadow-[0_0_0_8px_#1f2937,0_0_40px_rgba(0,0,0,0.5)] hover:shadow-[0_0_0_8px_#1f2937,0_0_60px_rgba(239,68,68,0.3)]'
+              }
               group
             `}
           >
@@ -83,7 +92,7 @@ export default function PushToStartButton() {
             `}>
               {/* Power icon */}
               <Power
-                size={48}
+                size={isHero ? 56 : 48}
                 className={`
                   text-red-500 mb-1
                   transition-all duration-300
@@ -92,24 +101,37 @@ export default function PushToStartButton() {
                 `}
               />
 
-              {/* ENGINE START text */}
-              <span className="text-[10px] font-bold tracking-widest text-gray-400 group-hover:text-gray-300 uppercase">
-                Engine
-              </span>
-              <span className="text-xs font-bold tracking-wider text-red-500 group-hover:text-red-400 uppercase">
-                Start
-              </span>
+              {/* Button label text */}
+              {isHero ? (
+                <>
+                  <span className="text-xs font-bold tracking-widest text-gray-400 group-hover:text-gray-300 uppercase">
+                    The Easy
+                  </span>
+                  <span className="text-sm font-bold tracking-wider text-red-500 group-hover:text-red-400 uppercase">
+                    Button
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="text-[10px] font-bold tracking-widest text-gray-400 group-hover:text-gray-300 uppercase">
+                    Engine
+                  </span>
+                  <span className="text-xs font-bold tracking-wider text-red-500 group-hover:text-red-400 uppercase">
+                    Start
+                  </span>
+                </>
+              )}
             </div>
 
             {/* Glowing ring animation on hover */}
             <div className="absolute inset-0 rounded-full border-2 border-red-500/0 group-hover:border-red-500/50 group-hover:animate-pulse transition-all" />
           </button>
 
-          <p className="text-lg font-heading uppercase mt-6 text-gray-700">
+          <p className={`font-heading uppercase mt-6 text-gray-700 ${isHero ? 'text-xl' : 'text-lg'}`}>
             Push to Start
           </p>
-          <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-            <Sparkles size={12} className="text-retro-mustard" />
+          <p className={`text-gray-500 mt-1 flex items-center gap-1 ${isHero ? 'text-sm' : 'text-xs'}`}>
+            <Sparkles size={isHero ? 14 : 12} className="text-retro-mustard" />
             AI-powered instant creation
           </p>
         </div>

@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI, Part } from '@google/generative-ai';
+import { GoogleGenAI, Part } from '@google/genai';
 import { config } from '../config';
 import { logger } from '../utils/logger';
 import * as fs from 'fs';
@@ -16,26 +16,17 @@ function sanitizeForPrompt(input: string): string {
     .slice(0, 500); // Limit length
 }
 
-// Initialize Gemini client (build: 2026-01-26-v1)
+// Initialize Gemini client (build: 2026-02-05-v2 — @google/genai SDK)
 const apiKey = config.gemini.apiKey;
 if (!apiKey) {
   logger.error('CRITICAL: GEMINI_API_KEY is not set!');
 }
-const genAI = new GoogleGenerativeAI(apiKey);
+const ai = new GoogleGenAI({ apiKey });
 logger.info('Gemini API initialized', { hasKey: !!apiKey });
 
-// Models - using available Gemini models
-const textModel = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-const visionModel = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-
-// Image generation model - Nano Banana Pro (gemini-3-pro-image-preview)
-const imageModel = genAI.getGenerativeModel({
-  model: 'gemini-3-pro-image-preview',
-  generationConfig: {
-    // @ts-ignore - responseModalities is supported in newer versions
-    responseModalities: ['TEXT', 'IMAGE'],
-  },
-});
+// Model names
+const TEXT_MODEL = 'gemini-2.0-flash';
+const IMAGE_MODEL = 'gemini-2.0-flash-preview-image-generation';
 
 interface TextGenerationOptions {
   maxTokens?: number;
@@ -104,9 +95,10 @@ export const geminiService = {
   // Generate text content
   async generateText(prompt: string, options: TextGenerationOptions = {}): Promise<GenerationResult> {
     try {
-      const result = await textModel.generateContent({
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: {
+      const response = await ai.models.generateContent({
+        model: TEXT_MODEL,
+        contents: prompt,
+        config: {
           maxOutputTokens: options.maxTokens || 2048,
           temperature: options.temperature || 0.7,
           topP: options.topP || 0.95,
@@ -114,8 +106,7 @@ export const geminiService = {
         },
       });
 
-      const response = result.response;
-      const text = response.text();
+      const text = response.text || '';
 
       logger.debug('Gemini text generation completed', {
         promptLength: prompt.length,
@@ -125,9 +116,9 @@ export const geminiService = {
       return {
         text,
         usage: {
-          promptTokens: (response as any).usageMetadata?.promptTokenCount || 0,
-          completionTokens: (response as any).usageMetadata?.candidatesTokenCount || 0,
-          totalTokens: (response as any).usageMetadata?.totalTokenCount || 0,
+          promptTokens: response.usageMetadata?.promptTokenCount || 0,
+          completionTokens: response.usageMetadata?.candidatesTokenCount || 0,
+          totalTokens: response.usageMetadata?.totalTokenCount || 0,
         },
       };
     } catch (error) {
@@ -207,34 +198,33 @@ ${options.negativePrompt ? `- ${options.negativePrompt}` : ''}
 
 Generate a single, stunning marketing image that a premium auto repair shop would be proud to post on their social media.`;
 
-      logger.info('Calling Nano Banana Pro model for image generation...', {
+      logger.info('Calling image model for generation...', {
         hasLogo: !!options.logoImage,
       });
 
-      let result;
+      let contents: Part[] | string;
       if (options.logoImage) {
         // Pass logo as inline image so the model can see and incorporate it
-        const logoPart: Part = {
-          inlineData: {
-            data: options.logoImage.base64,
-            mimeType: options.logoImage.mimeType,
-          },
-        };
-        result = await imageModel.generateContent({
-          contents: [
-            {
-              role: 'user',
-              parts: [
-                logoPart,
-                { text: fullPrompt + '\n\nIMPORTANT: The attached image is the business logo. You MUST incorporate this exact logo into the flyer design. Place it prominently where it is clearly visible — typically in the top or bottom area of the flyer. CRITICAL: If the logo has a white, colored, or solid background rectangle/box, IGNORE that background entirely — treat it as transparent. Only render the actual logo design/artwork itself, seamlessly integrated into the flyer. There should be NO visible bounding box, white rectangle, or background shape around the logo.' },
-              ],
+        contents = [
+          {
+            inlineData: {
+              data: options.logoImage.base64,
+              mimeType: options.logoImage.mimeType,
             },
-          ],
-        });
+          },
+          { text: fullPrompt + '\n\nIMPORTANT: The attached image is the business logo. You MUST incorporate this exact logo into the flyer design. Place it prominently where it is clearly visible — typically in the top or bottom area of the flyer. CRITICAL: If the logo has a white, colored, or solid background rectangle/box, IGNORE that background entirely — treat it as transparent. Only render the actual logo design/artwork itself, seamlessly integrated into the flyer. There should be NO visible bounding box, white rectangle, or background shape around the logo.' },
+        ];
       } else {
-        result = await imageModel.generateContent(fullPrompt);
+        contents = fullPrompt;
       }
-      const response = result.response;
+
+      const response = await ai.models.generateContent({
+        model: IMAGE_MODEL,
+        contents,
+        config: {
+          responseModalities: ['TEXT', 'IMAGE'],
+        },
+      });
 
       logger.info('Received response from image model', {
         hasResponse: !!response,
@@ -247,16 +237,15 @@ Generate a single, stunning marketing image that a premium auto repair shop woul
 
       logger.info('Response parts analysis', {
         partsCount: parts.length,
-        partTypes: parts.map((p) => (p as any).inlineData ? 'image' : (p as any).text ? 'text' : 'unknown'),
+        partTypes: parts.map((p) => p.inlineData ? 'image' : p.text ? 'text' : 'unknown'),
       });
 
       for (const part of parts) {
-        const inlineData = (part as any).inlineData;
-        if (inlineData) {
-          const imageData = Buffer.from(inlineData.data, 'base64');
-          const mimeType = inlineData.mimeType || 'image/png';
+        if (part.inlineData) {
+          const imageData = Buffer.from(part.inlineData.data!, 'base64');
+          const mimeType = part.inlineData.mimeType || 'image/png';
 
-          logger.info('Image generated successfully with Nano Banana Pro', {
+          logger.info('Image generated successfully', {
             size: imageData.length,
             mimeType,
             sizeKB: Math.round(imageData.length / 1024),
@@ -286,7 +275,7 @@ Generate a single, stunning marketing image that a premium auto repair shop woul
       }
 
       // If no image was generated, log the text response for debugging
-      const textResponse = response.text();
+      const textResponse = response.text || '';
       logger.warn('No image generated in response - model returned text only', {
         textResponseLength: textResponse?.length || 0,
         textResponsePreview: textResponse?.substring(0, 500) || 'empty',
@@ -619,32 +608,29 @@ CRITICAL INSTRUCTIONS FOR USING THE REFERENCE PHOTO:
 
 Aspect ratio: ${options.aspectRatio || '4:5'} (portrait orientation for social media)`;
 
-      // Create the image part from reference
-      const imagePart: Part = {
-        inlineData: {
-          data: referenceImage.base64,
-          mimeType: referenceImage.mimeType,
-        },
-      };
-
       // Generate with the reference image
-      const result = await imageModel.generateContent({
+      const response = await ai.models.generateContent({
+        model: IMAGE_MODEL,
         contents: [
           {
-            role: 'user',
-            parts: [imagePart, { text: fullPrompt }],
+            inlineData: {
+              data: referenceImage.base64,
+              mimeType: referenceImage.mimeType,
+            },
           },
+          { text: fullPrompt },
         ],
+        config: {
+          responseModalities: ['TEXT', 'IMAGE'],
+        },
       });
 
-      const response = result.response;
       const parts = response.candidates?.[0]?.content?.parts || [];
 
       for (const part of parts) {
-        const inlineData = (part as any).inlineData;
-        if (inlineData) {
-          const imageData = Buffer.from(inlineData.data, 'base64');
-          const mimeType = inlineData.mimeType || 'image/png';
+        if (part.inlineData) {
+          const imageData = Buffer.from(part.inlineData.data!, 'base64');
+          const mimeType = part.inlineData.mimeType || 'image/png';
 
           logger.info('Image with reference generated successfully', {
             size: imageData.length,
@@ -661,7 +647,7 @@ Aspect ratio: ${options.aspectRatio || '4:5'} (portrait orientation for social m
 
       // If no image was generated, return error
       logger.warn('No image generated with reference', {
-        response: response.text(),
+        response: response.text,
       });
 
       return {
@@ -710,30 +696,28 @@ CRITICAL RULES:
 
 Aspect ratio: ${options.aspectRatio || '4:5'} (portrait orientation for social media)`;
 
-      const imagePart: Part = {
-        inlineData: {
-          data: existingImage.base64,
-          mimeType: existingImage.mimeType,
-        },
-      };
-
-      const result = await imageModel.generateContent({
+      const response = await ai.models.generateContent({
+        model: IMAGE_MODEL,
         contents: [
           {
-            role: 'user',
-            parts: [imagePart, { text: editPrompt }],
+            inlineData: {
+              data: existingImage.base64,
+              mimeType: existingImage.mimeType,
+            },
           },
+          { text: editPrompt },
         ],
+        config: {
+          responseModalities: ['TEXT', 'IMAGE'],
+        },
       });
 
-      const response = result.response;
       const parts = response.candidates?.[0]?.content?.parts || [];
 
       for (const part of parts) {
-        const inlineData = (part as any).inlineData;
-        if (inlineData) {
-          const imageData = Buffer.from(inlineData.data, 'base64');
-          const mimeType = inlineData.mimeType || 'image/png';
+        if (part.inlineData) {
+          const imageData = Buffer.from(part.inlineData.data!, 'base64');
+          const mimeType = part.inlineData.mimeType || 'image/png';
 
           logger.info('Image edit completed successfully', {
             size: imageData.length,
@@ -745,7 +729,7 @@ Aspect ratio: ${options.aspectRatio || '4:5'} (portrait orientation for social m
       }
 
       logger.warn('No image generated during edit', {
-        response: response.text(),
+        response: response.text,
       });
 
       return {
@@ -773,31 +757,25 @@ Aspect ratio: ${options.aspectRatio || '4:5'} (portrait orientation for social m
   async analyzeImage(imageUrl: string, prompt: string): Promise<string> {
     try {
       // Fetch image and convert to base64
-      const response = await fetch(imageUrl);
-      const buffer = await response.arrayBuffer();
+      const fetchResp = await fetch(imageUrl);
+      const buffer = await fetchResp.arrayBuffer();
       const base64 = Buffer.from(buffer).toString('base64');
-      const mimeType = response.headers.get('content-type') || 'image/png';
+      const mimeType = fetchResp.headers.get('content-type') || 'image/png';
 
-      const imagePart: Part = {
-        inlineData: {
-          data: base64,
-          mimeType,
-        },
-      };
-
-      const result = await visionModel.generateContent({
+      const response = await ai.models.generateContent({
+        model: TEXT_MODEL,
         contents: [
           {
-            role: 'user',
-            parts: [
-              imagePart,
-              { text: prompt },
-            ],
+            inlineData: {
+              data: base64,
+              mimeType,
+            },
           },
+          { text: prompt },
         ],
       });
 
-      return result.response.text();
+      return response.text || '';
     } catch (error) {
       logger.error('Gemini image analysis failed', { error });
       throw error;

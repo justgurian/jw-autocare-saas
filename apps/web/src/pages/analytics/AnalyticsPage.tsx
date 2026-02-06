@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { analyticsApi } from '../../services/api';
 import { BarChart3, Clock, Zap, TrendingUp, Download } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function AnalyticsPage() {
   // Fetch analytics data
@@ -30,7 +31,7 @@ export default function AnalyticsPage() {
           </p>
         </div>
 
-        <button className="btn-retro-outline flex items-center gap-2">
+        <button onClick={() => toast('Export coming soon!')} className="btn-retro-outline flex items-center gap-2">
           <Download size={20} />
           Export Report
         </button>

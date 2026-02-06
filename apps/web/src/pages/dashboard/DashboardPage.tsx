@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
 import { useAuthStore } from '../../stores/auth.store';
 import { Link, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { analyticsApi, contentApi } from '../../services/api';
 import {
   MessageSquare,
   Bell,
@@ -8,9 +9,8 @@ import {
   CheckCircle,
   ArrowRight,
   Gift,
-  Sparkles,
 } from 'lucide-react';
-import api from '../../services/api';
+import PushToStartButton from '../../components/features/PushToStartButton';
 import SmartSuggestions from './components/SmartSuggestions';
 import MarketingScoreCard from './components/MarketingScoreCard';
 import ThemeShowcase from './components/ThemeShowcase';
@@ -19,35 +19,22 @@ import WeeklyThemeDrop from '../../components/features/WeeklyThemeDrop';
 export default function DashboardPage() {
   const { user } = useAuthStore();
   const navigate = useNavigate();
-  const [stats, setStats] = useState({ contentGenerated: 0, postsScheduled: 0, reviewsReplied: 0 });
-  const [recentContent, setRecentContent] = useState<Array<{ id: string; title: string; imageUrl: string }>>([]);
 
-  useEffect(() => {
-    // Fetch analytics overview
-    api
-      .get('/analytics/overview')
-      .then((res) => {
-        setStats({
-          contentGenerated: res.data.contentGenerated || 0,
-          postsScheduled: res.data.postsScheduled || 0,
-          reviewsReplied: res.data.reviewsReplied || 0,
-        });
-      })
-      .catch((err) => console.error('Failed to fetch stats:', err));
+  const { data: overview } = useQuery({
+    queryKey: ['analytics-overview'],
+    queryFn: () => analyticsApi.getOverview().then(res => res.data),
+  });
+  const { data: contentData } = useQuery({
+    queryKey: ['recent-content'],
+    queryFn: () => contentApi.getAll({ limit: 4 }).then(res => res.data),
+  });
 
-    // Fetch recent content
-    api
-      .get('/content', { params: { limit: 4 } })
-      .then((res) => {
-        setRecentContent(res.data.items || []);
-      })
-      .catch((err) => console.error('Failed to fetch content:', err));
-  }, []);
-
-  // Navigate directly to promo flyer page
-  const handleInstantPost = () => {
-    navigate('/tools/promo-flyer');
+  const stats = {
+    contentGenerated: overview?.contentGenerated || 0,
+    postsScheduled: overview?.postsScheduled || 0,
+    reviewsReplied: overview?.reviewsReplied || 0,
   };
+  const recentContent: Array<{ id: string; title: string; imageUrl: string }> = contentData?.items || [];
 
   return (
     <div className="space-y-8 pb-8">
@@ -64,28 +51,10 @@ export default function DashboardPage() {
 
       {/* MAGIC BUTTONS - Big, Bold, One-Tap Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Post Something Now - THE PRIMARY ACTION */}
-        <button
-          onClick={handleInstantPost}
-          className="col-span-1 md:col-span-3 group relative overflow-hidden bg-gradient-to-r from-retro-red to-red-600 text-white p-8 md:p-10 border-4 border-black shadow-retro hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all"
-        >
-          <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8">
-            <div className="w-20 h-20 md:w-24 md:h-24 bg-white/20 rounded-full flex items-center justify-center border-4 border-white/30">
-              <Sparkles size={40} className="group-hover:scale-110 transition-transform" />
-            </div>
-            <div className="text-center md:text-left">
-              <h2 className="font-display text-2xl md:text-4xl tracking-wide">
-                CREATE A FLYER
-              </h2>
-              <p className="text-white/80 text-lg mt-2">
-                10 style families, smart rotation, your vibe
-              </p>
-            </div>
-          </div>
-          {/* Decorative elements */}
-          <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full" />
-          <div className="absolute -right-5 -top-5 w-20 h-20 bg-white/5 rounded-full" />
-        </button>
+        {/* The Easy Button - Hero CTA */}
+        <div className="col-span-1 md:col-span-3 card-retro bg-gradient-to-br from-gray-50 to-gray-100">
+          <PushToStartButton size="hero" />
+        </div>
 
         {/* Remind My Customers */}
         <Link
@@ -166,16 +135,15 @@ export default function DashboardPage() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-heading text-xl uppercase">Your Recent Posts</h2>
-            <Link to="/content" className="text-retro-red text-sm font-medium flex items-center gap-1 hover:gap-2 transition-all">
+            <Link to="/tools/promo-flyer" className="text-retro-red text-sm font-medium flex items-center gap-1 hover:gap-2 transition-all">
               See All <ArrowRight size={14} />
             </Link>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {recentContent.map((content) => (
-              <Link
+              <div
                 key={content.id}
-                to={`/content/${content.id}`}
-                className="aspect-square bg-gray-100 border-2 border-black overflow-hidden hover:scale-105 transition-transform"
+                className="aspect-square bg-gray-100 border-2 border-black overflow-hidden"
               >
                 {content.imageUrl ? (
                   <img src={content.imageUrl} alt={content.title} className="w-full h-full object-cover" />
@@ -184,7 +152,7 @@ export default function DashboardPage() {
                     <Gift size={32} />
                   </div>
                 )}
-              </Link>
+              </div>
             ))}
           </div>
         </div>

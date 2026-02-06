@@ -35,6 +35,8 @@ const AnalyticsPage = lazy(() => import('./pages/analytics/AnalyticsPage'));
 const ProfilePage = lazy(() => import('./pages/settings/ProfilePage'));
 const SocialPage = lazy(() => import('./pages/settings/SocialPage'));
 const AutoPilotPage = lazy(() => import('./pages/settings/AutoPilotPage'));
+const ContentGalleryPage = lazy(() => import('./pages/content/ContentGalleryPage'));
+const ContentDetailPage = lazy(() => import('./pages/content/ContentDetailPage'));
 
 // Page loading spinner
 function PageLoader() {
@@ -123,6 +125,8 @@ function App() {
             <Route path="/tools/campaigns" element={<ErrorBoundary><CampaignPage /></ErrorBoundary>} />
             <Route path="/calendar" element={<ErrorBoundary><CalendarPage /></ErrorBoundary>} />
             <Route path="/analytics" element={<ErrorBoundary><AnalyticsPage /></ErrorBoundary>} />
+            <Route path="/content" element={<ErrorBoundary><ContentGalleryPage /></ErrorBoundary>} />
+            <Route path="/content/:id" element={<ErrorBoundary><ContentDetailPage /></ErrorBoundary>} />
             <Route path="/settings/profile" element={<ErrorBoundary><ProfilePage /></ErrorBoundary>} />
             <Route path="/settings/social" element={<ErrorBoundary><SocialPage /></ErrorBoundary>} />
             <Route path="/settings/auto-pilot" element={<ErrorBoundary><AutoPilotPage /></ErrorBoundary>} />

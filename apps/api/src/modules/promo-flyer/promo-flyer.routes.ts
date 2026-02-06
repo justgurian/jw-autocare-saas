@@ -45,6 +45,8 @@ import {
   PackType,
 } from './promo-flyer.types';
 
+import { buildNostalgicImagePrompt } from '../../services/prompt-builder.service';
+
 const router = Router();
 
 // Fetch a logo URL and convert to base64 for passing to the image model
@@ -1293,71 +1295,6 @@ router.post('/generate-pack', generationRateLimiter, async (req: Request, res: R
     next(error);
   }
 });
-
-// Helper function to build nostalgic image prompt
-function buildNostalgicImagePrompt(
-  theme: NostalgicThemeDefinition,
-  content: {
-    headline: string;
-    subject: string;
-    details?: string;
-    businessName?: string;
-    logoInstructions?: string;
-    vehiclePrompt?: string;
-  }
-): string {
-  return `You are an expert graphic designer creating a STUNNING promotional image for an auto repair shop's social media marketing.
-
-=== CREATIVE DIRECTION ===
-Create a promotional flyer in the "${theme.name}" style from the ${theme.era}.
-This is a ${theme.style === 'comic-book' ? 'COMIC BOOK' : theme.style === 'movie-poster' ? 'MOVIE POSTER' : 'CAR MAGAZINE'} style design.
-
-=== VISUAL STYLE SPECIFICATIONS ===
-${theme.imagePrompt.style}
-
-=== COLOR PALETTE ===
-${theme.imagePrompt.colorPalette}
-
-=== TYPOGRAPHY ===
-${theme.imagePrompt.typography}
-
-=== DESIGN ELEMENTS ===
-${theme.imagePrompt.elements}
-
-=== MOOD & ATMOSPHERE ===
-${theme.imagePrompt.mood}
-
-=== CAR/VEHICLE STYLING ===
-${theme.carStyle}
-${content.vehiclePrompt || ''}
-
-=== COMPOSITION & LAYOUT ===
-${theme.composition}
-
-=== CONTENT TO FEATURE ===
-HEADLINE (feature prominently): "${content.headline}"
-SUBJECT/SERVICE: ${content.subject}
-${content.details ? `DETAILS: ${content.details}` : ''}
-${content.businessName ? `BUSINESS NAME: "${content.businessName}" - include as branding` : ''}
-${content.logoInstructions ? `LOGO: ${content.logoInstructions}` : ''}
-
-=== QUALITY STANDARDS ===
-- Professional marketing agency quality
-- Scroll-stopping visual impact
-- Clean, polished, impressive design
-- Auto repair industry appropriate
-- Authentic ${theme.era} ${theme.style} aesthetic
-
-=== MUST AVOID ===
-${theme.avoidList}
-- Realistic human faces
-- Copyrighted logos or characters
-- Tiny, unreadable text
-- Cluttered layouts
-- Amateur or low-quality appearance
-
-Create ONE stunning 4:5 aspect ratio promotional image that an auto repair shop would proudly post on Instagram/Facebook.`;
-}
 
 // Generate mockup
 router.post('/mockup', generationRateLimiter, async (req: Request, res: Response, next: NextFunction) => {

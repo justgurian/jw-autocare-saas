@@ -5,6 +5,7 @@
 
 import { Router, Request, Response } from 'express';
 import { authenticate } from '../../middleware/auth.middleware';
+import { prisma } from '../../db/client';
 import { logger } from '../../utils/logger';
 
 const router = Router();
@@ -29,38 +30,41 @@ interface AutoPilotSettings {
   autoApprove: boolean;
 }
 
-// In-memory storage for demo (would be in database in production)
-const autoPilotStore = new Map<string, AutoPilotSettings>();
+const defaultAutoPilotSettings: AutoPilotSettings = {
+  enabled: false,
+  frequency: '3x-week',
+  postingTimes: ['09:00', '12:00', '17:00'],
+  platforms: {
+    facebook: true,
+    instagram: true,
+  },
+  contentTypes: {
+    promos: true,
+    tips: true,
+    memes: true,
+    seasonal: true,
+  },
+  autoApprove: false,
+};
 
 /**
  * GET /settings/auto-pilot
  * Get auto-pilot settings for the current tenant
  */
-router.get('/auto-pilot', (req: Request, res: Response) => {
+router.get('/auto-pilot', async (req: Request, res: Response) => {
   try {
     const tenantId = req.user?.tenantId;
     if (!tenantId) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const settings = autoPilotStore.get(tenantId) || {
-      enabled: false,
-      frequency: '3x-week',
-      postingTimes: ['09:00', '12:00', '17:00'],
-      platforms: {
-        facebook: true,
-        instagram: true,
-      },
-      contentTypes: {
-        promos: true,
-        tips: true,
-        memes: true,
-        seasonal: true,
-      },
-      autoApprove: false,
-    };
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { settings: true },
+    });
+    const settings = (tenant?.settings as Record<string, unknown>)?.autoPilot as AutoPilotSettings | undefined;
 
-    res.json(settings);
+    res.json(settings || defaultAutoPilotSettings);
   } catch (error) {
     logger.error('Failed to get auto-pilot settings', { error });
     res.status(500).json({ error: 'Failed to get settings' });
@@ -71,7 +75,7 @@ router.get('/auto-pilot', (req: Request, res: Response) => {
  * PUT /settings/auto-pilot
  * Update auto-pilot settings for the current tenant
  */
-router.put('/auto-pilot', (req: Request, res: Response) => {
+router.put('/auto-pilot', async (req: Request, res: Response) => {
   try {
     const tenantId = req.user?.tenantId;
     if (!tenantId) {
@@ -93,8 +97,21 @@ router.put('/auto-pilot', (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Invalid settings: postingTimes must be a non-empty array' });
     }
 
-    // Store settings
-    autoPilotStore.set(tenantId, settings);
+    // Persist settings to database
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { settings: true },
+    });
+    const currentSettings = (tenant?.settings || {}) as Record<string, unknown>;
+    await prisma.tenant.update({
+      where: { id: tenantId },
+      data: {
+        settings: {
+          ...currentSettings,
+          autoPilot: settings,
+        } as any,
+      },
+    });
 
     logger.info('Auto-pilot settings updated', { tenantId, enabled: settings.enabled });
 
@@ -109,28 +126,35 @@ router.put('/auto-pilot', (req: Request, res: Response) => {
  * POST /settings/auto-pilot/toggle
  * Quick toggle for auto-pilot enabled state
  */
-router.post('/auto-pilot/toggle', (req: Request, res: Response) => {
+router.post('/auto-pilot/toggle', async (req: Request, res: Response) => {
   try {
     const tenantId = req.user?.tenantId;
     if (!tenantId) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const currentSettings = autoPilotStore.get(tenantId) || {
-      enabled: false,
-      frequency: '3x-week' as const,
-      postingTimes: ['09:00', '12:00', '17:00'],
-      platforms: { facebook: true, instagram: true },
-      contentTypes: { promos: true, tips: true, memes: true, seasonal: true },
-      autoApprove: false,
-    };
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { settings: true },
+    });
+    const tenantSettings = (tenant?.settings || {}) as Record<string, unknown>;
+    const currentAutoPilot = (tenantSettings.autoPilot as AutoPilotSettings) || { ...defaultAutoPilotSettings };
 
-    currentSettings.enabled = !currentSettings.enabled;
-    autoPilotStore.set(tenantId, currentSettings);
+    currentAutoPilot.enabled = !currentAutoPilot.enabled;
 
-    logger.info('Auto-pilot toggled', { tenantId, enabled: currentSettings.enabled });
+    await prisma.tenant.update({
+      where: { id: tenantId },
+      data: {
+        settings: {
+          ...tenantSettings,
+          autoPilot: currentAutoPilot,
+        } as any,
+      },
+    });
 
-    res.json({ success: true, enabled: currentSettings.enabled });
+    logger.info('Auto-pilot toggled', { tenantId, enabled: currentAutoPilot.enabled });
+
+    res.json({ success: true, enabled: currentAutoPilot.enabled });
   } catch (error) {
     logger.error('Failed to toggle auto-pilot', { error });
     res.status(500).json({ error: 'Failed to toggle auto-pilot' });

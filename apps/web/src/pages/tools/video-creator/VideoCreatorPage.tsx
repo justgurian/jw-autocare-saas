@@ -21,8 +21,9 @@ import ShareModal from '../../../components/features/ShareModal';
 
 // Types
 type VideoStyle = 'cinematic' | 'commercial' | 'social-media' | 'documentary' | 'animated' | 'retro';
-type VideoAspectRatio = '16:9' | '9:16' | '1:1' | '4:5';
-type VideoDuration = '5s' | '10s' | '15s' | '30s';
+type VideoAspectRatio = '16:9' | '9:16';
+type VideoDuration = '4s' | '6s' | '8s';
+type VideoResolution = '720p' | '1080p';
 
 interface VideoTemplate {
   id: string;
@@ -42,6 +43,7 @@ interface VideoJob {
   thumbnailUrl?: string;
   caption?: string;
   error?: string;
+  metadata?: Record<string, unknown>;
 }
 
 interface GeneratedVideo {
@@ -72,7 +74,8 @@ export default function VideoCreatorPage() {
     callToAction: '',
     style: 'commercial' as VideoStyle,
     aspectRatio: '9:16' as VideoAspectRatio,
-    duration: '15s' as VideoDuration,
+    duration: '8s' as VideoDuration,
+    resolution: '1080p' as VideoResolution,
     voiceoverText: '',
   });
   const [currentJob, setCurrentJob] = useState<VideoJob | null>(null);
@@ -120,8 +123,8 @@ export default function VideoCreatorPage() {
         if (job.status === 'completed') {
           setGeneratedVideo({
             id: jobId,
-            videoUrl: job.videoUrl || '',
-            thumbnailUrl: job.thumbnailUrl || '',
+            videoUrl: job.videoUrl || (job.metadata?.videoUrl as string) || '',
+            thumbnailUrl: job.thumbnailUrl || (job.metadata?.thumbnailUrl as string) || '',
             caption: job.caption || '',
             duration: formData.duration,
             aspectRatio: formData.aspectRatio,
@@ -134,7 +137,7 @@ export default function VideoCreatorPage() {
           setStep('customize');
         } else {
           // Continue polling
-          setTimeout(poll, 2000);
+          setTimeout(poll, 5000);
         }
       } catch (error) {
         toast.error('Failed to check job status');
@@ -185,7 +188,8 @@ export default function VideoCreatorPage() {
       callToAction: '',
       style: 'commercial',
       aspectRatio: '9:16',
-      duration: '15s',
+      duration: '8s',
+      resolution: '1080p',
       voiceoverText: '',
     });
     setCurrentJob(null);
@@ -200,9 +204,14 @@ export default function VideoCreatorPage() {
     }
 
     try {
-      // For now, open video in new tab (actual download would require backend support)
-      window.open(generatedVideo.videoUrl, '_blank');
-      toast.success('Opening video...');
+      // Create download link for video (works with both data URLs and regular URLs)
+      const a = document.createElement('a');
+      a.href = generatedVideo.videoUrl;
+      a.download = `video-${Date.now()}.mp4`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      toast.success('Downloading video...');
     } catch {
       toast.error('Failed to download');
     }
@@ -221,7 +230,7 @@ export default function VideoCreatorPage() {
         </p>
         <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
           <Sparkles size={14} />
-          Powered by Sora 2
+          Powered by Veo 3.1
         </div>
       </div>
 
@@ -390,10 +399,22 @@ export default function VideoCreatorPage() {
                   onChange={(e) => handleChange('duration', e.target.value)}
                   className="w-full p-3 border-2 border-black rounded focus:ring-2 focus:ring-retro-red"
                 >
-                  <option value="5s">5 seconds</option>
-                  <option value="10s">10 seconds</option>
-                  <option value="15s">15 seconds</option>
-                  <option value="30s">30 seconds</option>
+                  <option value="4s">4 seconds (teaser)</option>
+                  <option value="6s">6 seconds (standard)</option>
+                  <option value="8s">8 seconds (HD/1080p)</option>
+                </select>
+              </div>
+
+              {/* Resolution */}
+              <div>
+                <label className="block text-sm font-heading uppercase mb-1">Resolution</label>
+                <select
+                  value={formData.resolution || '720p'}
+                  onChange={(e) => handleChange('resolution', e.target.value)}
+                  className="w-full p-3 border-2 border-black rounded focus:ring-2 focus:ring-retro-red"
+                >
+                  <option value="720p">720p (all durations)</option>
+                  <option value="1080p" disabled={formData.duration !== '8s'}>1080p HD (8s only)</option>
                 </select>
               </div>
 
@@ -409,8 +430,6 @@ export default function VideoCreatorPage() {
                 >
                   <option value="9:16">Portrait 9:16 (TikTok/Reels)</option>
                   <option value="16:9">Landscape 16:9 (YouTube)</option>
-                  <option value="1:1">Square 1:1 (Instagram)</option>
-                  <option value="4:5">Portrait 4:5 (Instagram Feed)</option>
                 </select>
               </div>
             </div>
@@ -485,7 +504,7 @@ export default function VideoCreatorPage() {
             <p className="text-sm text-gray-500">{currentJob.progress}% complete</p>
 
             <p className="text-xs text-gray-400">
-              This may take 30-60 seconds depending on video length
+              Veo 3.1 generation typically takes 1-3 minutes. Please wait...
             </p>
           </div>
         </div>
@@ -502,7 +521,22 @@ export default function VideoCreatorPage() {
 
             {/* Video Preview */}
             <div className="max-w-lg mx-auto">
-              {generatedVideo.thumbnailUrl ? (
+              {generatedVideo.videoUrl ? (
+                <div className="relative bg-gray-900 rounded-lg overflow-hidden border-4 border-black shadow-retro">
+                  <video
+                    src={generatedVideo.videoUrl}
+                    controls
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="w-full"
+                  />
+                  <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-2 py-1 rounded">
+                    {generatedVideo.duration}
+                  </div>
+                </div>
+              ) : generatedVideo.thumbnailUrl ? (
                 <div className="relative aspect-video bg-gray-900 rounded-lg overflow-hidden border-4 border-black shadow-retro">
                   <img
                     src={generatedVideo.thumbnailUrl}
@@ -514,16 +548,12 @@ export default function VideoCreatorPage() {
                       <Play size={32} className="text-retro-red ml-1" />
                     </div>
                   </div>
-                  <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-2 py-1 rounded">
-                    {generatedVideo.duration}
-                  </div>
                 </div>
               ) : (
                 <div className="aspect-video bg-gray-100 rounded-lg flex items-center justify-center border-4 border-black">
                   <div className="text-center text-gray-500">
                     <AlertCircle size={48} className="mx-auto mb-2" />
                     <p>Video preview not available</p>
-                    <p className="text-xs">(API key required for full video generation)</p>
                   </div>
                 </div>
               )}

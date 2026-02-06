@@ -1,11 +1,10 @@
 /**
  * Video Creator Service
- * Business logic for AI-powered video generation
- * Designed for Sora 2 integration (or compatible video generation API)
+ * Business logic for AI-powered video generation using Veo 3.1
+ * Uses Veo 3.1 via Google Gemini API for video generation
  */
 
 import { prisma } from '../../db/client';
-import { storageService } from '../../services/storage.service';
 import { logger } from '../../utils/logger';
 import { config } from '../../config';
 import {
@@ -19,9 +18,10 @@ import {
   generateVideoCaption,
 } from './video-creator.types';
 
-// Sora 2 / Video API configuration
-const VIDEO_API_KEY = config.sora?.apiKey || process.env.SORA_API_KEY;
-const VIDEO_API_URL = config.sora?.apiUrl || 'https://api.openai.com/v1/videos/generations';
+import { GoogleGenAI } from '@google/genai';
+
+// Veo 3.1 Video generation via Gemini API
+const veoAI = new GoogleGenAI({ apiKey: config.gemini.apiKey });
 
 export const videoCreatorService = {
   /**
@@ -69,7 +69,7 @@ export const videoCreatorService = {
       template,
       input,
       businessName,
-      tagline,
+      tagline: tagline || undefined,
     });
 
     // Create job record in database
@@ -82,10 +82,10 @@ export const videoCreatorService = {
         completedItems: 0,
         status: 'pending',
         metadata: {
-          input,
+          input: JSON.parse(JSON.stringify(input)),
           prompt,
           template: template.id,
-        },
+        } as any,
       },
     });
 
@@ -114,7 +114,7 @@ export const videoCreatorService = {
   },
 
   /**
-   * Process video generation (async)
+   * Process video generation (async) using Veo 2
    */
   async processVideoGeneration(
     jobId: string,
@@ -133,32 +133,20 @@ export const videoCreatorService = {
         },
       });
 
-      // Check if API key is configured
-      if (!VIDEO_API_KEY) {
-        // Simulate video generation for demo/development
-        logger.warn('Video API key not configured, using simulation mode');
-        await this.simulateVideoGeneration(jobId, tenantId, userId, input);
-        return;
+      // Check if Gemini API key is configured
+      if (!config.gemini.apiKey) {
+        throw new Error('Gemini API key not configured. Set GEMINI_API_KEY to enable Veo 2 video generation.');
       }
 
-      // Call Sora 2 / Video generation API
+      // Call Veo 2 video generation API
       const videoResult = await this.callVideoGenerationAPI(prompt, input);
 
       if (!videoResult.success) {
         throw new Error(videoResult.error || 'Video generation failed');
       }
 
-      // Upload video to storage
-      const videoBuffer = await this.downloadVideo(videoResult.videoUrl!);
-      const videoFilename = `video-${jobId}-${Date.now()}.mp4`;
-      const videoUrl = await storageService.uploadBuffer(
-        videoBuffer,
-        `tenants/${tenantId}/videos/${videoFilename}`,
-        'video/mp4'
-      );
-
-      // Generate thumbnail (if API provides one or extract from video)
-      const thumbnailUrl = videoResult.thumbnailUrl || videoUrl.replace('.mp4', '-thumb.jpg');
+      // Convert video data to base64 data URL for storage
+      const videoDataUrl = `data:video/mp4;base64,${videoResult.videoData!.toString('base64')}`;
 
       // Generate caption
       const caption = generateVideoCaption({
@@ -176,13 +164,13 @@ export const videoCreatorService = {
           tool: 'video_creator',
           contentType: 'video',
           title: `Video - ${input.topic}`,
-          imageUrl: thumbnailUrl,
+          imageUrl: videoResult.thumbnailUrl || '',
           caption,
           status: 'approved',
           moderationStatus: 'passed',
           metadata: {
-            videoUrl,
-            thumbnailUrl,
+            videoUrl: videoDataUrl,
+            thumbnailUrl: videoResult.thumbnailUrl || '',
             duration: input.duration,
             aspectRatio: input.aspectRatio,
             style: input.style,
@@ -200,8 +188,8 @@ export const videoCreatorService = {
           completedAt: new Date(),
           metadata: {
             contentId: content.id,
-            videoUrl,
-            thumbnailUrl,
+            videoUrl: videoDataUrl,
+            thumbnailUrl: videoResult.thumbnailUrl || '',
             caption,
           },
         },
@@ -230,159 +218,73 @@ export const videoCreatorService = {
   },
 
   /**
-   * Call video generation API (Sora 2 or compatible)
+   * Call Veo 2 video generation API
    */
   async callVideoGenerationAPI(
     prompt: string,
     input: VideoGenerationInput
   ): Promise<{
     success: boolean;
-    videoUrl?: string;
+    videoData?: Buffer;
     thumbnailUrl?: string;
     error?: string;
   }> {
     try {
-      // Sora 2 API call (structure may vary based on actual API)
-      const response = await fetch(VIDEO_API_URL, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${VIDEO_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'sora-2',
-          prompt,
-          duration: input.duration,
-          aspect_ratio: input.aspectRatio,
-          style: input.style,
-          // Include reference images if provided
-          ...(input.referenceImages?.length && {
-            reference_images: input.referenceImages.map((img) => ({
-              data: img.base64,
-              mime_type: img.mimeType,
-            })),
-          }),
-        }),
+      // Map options to Veo 3.1 format
+      const aspectRatio = input.aspectRatio === '9:16' ? '9:16' : '16:9';
+      const durationSeconds = parseInt(input.duration) || 8;
+      const resolution = input.resolution || (durationSeconds === 8 ? '1080p' : '720p');
+
+      // Start Veo 3.1 video generation
+      let operation = await veoAI.models.generateVideos({
+        model: 'veo-3.1-generate-preview',
+        prompt,
+        config: {
+          aspectRatio,
+          numberOfVideos: 1,
+          durationSeconds,
+          resolution,
+        } as any,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error?.message || `API error: ${response.status}`);
+      // Poll until complete (Veo 3.1 is async — takes 1-3 minutes)
+      let pollCount = 0;
+      const maxPolls = 30; // 5 minutes max
+      while (!operation.done && pollCount < maxPolls) {
+        await new Promise((resolve) => setTimeout(resolve, 10000)); // 10 seconds
+        pollCount++;
+        operation = await veoAI.operations.getVideosOperation({
+          operation: operation,
+        });
+        logger.info('Veo 2 poll', { pollCount, done: operation.done });
       }
 
-      const data = await response.json();
+      if (!operation.done) {
+        return { success: false, error: 'Video generation timed out after 5 minutes' };
+      }
+
+      // Extract video data
+      const generatedVideo = operation.response?.generatedVideos?.[0];
+      if (!generatedVideo?.video) {
+        return { success: false, error: 'No video in response' };
+      }
+
+      // Get video bytes
+      const videoData = Buffer.from(generatedVideo.video.videoBytes || []);
 
       return {
         success: true,
-        videoUrl: data.data?.[0]?.url || data.url,
-        thumbnailUrl: data.data?.[0]?.thumbnail || data.thumbnail,
+        videoData,
       };
-    } catch (error) {
-      logger.error('Video API call failed', { error });
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'API call failed',
-      };
+    } catch (error: any) {
+      logger.error('Veo 2 video generation failed', { error: error.message });
+
+      if (error.message?.includes('SAFETY')) {
+        return { success: false, error: 'Video blocked by safety filters. Try a different prompt.' };
+      }
+
+      return { success: false, error: error.message || 'Video generation failed' };
     }
-  },
-
-  /**
-   * Simulate video generation for demo mode
-   */
-  async simulateVideoGeneration(
-    jobId: string,
-    tenantId: string,
-    userId: string,
-    input: VideoGenerationInput
-  ): Promise<void> {
-    // Simulate processing time
-    await new Promise((resolve) => setTimeout(resolve, 5000));
-
-    // Generate placeholder thumbnail using Gemini
-    const { geminiService } = await import('../../services/gemini.service');
-
-    const thumbnailPrompt = `Create a video thumbnail image for an auto repair shop promotional video.
-Topic: ${input.topic}
-Style: ${input.style}
-This should look like a professional video thumbnail with a play button overlay.
-Include bold text overlay and automotive imagery.`;
-
-    const thumbnailResult = await geminiService.generateImage(thumbnailPrompt, {
-      aspectRatio: input.aspectRatio === '16:9' ? '16:9' : '4:5',
-    });
-
-    let thumbnailUrl = '';
-    if (thumbnailResult.success && thumbnailResult.imageData) {
-      // Convert to base64 data URL for immediate display
-      const base64Data = thumbnailResult.imageData.toString('base64');
-      thumbnailUrl = `data:image/png;base64,${base64Data}`;
-    }
-
-    // Generate caption
-    const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
-    const caption = generateVideoCaption({
-      topic: input.topic,
-      style: input.style,
-      businessName: tenant?.name || 'Our Shop',
-      callToAction: input.callToAction,
-    });
-
-    // Create content record (video placeholder)
-    const content = await prisma.content.create({
-      data: {
-        tenantId,
-        userId,
-        tool: 'video_creator',
-        contentType: 'video',
-        title: `Video - ${input.topic}`,
-        imageUrl: thumbnailUrl,
-        caption,
-        status: 'draft', // Draft until real video is available
-        moderationStatus: 'passed',
-        metadata: {
-          thumbnailUrl,
-          duration: input.duration,
-          aspectRatio: input.aspectRatio,
-          style: input.style,
-          jobId,
-          isSimulated: true,
-          note: 'Video API key not configured. This is a placeholder.',
-        },
-      },
-    });
-
-    // Update job as completed
-    await prisma.batchJob.update({
-      where: { id: jobId },
-      data: {
-        status: 'completed',
-        completedItems: 1,
-        completedAt: new Date(),
-        metadata: {
-          contentId: content.id,
-          thumbnailUrl,
-          caption,
-          isSimulated: true,
-        },
-      },
-    });
-
-    logger.info('Simulated video generation completed', {
-      jobId,
-      contentId: content.id,
-    });
-  },
-
-  /**
-   * Download video from URL
-   */
-  async downloadVideo(url: string): Promise<Buffer> {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`Failed to download video: ${response.status}`);
-    }
-    const arrayBuffer = await response.arrayBuffer();
-    return Buffer.from(arrayBuffer);
   },
 
   /**
@@ -470,27 +372,7 @@ Include bold text overlay and automotive imagery.`;
       throw new Error('Video not found');
     }
 
-    const metadata = content.metadata as Record<string, unknown>;
-
-    // Delete video from storage
-    if (metadata.videoUrl) {
-      try {
-        await storageService.deleteFile(metadata.videoUrl as string);
-      } catch (error) {
-        logger.warn('Failed to delete video from storage', { error });
-      }
-    }
-
-    // Delete thumbnail
-    if (content.imageUrl) {
-      try {
-        await storageService.deleteFile(content.imageUrl);
-      } catch (error) {
-        logger.warn('Failed to delete thumbnail from storage', { error });
-      }
-    }
-
-    // Delete from database
+    // Delete from database (video data is stored as base64 in metadata, no external storage to clean up)
     await prisma.content.delete({
       where: { id: contentId },
     });

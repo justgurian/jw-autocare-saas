@@ -36,6 +36,8 @@ import sharp from 'sharp';
 import { creativeLogoService } from '../../services/creative-logo.service';
 import { LogoStyle, selectRandomLogoStyle } from '../../services/logo-styles';
 
+import { buildNostalgicImagePrompt } from '../../services/prompt-builder.service';
+
 const router = Router();
 
 // ============================================================================
@@ -1077,77 +1079,6 @@ async function generateFlyers(
       data: { status: 'failed' },
     });
   }
-}
-
-function buildNostalgicImagePrompt(
-  theme: NostalgicThemeDefinition,
-  content: {
-    headline: string;
-    subject: string;
-    details?: string;
-    businessName?: string;
-    logoInstructions?: string;
-    vehiclePrompt?: string;
-    logoPlacementHint?: string; // NEW: Tell AI where to leave space for logo
-  }
-): string {
-  // Build logo placement section if hint provided
-  const logoPlacementSection = content.logoPlacementHint
-    ? `\n=== CRITICAL: LOGO PLACEMENT AREA ===\n${content.logoPlacementHint}\nDO NOT place text, important elements, or cluttered content in this area - the business logo will be placed there.\n`
-    : '';
-
-  return `You are an expert graphic designer creating a STUNNING promotional image for an auto repair shop's social media marketing.
-
-=== CREATIVE DIRECTION ===
-Create a promotional flyer in the "${theme.name}" style from the ${theme.era}.
-This is a ${theme.style === 'comic-book' ? 'COMIC BOOK' : theme.style === 'movie-poster' ? 'MOVIE POSTER' : 'CAR MAGAZINE'} style design.
-
-=== VISUAL STYLE SPECIFICATIONS ===
-${theme.imagePrompt.style}
-
-=== COLOR PALETTE ===
-${theme.imagePrompt.colorPalette}
-
-=== TYPOGRAPHY ===
-${theme.imagePrompt.typography}
-
-=== DESIGN ELEMENTS ===
-${theme.imagePrompt.elements}
-
-=== MOOD & ATMOSPHERE ===
-${theme.imagePrompt.mood}
-
-=== CAR/VEHICLE STYLING ===
-${theme.carStyle}
-${content.vehiclePrompt || ''}
-
-=== COMPOSITION & LAYOUT ===
-${theme.composition}
-${logoPlacementSection}
-=== CONTENT TO FEATURE ===
-HEADLINE (feature prominently): "${content.headline}"
-SUBJECT/SERVICE: ${content.subject}
-${content.details ? `DETAILS: ${content.details}` : ''}
-${content.businessName ? `BUSINESS NAME: "${content.businessName}" - include as branding` : ''}
-${content.logoInstructions ? `LOGO: ${content.logoInstructions}` : ''}
-
-=== QUALITY STANDARDS ===
-- Professional marketing agency quality
-- Scroll-stopping visual impact
-- Clean, polished, impressive design
-- Auto repair industry appropriate
-- Authentic ${theme.era} ${theme.style} aesthetic
-
-=== MUST AVOID ===
-${theme.avoidList}
-- Realistic human faces
-- Copyrighted logos or characters
-- Tiny, unreadable text
-- Cluttered layouts
-- Amateur or low-quality appearance
-${content.logoPlacementHint ? '- Placing text or important content in the logo placement area' : ''}
-
-Create ONE stunning 4:5 aspect ratio promotional image that an auto repair shop would proudly post on Instagram/Facebook.`;
 }
 
 function getNext9AM(timezone: string): Date {

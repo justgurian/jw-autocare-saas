@@ -48,7 +48,6 @@ export default {
         display: ['"Bebas Neue"', '"Impact"', 'sans-serif'],
         heading: ['"Oswald"', '"Franklin Gothic Medium"', 'sans-serif'],
         body: ['"Source Sans Pro"', '"Helvetica Neue"', 'sans-serif'],
-        mono: ['"IBM Plex Mono"', 'monospace'],
         script: ['"Pacifico"', 'cursive'],
       },
       boxShadow: {

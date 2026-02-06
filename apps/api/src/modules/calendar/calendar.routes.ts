@@ -1,5 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
+import PDFDocument from 'pdfkit';
 import { authenticate } from '../../middleware/auth.middleware';
 import { tenantContext } from '../../middleware/tenant.middleware';
 import { prisma } from '../../db/client';
@@ -172,6 +173,12 @@ router.delete('/events/:id', async (req: Request, res: Response, next: NextFunct
   }
 });
 
+// Month names for PDF header
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
 // Export calendar (PDF/iCal)
 router.get('/export/:format', async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -198,11 +205,39 @@ router.get('/export/:format', async (req: Request, res: Response, next: NextFunc
       res.setHeader('Content-Disposition', 'attachment; filename=marketing-calendar.ics');
       res.send(icalContent);
     } else if (format === 'pdf') {
-      // For MVP, return placeholder
-      res.json({
-        message: 'PDF export coming soon',
-        eventCount: events.length,
-      });
+      const monthNum = month ? Number(month) : new Date().getMonth() + 1;
+      const yearNum = year ? Number(year) : new Date().getFullYear();
+      const monthName = MONTH_NAMES[monthNum - 1];
+
+      const doc = new PDFDocument({ size: 'letter', margin: 50 });
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename=marketing-calendar-${monthNum}-${yearNum}.pdf`);
+      doc.pipe(res);
+
+      // Title
+      doc.fontSize(24).font('Helvetica-Bold').text('Marketing Calendar', { align: 'center' });
+      doc.fontSize(14).font('Helvetica').text(`${monthName} ${yearNum}`, { align: 'center' });
+      doc.moveDown(2);
+
+      // Events
+      if (events.length === 0) {
+        doc.fontSize(12).font('Helvetica').text('No events scheduled for this period.', { align: 'center' });
+      } else {
+        for (const event of events) {
+          doc.fontSize(12).font('Helvetica-Bold')
+            .text(`${new Date(event.scheduledDate).toLocaleDateString()} — ${event.suggestedTopic || 'Marketing Post'}`);
+          if (event.beatType) {
+            doc.fontSize(10).font('Helvetica').text(`Type: ${event.beatType}`);
+          }
+          if (event.notes) {
+            doc.fontSize(10).font('Helvetica').text(event.notes);
+          }
+          doc.moveDown(0.5);
+        }
+      }
+
+      doc.end();
+      return;
     } else {
       res.status(400).json({ error: 'Invalid format. Use "pdf" or "ical"' });
     }

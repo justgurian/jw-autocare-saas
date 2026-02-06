@@ -34,19 +34,31 @@ export default function BusinessInfoStep({ formData, setFormData }: BusinessInfo
           onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
         />
       </div>
+      <div>
+        <label className="block font-heading uppercase text-sm mb-2">
+          Phone
+        </label>
+        <input
+          type="tel"
+          className="input-retro"
+          placeholder="(555) 123-4567"
+          value={formData.phone}
+          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+        />
+      </div>
+      <div>
+        <label className="block font-heading uppercase text-sm mb-2">
+          Street Address
+        </label>
+        <input
+          type="text"
+          className="input-retro"
+          placeholder="123 Main Street"
+          value={formData.address}
+          onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+        />
+      </div>
       <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block font-heading uppercase text-sm mb-2">
-            Phone
-          </label>
-          <input
-            type="tel"
-            className="input-retro"
-            placeholder="(555) 123-4567"
-            value={formData.phone}
-            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-          />
-        </div>
         <div>
           <label className="block font-heading uppercase text-sm mb-2">
             City
@@ -57,6 +69,19 @@ export default function BusinessInfoStep({ formData, setFormData }: BusinessInfo
             placeholder="Phoenix"
             value={formData.city}
             onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+          />
+        </div>
+        <div>
+          <label className="block font-heading uppercase text-sm mb-2">
+            State
+          </label>
+          <input
+            type="text"
+            className="input-retro"
+            placeholder="AZ"
+            maxLength={2}
+            value={formData.state}
+            onChange={(e) => setFormData({ ...formData, state: e.target.value.toUpperCase() })}
           />
         </div>
       </div>

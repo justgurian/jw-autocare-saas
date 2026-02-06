@@ -269,8 +269,9 @@ export const videoCreatorApi = {
     serviceHighlight?: string;
     callToAction?: string;
     style: 'cinematic' | 'commercial' | 'social-media' | 'documentary' | 'animated' | 'retro';
-    aspectRatio: '16:9' | '9:16' | '1:1' | '4:5';
-    duration: '5s' | '10s' | '15s' | '30s';
+    aspectRatio: '16:9' | '9:16';
+    duration: '4s' | '6s' | '8s';
+    resolution?: '720p' | '1080p';
     includeLogoOverlay?: boolean;
     includeMusicTrack?: boolean;
     voiceoverText?: string;

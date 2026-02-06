@@ -301,7 +301,7 @@ export default function MainLayout() {
                 {expandedGroups.includes(group.id) && (
                   <div className="bg-black/20 py-1">
                     {group.items.map((item) => (
-                      <div key={item.href} className="relative">
+                      <div key={item.href} className="group relative">
                         <Link
                           to={item.href}
                           onClick={() => setSidebarOpen(false)}

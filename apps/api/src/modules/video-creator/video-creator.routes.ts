@@ -5,7 +5,7 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { videoCreatorService } from './video-creator.service';
-import { VIDEO_TEMPLATES, VideoStyle, VideoAspectRatio, VideoDuration } from './video-creator.types';
+import { VIDEO_TEMPLATES, VIDEO_OPTIONS, VideoStyle, VideoAspectRatio, VideoDuration } from './video-creator.types';
 import { logger } from '../../utils/logger';
 
 const router = Router();
@@ -57,32 +57,9 @@ router.get('/templates/:id', async (req: Request, res: Response, next: NextFunct
  */
 router.get('/options', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const options = {
-      styles: [
-        { id: 'cinematic', name: 'Cinematic', description: 'Hollywood-style dramatic' },
-        { id: 'commercial', name: 'Commercial', description: 'Professional advertisement' },
-        { id: 'social-media', name: 'Social Media', description: 'TikTok/Reels optimized' },
-        { id: 'documentary', name: 'Documentary', description: 'Informative and educational' },
-        { id: 'animated', name: 'Animated', description: 'Motion graphics style' },
-        { id: 'retro', name: 'Retro', description: '1950s nostalgic style' },
-      ],
-      durations: [
-        { id: '5s', name: '5 seconds', description: 'Quick teaser' },
-        { id: '10s', name: '10 seconds', description: 'Short promo' },
-        { id: '15s', name: '15 seconds', description: 'Standard social' },
-        { id: '30s', name: '30 seconds', description: 'Full promo' },
-      ],
-      aspectRatios: [
-        { id: '16:9', name: 'Landscape (16:9)', description: 'YouTube, Website' },
-        { id: '9:16', name: 'Portrait (9:16)', description: 'TikTok, Reels, Stories' },
-        { id: '1:1', name: 'Square (1:1)', description: 'Instagram Feed' },
-        { id: '4:5', name: 'Portrait (4:5)', description: 'Instagram Feed' },
-      ],
-    };
-
     res.json({
       success: true,
-      data: options,
+      data: VIDEO_OPTIONS,
     });
   } catch (error) {
     next(error);
@@ -118,6 +95,7 @@ router.post('/generate', async (req: Request, res: Response, next: NextFunction)
       includeMusicTrack,
       voiceoverText,
       referenceImages,
+      resolution,
     } = req.body;
 
     // Validate required fields
@@ -138,7 +116,7 @@ router.post('/generate', async (req: Request, res: Response, next: NextFunction)
     }
 
     // Validate aspect ratio
-    const validAspectRatios: VideoAspectRatio[] = ['16:9', '9:16', '1:1', '4:5'];
+    const validAspectRatios: VideoAspectRatio[] = ['16:9', '9:16'];
     if (aspectRatio && !validAspectRatios.includes(aspectRatio)) {
       return res.status(400).json({
         success: false,
@@ -147,7 +125,7 @@ router.post('/generate', async (req: Request, res: Response, next: NextFunction)
     }
 
     // Validate duration
-    const validDurations: VideoDuration[] = ['5s', '10s', '15s', '30s'];
+    const validDurations: VideoDuration[] = ['4s', '6s', '8s'];
     if (duration && !validDurations.includes(duration)) {
       return res.status(400).json({
         success: false,
@@ -171,7 +149,8 @@ router.post('/generate', async (req: Request, res: Response, next: NextFunction)
       callToAction,
       style: style || 'commercial',
       aspectRatio: aspectRatio || '9:16',
-      duration: duration || '15s',
+      duration: duration || '8s',
+      resolution: resolution || '720p',
       includeLogoOverlay,
       includeMusicTrack,
       voiceoverText,

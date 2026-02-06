@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
-
-const API_URL = import.meta.env.VITE_API_URL || '/api/v1';
+import api from '../../services/api';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -14,21 +13,12 @@ export default function ForgotPasswordPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/auth/forgot-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-
-      if (response.ok) {
-        setIsSubmitted(true);
-        toast.success('Check your email for reset instructions');
-      } else {
-        const data = await response.json();
-        toast.error(data.message || 'Failed to send reset email');
-      }
-    } catch {
-      toast.error('Failed to send reset email');
+      await api.post('/auth/forgot-password', { email });
+      setIsSubmitted(true);
+      toast.success('Check your email for reset instructions');
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || 'Failed to send reset email');
     } finally {
       setIsLoading(false);
     }
