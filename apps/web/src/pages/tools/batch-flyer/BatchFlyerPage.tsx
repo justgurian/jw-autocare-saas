@@ -20,7 +20,7 @@ import ModeSelector from '../../../components/batch-flyer/ModeSelector';
 import ContentSelector from '../../../components/batch-flyer/ContentSelector';
 import ThemeSelector from '../../../components/batch-flyer/ThemeSelector';
 import FlyerCarousel from '../../../components/batch-flyer/FlyerCarousel';
-import InPaintEditor from '../../../components/batch-flyer/InPaintEditor';
+import FlyerEditor from '../../../components/flyer-editor/FlyerEditor';
 import RetroLoadingStage from '../../../components/ui/RetroLoadingStage';
 
 // Types
@@ -518,10 +518,12 @@ export default function BatchFlyerPage() {
         </div>
       )}
 
-      {/* InPaint Editor Modal */}
+      {/* Flyer Editor Modal */}
       {showInPaintEditor && editingFlyer && (
-        <InPaintEditor
-          flyer={editingFlyer}
+        <FlyerEditor
+          contentId={editingFlyer.id}
+          imageUrl={editingFlyer.imageUrl}
+          title={editingFlyer.title}
           onClose={() => {
             setShowInPaintEditor(false);
             setEditingFlyer(null);

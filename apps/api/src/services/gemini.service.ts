@@ -685,6 +685,90 @@ Aspect ratio: ${options.aspectRatio || '4:5'} (portrait orientation for social m
     }
   },
 
+  // Edit an existing image using Gemini (true image editing — passes the actual image)
+  async editImage(
+    existingImage: { base64: string; mimeType: string },
+    editInstruction: string,
+    options: { aspectRatio?: string } = {}
+  ): Promise<ImageGenResult> {
+    try {
+      logger.info('Starting true image edit with Gemini', {
+        instructionLength: editInstruction.length,
+      });
+
+      const editPrompt = `You are editing an existing marketing flyer image for a professional auto repair shop.
+
+EDIT INSTRUCTION: ${editInstruction}
+
+CRITICAL RULES:
+- Keep the overall layout, composition, and design style of the original image
+- Only change what the edit instruction specifically asks for
+- Maintain the same professional quality and aesthetic
+- Keep all text, logos, and brand elements that are NOT being changed
+- Preserve colors, fonts, and visual hierarchy unless told otherwise
+- The result must be a complete, polished marketing flyer — not a rough edit
+
+Aspect ratio: ${options.aspectRatio || '4:5'} (portrait orientation for social media)`;
+
+      const imagePart: Part = {
+        inlineData: {
+          data: existingImage.base64,
+          mimeType: existingImage.mimeType,
+        },
+      };
+
+      const result = await imageModel.generateContent({
+        contents: [
+          {
+            role: 'user',
+            parts: [imagePart, { text: editPrompt }],
+          },
+        ],
+      });
+
+      const response = result.response;
+      const parts = response.candidates?.[0]?.content?.parts || [];
+
+      for (const part of parts) {
+        const inlineData = (part as any).inlineData;
+        if (inlineData) {
+          const imageData = Buffer.from(inlineData.data, 'base64');
+          const mimeType = inlineData.mimeType || 'image/png';
+
+          logger.info('Image edit completed successfully', {
+            size: imageData.length,
+            mimeType,
+          });
+
+          return { success: true, imageData, mimeType };
+        }
+      }
+
+      logger.warn('No image generated during edit', {
+        response: response.text(),
+      });
+
+      return {
+        success: false,
+        error: 'No image generated. The model returned text instead of an image.',
+      };
+    } catch (error: any) {
+      logger.error('Gemini image edit failed', { error: error.message });
+
+      if (error.message?.includes('SAFETY')) {
+        return {
+          success: false,
+          error: 'Content was blocked by safety filters. Try a different edit.',
+        };
+      }
+
+      return {
+        success: false,
+        error: error.message || 'Image edit failed',
+      };
+    }
+  },
+
   // Analyze image (for logo color extraction, etc.)
   async analyzeImage(imageUrl: string, prompt: string): Promise<string> {
     try {

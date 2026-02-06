@@ -402,6 +402,15 @@ export const contentApi = {
   delete: (id: string) => api.delete(`/content/${id}`),
   approve: (id: string) => api.post(`/content/${id}/approve`),
   download: (id: string, format: 'png' | 'pdf') => api.get(`/content/${id}/download/${format}`),
+  edit: (id: string, data: {
+    editType: 'swap-vehicle' | 'change-text' | 'adjust-preset' | 'custom';
+    vehicleMake?: string;
+    vehicleModel?: string;
+    newHeadline?: string;
+    preset?: 'brighten' | 'darken' | 'more-contrast' | 'less-contrast' | 'warmer' | 'cooler' | 'vintage' | 'sharpen';
+    customPrompt?: string;
+  }) => api.post(`/content/${id}/edit`, data),
+  getEditSuggestions: (id: string) => api.get(`/content/${id}/edit-suggestions`),
 };
 
 export const analyticsApi = {

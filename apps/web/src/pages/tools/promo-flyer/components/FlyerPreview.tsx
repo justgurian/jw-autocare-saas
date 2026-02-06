@@ -23,6 +23,7 @@ interface FlyerPreviewProps {
   onCopyCaption: (caption: string) => void;
   onShare: () => void;
   onReset: () => void;
+  onEditImage?: (content: GeneratedFlyer) => void;
 }
 
 export default function FlyerPreview({
@@ -36,6 +37,7 @@ export default function FlyerPreview({
   onCopyCaption,
   onShare,
   onReset,
+  onEditImage,
 }: FlyerPreviewProps) {
   return (
     <>
@@ -125,6 +127,17 @@ export default function FlyerPreview({
             <Download size={24} />
             Download Image
           </button>
+
+          {/* Edit Image Button */}
+          {onEditImage && (
+            <button
+              onClick={() => onEditImage(currentFlyer)}
+              className="w-full py-3 mt-3 bg-retro-navy text-white border-2 border-black shadow-retro hover:shadow-none transition-all flex items-center justify-center gap-2 font-heading uppercase"
+            >
+              <Wand2 size={20} />
+              Edit Image
+            </button>
+          )}
 
           {/* Mobile hint */}
           <p className="text-center text-xs text-gray-500 md:hidden">

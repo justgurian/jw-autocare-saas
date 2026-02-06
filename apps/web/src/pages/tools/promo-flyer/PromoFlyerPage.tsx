@@ -5,6 +5,7 @@ import { promoFlyerApi, downloadApi } from '../../../services/api';
 import { Eye, PenTool } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ShareModal from '../../../components/features/ShareModal';
+import FlyerEditor from '../../../components/flyer-editor/FlyerEditor';
 import PushToStartButton from '../../../components/features/PushToStartButton';
 import ContentCalendar from '../../../components/features/ContentCalendar';
 import FirstFlyerCelebration, { hasSeenFirstFlyerCelebration } from '../../../components/features/FirstFlyerCelebration';
@@ -44,6 +45,7 @@ export default function PromoFlyerPage() {
   const [activePackIndex, setActivePackIndex] = useState(0);
   const [mobileShowPreview, setMobileShowPreview] = useState(false);
   const [showFirstFlyerCelebration, setShowFirstFlyerCelebration] = useState(false);
+  const [showFlyerEditor, setShowFlyerEditor] = useState(false);
 
   // Fetch themes for legacy selector
   const { data: themesData } = useQuery({
@@ -371,6 +373,7 @@ export default function PromoFlyerPage() {
                 onCopyCaption={handleCopyCaption}
                 onShare={() => setShowShareModal(true)}
                 onReset={resetForm}
+                onEditImage={() => setShowFlyerEditor(true)}
               />
             </div>
           </div>
@@ -387,6 +390,28 @@ export default function PromoFlyerPage() {
             title: currentFlyer.title,
             imageUrl: currentFlyer.imageUrl,
             caption: currentFlyer.caption,
+          }}
+        />
+      )}
+
+      {/* Flyer Editor Modal */}
+      {showFlyerEditor && currentFlyer && (
+        <FlyerEditor
+          contentId={currentFlyer.id}
+          imageUrl={currentFlyer.imageUrl}
+          title={currentFlyer.title}
+          onClose={() => setShowFlyerEditor(false)}
+          onSave={(newImageUrl) => {
+            if (generatedPack.length > 0) {
+              setGeneratedPack(prev =>
+                prev.map((f, i) => i === activePackIndex ? { ...f, imageUrl: newImageUrl } : f)
+              );
+            }
+            if (generatedContent) {
+              setGeneratedContent({ ...generatedContent, imageUrl: newImageUrl });
+            }
+            setShowFlyerEditor(false);
+            toast.success('Image updated!');
           }}
         />
       )}

@@ -512,16 +512,29 @@ router.post('/flyers/:id/inpaint', generationRateLimiter, async (req: Request, r
       throw new ValidationError('Either preset or customPrompt is required');
     }
 
-    // For MVP: re-generate with adjusted prompt
-    // In production, this would use actual inpainting API
-    const originalPrompt = content.promptUsed || '';
-    const enhancedPrompt = `${originalPrompt}\n\nADDITIONAL EDIT: ${editPrompt}`;
+    // True image editing: pass existing image to Gemini
+    let imgBase64: string;
+    let imgMimeType: string;
 
-    logger.info('Applying inpaint edit', { contentId: id, editType, preset });
+    if (content.imageUrl!.startsWith('data:')) {
+      const match = content.imageUrl!.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/s);
+      if (!match) throw new ValidationError('Invalid image data');
+      imgMimeType = match[1];
+      imgBase64 = match[2];
+    } else {
+      const fetchResp = await fetch(content.imageUrl!);
+      const buf = Buffer.from(await fetchResp.arrayBuffer());
+      imgBase64 = buf.toString('base64');
+      imgMimeType = fetchResp.headers.get('content-type') || 'image/png';
+    }
 
-    const imageResult = await geminiService.generateImage(enhancedPrompt, {
-      aspectRatio: '4:5',
-    });
+    logger.info('Applying true image edit', { contentId: id, editType, preset });
+
+    const imageResult = await geminiService.editImage(
+      { base64: imgBase64, mimeType: imgMimeType },
+      editPrompt,
+      { aspectRatio: '4:5' }
+    );
 
     if (imageResult.success && imageResult.imageData) {
       const base64Data = imageResult.imageData.toString('base64');
