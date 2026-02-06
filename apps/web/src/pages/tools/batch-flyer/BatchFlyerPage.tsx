@@ -4,7 +4,6 @@ import {
   Zap,
   Calendar,
   Rocket,
-  Sparkles,
   Check,
   X,
   ChevronLeft,
@@ -22,6 +21,7 @@ import ContentSelector from '../../../components/batch-flyer/ContentSelector';
 import ThemeSelector from '../../../components/batch-flyer/ThemeSelector';
 import FlyerCarousel from '../../../components/batch-flyer/FlyerCarousel';
 import InPaintEditor from '../../../components/batch-flyer/InPaintEditor';
+import RetroLoadingStage from '../../../components/ui/RetroLoadingStage';
 
 // Types
 interface BatchFlyer {
@@ -382,32 +382,22 @@ export default function BatchFlyerPage() {
 
         {/* Generation Progress */}
         {currentStep === 'generating' && (
-          <div className="py-12 text-center">
-            <div className="w-16 h-16 mx-auto mb-6 relative">
-              <div className="absolute inset-0 border-4 border-retro-red/20 rounded-full" />
-              <div
-                className="absolute inset-0 border-4 border-retro-red rounded-full animate-spin"
-                style={{
-                  borderTopColor: 'transparent',
-                  borderRightColor: 'transparent',
-                }}
-              />
-              <Sparkles className="absolute inset-0 m-auto text-retro-red" size={24} />
-            </div>
-            <h2 className="font-heading text-xl uppercase mb-2">Creating Your Flyers</h2>
-            <p className="text-gray-600 mb-4">
-              {jobStatus?.job?.completedItems || 0} of {jobStatus?.job?.totalItems || flyerCount} complete
-            </p>
-            <div className="w-64 mx-auto bg-gray-200 h-2 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-retro-red to-retro-teal transition-all duration-500"
-                style={{ width: `${jobStatus?.progress || 0}%` }}
-              />
-            </div>
-            <p className="text-sm text-gray-500 mt-4">
-              AI is generating unique images and captions for each flyer...
-            </p>
-          </div>
+          <RetroLoadingStage
+            isLoading={true}
+            estimatedDuration={flyerCount * 8000}
+            size="lg"
+            showExhaust={true}
+            progress={{
+              completed: jobStatus?.job?.completedItems || 0,
+              total: jobStatus?.job?.totalItems || flyerCount,
+            }}
+            phaseMessages={{
+              0: ['Firing up the batch press...', 'Loading the design templates...'],
+              1: ['Your AI team is hard at work...', 'Each flyer gets its own style...'],
+              2: ['Mixing unique color palettes...', 'Adding your brand\'s signature touch...'],
+              3: ['Final quality checks...', 'Almost there — just a few more...'],
+            }}
+          />
         )}
 
         {/* Review Carousel */}

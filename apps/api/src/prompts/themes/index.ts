@@ -31,6 +31,16 @@ import {
   getInSeasonHolidayPacks,
   getHolidayTheme,
 } from './holiday-themes';
+import {
+  STYLE_FAMILIES,
+  StyleFamily,
+  ALL_NEW_FAMILY_THEMES,
+  getAllFamilies,
+  getFamilyById,
+  getFamilyForTheme,
+  getWeeklyDropFamily,
+  getCurrentWeekString,
+} from './style-families';
 
 export interface ThemeImagePrompt {
   style: string;
@@ -355,19 +365,24 @@ const nostalgicAsThemes: ThemeDefinition[] = NOSTALGIC_THEMES.map(theme => ({
   compatibleTools: theme.compatibleTools,
 }));
 
-// Combined themes: brand styles first (premium), then legacy themes, then additional themes, then nostalgic themes
-const themes: ThemeDefinition[] = [
+// Combined themes: brand styles first (premium), then legacy, additional, nostalgic, and new family themes
+const allExisting = [
   ...brandStyleThemes,
-  ...legacyThemes.filter(lt => !brandStyleThemes.some(bt => bt.id === lt.id)), // Avoid duplicates
+  ...legacyThemes.filter(lt => !brandStyleThemes.some(bt => bt.id === lt.id)),
   ...ADDITIONAL_THEMES.filter(at =>
     !brandStyleThemes.some(bt => bt.id === at.id) &&
     !legacyThemes.some(lt => lt.id === at.id)
-  ), // Avoid duplicates with additional themes
+  ),
   ...nostalgicAsThemes.filter(nt =>
     !brandStyleThemes.some(bt => bt.id === nt.id) &&
     !legacyThemes.some(lt => lt.id === nt.id) &&
     !ADDITIONAL_THEMES.some(at => at.id === nt.id)
-  ), // Avoid duplicates with nostalgic themes
+  ),
+];
+const existingIds = new Set(allExisting.map(t => t.id));
+const themes: ThemeDefinition[] = [
+  ...allExisting,
+  ...ALL_NEW_FAMILY_THEMES.filter(t => !existingIds.has(t.id)),
 ];
 
 // Category definitions with display info
@@ -679,6 +694,46 @@ Create ONE stunning 4:5 aspect ratio promotional image that an auto repair shop 
   getAllHolidayThemeIds(): string[] {
     return getAllHolidayThemeIds();
   },
+
+  // ============================================================================
+  // STYLE FAMILY METHODS
+  // ============================================================================
+
+  getAllFamilies(): StyleFamily[] {
+    return getAllFamilies();
+  },
+
+  getFamilyById(id: string): StyleFamily | undefined {
+    return getFamilyById(id);
+  },
+
+  getFamilyForTheme(themeId: string): StyleFamily | undefined {
+    return getFamilyForTheme(themeId);
+  },
+
+  getWeeklyDropFamily(): StyleFamily {
+    return getWeeklyDropFamily();
+  },
+
+  getCurrentWeekString(): string {
+    return getCurrentWeekString();
+  },
+
+  /** Get resolved ThemeDefinition objects for a given family */
+  getThemesByFamily(familyId: string): ThemeDefinition[] {
+    const family = getFamilyById(familyId);
+    if (!family) return [];
+    return family.themeIds
+      .map(id => themes.find(t => t.id === id))
+      .filter((t): t is ThemeDefinition => t !== undefined);
+  },
+
+  /** Get a random theme from a specific family */
+  getRandomThemeFromFamily(familyId: string): ThemeDefinition | undefined {
+    const familyThemes = this.getThemesByFamily(familyId);
+    if (familyThemes.length === 0) return undefined;
+    return familyThemes[Math.floor(Math.random() * familyThemes.length)];
+  },
 };
 
 // Re-export brand style types and helpers
@@ -721,5 +776,17 @@ export {
   getInSeasonHolidayPacks,
   getHolidayTheme,
 } from './holiday-themes';
+
+// Re-export style family types and helpers
+export {
+  STYLE_FAMILIES,
+  StyleFamily,
+  ALL_NEW_FAMILY_THEMES,
+  getAllFamilies,
+  getFamilyById,
+  getFamilyForTheme,
+  getWeeklyDropFamily,
+  getCurrentWeekString,
+} from './style-families';
 
 export default themeRegistry;

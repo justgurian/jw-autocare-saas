@@ -5,6 +5,7 @@
 
 import { imageGenService } from '../../services/image-gen.service';
 import { geminiService } from '../../services/gemini.service';
+import { logger } from '../../utils/logger';
 import {
   EnhancementPreset,
   PhotoCategory,
@@ -127,7 +128,7 @@ class PhotoTunerService {
         });
         results.push(result);
       } catch (error) {
-        console.error('Failed to enhance image:', error);
+        logger.error('Failed to enhance image:', error);
         failedCount++;
       }
     }
@@ -178,7 +179,7 @@ Provide settings as JSON with values from -100 to 100 (0 is no change):
         return mergeSettings(DEFAULT_SETTINGS, suggested);
       }
     } catch (error) {
-      console.error('Failed to analyze image:', error);
+      logger.error('Failed to analyze image:', error);
     }
 
     // Fall back to category-specific preset or auto-enhance

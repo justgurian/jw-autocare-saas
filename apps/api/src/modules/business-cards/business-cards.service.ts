@@ -5,6 +5,7 @@
 
 import { geminiService } from '../../services/gemini.service';
 import { imageGenService } from '../../services/image-gen.service';
+import { logger } from '../../utils/logger';
 import {
   CardStyle,
   CardGenerationInput,
@@ -137,7 +138,7 @@ Format as JSON:
         return JSON.parse(jsonMatch[0]);
       }
     } catch (error) {
-      console.error('Failed to parse content suggestions:', error);
+      logger.error('Failed to parse content suggestions:', error);
     }
 
     // Default suggestions

@@ -2,192 +2,25 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '../../stores/auth.store';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  Zap,
   MessageSquare,
   Bell,
-  TrendingUp,
-  Sun,
-  Snowflake,
-  Leaf,
-  CloudRain,
   Calendar,
-  Trophy,
-  Star,
   CheckCircle,
   ArrowRight,
-  Clock,
-  Target,
   Gift,
   Sparkles,
-  Film,
-  Newspaper,
-  Image,
 } from 'lucide-react';
 import api from '../../services/api';
-
-// Smart AI suggestions based on day/season
-function getSmartSuggestions(): Array<{
-  title: string;
-  description: string;
-  action: string;
-  href: string;
-  icon: typeof Zap;
-  priority: 'high' | 'medium' | 'low';
-}> {
-  const now = new Date();
-  const dayOfWeek = now.getDay();
-  const month = now.getMonth();
-  const hour = now.getHours();
-
-  const suggestions: Array<{
-    title: string;
-    description: string;
-    action: string;
-    href: string;
-    icon: typeof Zap;
-    priority: 'high' | 'medium' | 'low';
-  }> = [];
-
-  // Day-based suggestions
-  if (dayOfWeek === 1) {
-    // Monday
-    suggestions.push({
-      title: 'Monday Motivation',
-      description: "Start the week strong! Post a motivational message or a special deal to kick off Monday.",
-      action: 'Create Monday Post',
-      href: '/tools/promo-flyer',
-      icon: Sun,
-      priority: 'high',
-    });
-  } else if (dayOfWeek === 5) {
-    // Friday
-    suggestions.push({
-      title: 'Weekend Ready?',
-      description: "Remind customers to get their car checked before the weekend!",
-      action: 'Send Weekend Reminder',
-      href: '/tools/sms-templates',
-      icon: Bell,
-      priority: 'high',
-    });
-  } else if (dayOfWeek === 0 || dayOfWeek === 6) {
-    // Weekend
-    suggestions.push({
-      title: 'Plan Next Week',
-      description: "Use the quiet time to schedule posts for the whole week ahead.",
-      action: 'Plan My Week',
-      href: '/tools/instant-pack',
-      icon: Calendar,
-      priority: 'medium',
-    });
-  }
-
-  // Season-based suggestions
-  if (month >= 11 || month <= 1) {
-    // Winter
-    suggestions.push({
-      title: 'Winter Car Care',
-      description: "Cold weather is here! Remind customers about battery checks, antifreeze, and winter tires.",
-      action: 'Create Winter Post',
-      href: '/tools/promo-flyer',
-      icon: Snowflake,
-      priority: 'high',
-    });
-  } else if (month >= 2 && month <= 4) {
-    // Spring
-    suggestions.push({
-      title: 'Spring Tune-Up Time',
-      description: "Perfect time to promote AC checks, alignment, and spring maintenance specials.",
-      action: 'Create Spring Post',
-      href: '/tools/promo-flyer',
-      icon: Leaf,
-      priority: 'high',
-    });
-  } else if (month >= 5 && month <= 7) {
-    // Summer
-    suggestions.push({
-      title: 'Road Trip Season',
-      description: "Vacation season! Push pre-trip inspections and AC services.",
-      action: 'Create Summer Post',
-      href: '/tools/promo-flyer',
-      icon: Sun,
-      priority: 'high',
-    });
-  } else {
-    // Fall
-    suggestions.push({
-      title: 'Fall Prep Special',
-      description: "Time for brake checks, heating system inspections, and winterizing.",
-      action: 'Create Fall Post',
-      href: '/tools/promo-flyer',
-      icon: CloudRain,
-      priority: 'medium',
-    });
-  }
-
-  // Time-based suggestions
-  if (hour >= 7 && hour <= 9) {
-    suggestions.push({
-      title: 'Good Morning Post',
-      description: "Great time to post! People check social media in the morning.",
-      action: 'Post Now',
-      href: '/tools/promo-flyer',
-      icon: Sun,
-      priority: 'medium',
-    });
-  } else if (hour >= 12 && hour <= 13) {
-    suggestions.push({
-      title: 'Lunch Break Post',
-      description: "People scroll during lunch - perfect time to reach them!",
-      action: 'Post Now',
-      href: '/tools/promo-flyer',
-      icon: Clock,
-      priority: 'medium',
-    });
-  }
-
-  // Always suggest review replies
-  suggestions.push({
-    title: 'Check Your Reviews',
-    description: "Responding to reviews builds trust and brings customers back.",
-    action: 'Reply to Reviews',
-    href: '/tools/review-reply',
-    icon: MessageSquare,
-    priority: 'low',
-  });
-
-  // Sort by priority and return top 3
-  const priorityOrder = { high: 0, medium: 1, low: 2 };
-  return suggestions.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]).slice(0, 3);
-}
-
-// Calculate marketing score
-function calculateMarketingScore(stats: { contentGenerated: number; postsScheduled: number; reviewsReplied: number }): {
-  score: number;
-  level: string;
-  nextLevel: string;
-  pointsToNext: number;
-} {
-  const points = stats.contentGenerated * 10 + stats.postsScheduled * 15 + stats.reviewsReplied * 20;
-
-  if (points >= 500) {
-    return { score: points, level: 'Marketing Pro', nextLevel: 'Marketing Legend', pointsToNext: 1000 - points };
-  } else if (points >= 200) {
-    return { score: points, level: 'Rising Star', nextLevel: 'Marketing Pro', pointsToNext: 500 - points };
-  } else if (points >= 50) {
-    return { score: points, level: 'Getting Started', nextLevel: 'Rising Star', pointsToNext: 200 - points };
-  } else {
-    return { score: points, level: 'Newcomer', nextLevel: 'Getting Started', pointsToNext: 50 - points };
-  }
-}
+import SmartSuggestions from './components/SmartSuggestions';
+import MarketingScoreCard from './components/MarketingScoreCard';
+import ThemeShowcase from './components/ThemeShowcase';
+import WeeklyThemeDrop from '../../components/features/WeeklyThemeDrop';
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
   const navigate = useNavigate();
   const [stats, setStats] = useState({ contentGenerated: 0, postsScheduled: 0, reviewsReplied: 0 });
   const [recentContent, setRecentContent] = useState<Array<{ id: string; title: string; imageUrl: string }>>([]);
-
-  const suggestions = getSmartSuggestions();
-  const marketingScore = calculateMarketingScore(stats);
 
   useEffect(() => {
     // Fetch analytics overview
@@ -226,6 +59,9 @@ export default function DashboardPage() {
         <p className="text-gray-600 mt-2 text-lg">What do you want to do today?</p>
       </div>
 
+      {/* Weekly Style Drop Banner */}
+      <WeeklyThemeDrop onTryStyle={() => navigate('/tools/promo-flyer')} />
+
       {/* MAGIC BUTTONS - Big, Bold, One-Tap Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Post Something Now - THE PRIMARY ACTION */}
@@ -242,7 +78,7 @@ export default function DashboardPage() {
                 CREATE A FLYER
               </h2>
               <p className="text-white/80 text-lg mt-2">
-                48 nostalgic themes: Comics, Movies, Magazines
+                10 style families, smart rotation, your vibe
               </p>
             </div>
           </div>
@@ -301,183 +137,13 @@ export default function DashboardPage() {
       </div>
 
       {/* NOSTALGIC THEMES SHOWCASE - The Star Feature! */}
-      <div className="card-retro border-4 border-black bg-gradient-to-br from-retro-cream to-white overflow-hidden">
-        <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8">
-          <div className="flex-1 text-center md:text-left">
-            <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
-              <Sparkles className="text-retro-red" size={24} />
-              <span className="bg-retro-red text-white px-3 py-1 text-xs font-heading uppercase">New Feature</span>
-            </div>
-            <h2 className="font-display text-3xl md:text-4xl tracking-wide text-retro-navy mb-2">
-              48 NOSTALGIC THEMES
-            </h2>
-            <p className="text-gray-600 mb-4">
-              Create eye-catching flyers with retro styles from the golden age of automotive advertising
-            </p>
-
-            {/* Theme Categories */}
-            <div className="flex flex-wrap gap-3 justify-center md:justify-start mb-6">
-              <div className="flex items-center gap-2 bg-red-100 text-red-700 px-4 py-2 border-2 border-red-300">
-                <Sparkles size={18} />
-                <span className="font-heading text-sm">COMIC BOOKS</span>
-              </div>
-              <div className="flex items-center gap-2 bg-teal-100 text-teal-700 px-4 py-2 border-2 border-teal-300">
-                <Film size={18} />
-                <span className="font-heading text-sm">MOVIE POSTERS</span>
-              </div>
-              <div className="flex items-center gap-2 bg-amber-100 text-amber-700 px-4 py-2 border-2 border-amber-300">
-                <Newspaper size={18} />
-                <span className="font-heading text-sm">MAGAZINES</span>
-              </div>
-            </div>
-
-            {/* Era Pills */}
-            <div className="flex flex-wrap gap-2 justify-center md:justify-start mb-6">
-              <span className="px-3 py-1 bg-gray-100 text-gray-700 text-sm font-heading border border-gray-300">1950s</span>
-              <span className="px-3 py-1 bg-gray-100 text-gray-700 text-sm font-heading border border-gray-300">1960s</span>
-              <span className="px-3 py-1 bg-gray-100 text-gray-700 text-sm font-heading border border-gray-300">1970s</span>
-              <span className="px-3 py-1 bg-gray-100 text-gray-700 text-sm font-heading border border-gray-300">1980s</span>
-            </div>
-
-            <Link
-              to="/tools/promo-flyer"
-              className="inline-flex items-center gap-3 bg-retro-red text-white px-8 py-4 font-display text-xl uppercase border-4 border-black shadow-retro hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all"
-            >
-              <Image size={24} />
-              EXPLORE THEMES
-              <ArrowRight size={20} />
-            </Link>
-          </div>
-
-          {/* Theme Preview Grid */}
-          <div className="grid grid-cols-2 gap-2 md:gap-3">
-            <div className="w-24 h-24 md:w-32 md:h-32 bg-gradient-to-br from-red-500 to-red-700 border-4 border-black flex items-center justify-center text-white">
-              <div className="text-center">
-                <Sparkles size={24} className="mx-auto mb-1" />
-                <span className="text-xs font-heading">SUPERHERO</span>
-              </div>
-            </div>
-            <div className="w-24 h-24 md:w-32 md:h-32 bg-gradient-to-br from-amber-400 to-amber-600 border-4 border-black flex items-center justify-center text-white">
-              <div className="text-center">
-                <Film size={24} className="mx-auto mb-1" />
-                <span className="text-xs font-heading">DRIVE-IN</span>
-              </div>
-            </div>
-            <div className="w-24 h-24 md:w-32 md:h-32 bg-gradient-to-br from-teal-500 to-teal-700 border-4 border-black flex items-center justify-center text-white">
-              <div className="text-center">
-                <Newspaper size={24} className="mx-auto mb-1" />
-                <span className="text-xs font-heading">HOT ROD</span>
-              </div>
-            </div>
-            <div className="w-24 h-24 md:w-32 md:h-32 bg-gradient-to-br from-purple-500 to-purple-700 border-4 border-black flex items-center justify-center text-white">
-              <div className="text-center">
-                <Star size={24} className="mx-auto mb-1" />
-                <span className="text-xs font-heading">NEON</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <ThemeShowcase />
 
       {/* Marketing Score Gamification */}
-      <div className="card-retro bg-gradient-to-br from-purple-900 to-indigo-900 text-white border-4 border-black">
-        <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8">
-          <div className="relative">
-            <div className="w-32 h-32 md:w-40 md:h-40 rounded-full bg-white/10 flex items-center justify-center border-4 border-yellow-400">
-              <div className="text-center">
-                <Trophy size={32} className="mx-auto text-yellow-400 mb-1" />
-                <p className="font-display text-3xl md:text-4xl">{marketingScore.score}</p>
-                <p className="text-xs text-white/60 uppercase">Points</p>
-              </div>
-            </div>
-            {/* Level badge */}
-            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-yellow-400 text-black px-4 py-1 text-xs font-bold uppercase tracking-wide border-2 border-black whitespace-nowrap">
-              {marketingScore.level}
-            </div>
-          </div>
-
-          <div className="flex-1 text-center md:text-left">
-            <h3 className="font-display text-2xl md:text-3xl tracking-wide mb-2">YOUR MARKETING SCORE</h3>
-            <p className="text-white/70 mb-4">
-              Keep posting to level up! You need <span className="text-yellow-400 font-bold">{marketingScore.pointsToNext} more points</span> to
-              reach {marketingScore.nextLevel}.
-            </p>
-
-            {/* Progress bar */}
-            <div className="w-full bg-white/20 h-4 border-2 border-white/30 overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-yellow-400 to-yellow-300 transition-all duration-500"
-                style={{
-                  width: `${Math.min(100, (marketingScore.score / (marketingScore.score + marketingScore.pointsToNext)) * 100)}%`,
-                }}
-              />
-            </div>
-
-            {/* How to earn points */}
-            <div className="flex flex-wrap gap-4 mt-4 justify-center md:justify-start">
-              <div className="flex items-center gap-2 text-sm text-white/60">
-                <Star size={14} className="text-yellow-400" />
-                <span>+10 per post</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-white/60">
-                <Calendar size={14} className="text-yellow-400" />
-                <span>+15 per scheduled</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-white/60">
-                <MessageSquare size={14} className="text-yellow-400" />
-                <span>+20 per review reply</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <MarketingScoreCard stats={stats} />
 
       {/* Smart AI Suggestions */}
-      <div>
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 bg-retro-red text-white flex items-center justify-center border-2 border-black">
-            <Target size={20} />
-          </div>
-          <h2 className="font-heading text-xl uppercase">AI Suggests For You</h2>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {suggestions.map((suggestion, index) => (
-            <Link
-              key={index}
-              to={suggestion.href}
-              className="card-retro hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all group"
-            >
-              <div className="flex items-start gap-4">
-                <div
-                  className={`w-12 h-12 flex items-center justify-center border-2 border-black ${
-                    suggestion.priority === 'high'
-                      ? 'bg-retro-red text-white'
-                      : suggestion.priority === 'medium'
-                        ? 'bg-retro-mustard text-retro-navy'
-                        : 'bg-gray-200 text-gray-700'
-                  }`}
-                >
-                  <suggestion.icon size={24} />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-heading text-sm uppercase flex items-center gap-2">
-                    {suggestion.title}
-                    {suggestion.priority === 'high' && (
-                      <span className="bg-retro-red text-white text-xs px-2 py-0.5">HOT</span>
-                    )}
-                  </h3>
-                  <p className="text-gray-600 text-sm mt-1">{suggestion.description}</p>
-                  <p className="text-retro-red font-medium text-sm mt-2 flex items-center gap-1 group-hover:gap-2 transition-all">
-                    {suggestion.action}
-                    <ArrowRight size={14} />
-                  </p>
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </div>
+      <SmartSuggestions />
 
       {/* Quick Stats - Simplified */}
       <div className="grid grid-cols-3 gap-4">

@@ -211,6 +211,7 @@ export default function FlyerCarousel({
 
           {/* Status Badge */}
           <div
+            role="status"
             className={`absolute top-4 left-4 px-3 py-1 text-white font-heading uppercase text-sm ${getStatusColor(
               currentFlyer.approvalStatus
             )}`}
@@ -228,6 +229,7 @@ export default function FlyerCarousel({
             onClick={() => onEditImage(currentFlyer)}
             className="absolute top-4 right-4 p-2 bg-white border-2 border-black shadow-retro hover:shadow-none transition-all"
             title="Edit image with AI"
+            aria-label="Edit image with AI"
           >
             <Wand2 size={18} />
           </button>
@@ -247,6 +249,7 @@ export default function FlyerCarousel({
                   onClick={handleCopyCaption}
                   className="text-gray-500 hover:text-gray-700"
                   title="Copy caption"
+                  aria-label="Copy caption to clipboard"
                 >
                   {copied ? <Check size={14} /> : <Copy size={14} />}
                 </button>
@@ -254,6 +257,7 @@ export default function FlyerCarousel({
                   onClick={startEditingCaption}
                   className="text-gray-500 hover:text-gray-700"
                   title="Edit caption"
+                  aria-label="Edit caption"
                 >
                   <Edit3 size={14} />
                 </button>
@@ -377,6 +381,7 @@ export default function FlyerCarousel({
           disabled={currentIndex === 0}
           className="p-3 border-2 border-black bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           title="Previous (← arrow key)"
+          aria-label="Previous flyer"
         >
           <ChevronLeft size={24} />
         </button>
@@ -423,6 +428,7 @@ export default function FlyerCarousel({
           disabled={currentIndex === flyers.length - 1}
           className="p-3 border-2 border-black bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           title="Next (→ arrow key)"
+          aria-label="Next flyer"
         >
           <ChevronRight size={24} />
         </button>

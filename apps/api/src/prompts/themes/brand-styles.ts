@@ -838,7 +838,7 @@ ${imagePrompt.avoidElements}
 ❌ Cluttered, busy, or chaotic layouts
 ❌ Generic stock photo aesthetic
 ❌ Watermarks or template-looking elements
-❌ Phone numbers or specific street addresses
+❌ Offensive, discriminatory, or inappropriate content
 ❌ Low-quality, amateur, or unprofessional elements
 
 === OUTPUT SPECIFICATIONS ===

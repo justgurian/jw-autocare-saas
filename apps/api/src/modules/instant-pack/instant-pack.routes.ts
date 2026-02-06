@@ -120,6 +120,10 @@ router.post('/generate', generationRateLimiter, async (req: Request, res: Respon
             logger.info(`Generating instant pack item ${i + 1}/${count}`, { theme: theme.id });
             const imageResult = await geminiService.generateImage(imagePrompt, {
               aspectRatio: '4:5',
+              contactInfo: {
+                phone: brandKit?.phone || undefined,
+                website: brandKit?.website || undefined,
+              },
             });
 
             let imageUrl: string;

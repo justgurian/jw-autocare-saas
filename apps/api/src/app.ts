@@ -7,6 +7,7 @@ import path from 'path';
 
 import { config } from './config';
 import { logger } from './utils/logger';
+import { getRedisClient } from './services/redis.service';
 import { errorHandler } from './middleware/error.middleware';
 import { requestLogger } from './middleware/request-logger.middleware';
 import { rateLimiter } from './middleware/rate-limit.middleware';
@@ -41,6 +42,9 @@ import businessCardsRoutes from './modules/business-cards/business-cards.routes'
 import photoTunerRoutes from './modules/photo-tuner/photo-tuner.routes';
 import settingsRoutes from './modules/settings/settings.routes';
 import batchFlyerRoutes from './modules/batch-flyer/batch-flyer.routes';
+
+// Initialize Redis (non-blocking, app works without it)
+getRedisClient();
 
 // Initialize Express app
 const app: Express = express();

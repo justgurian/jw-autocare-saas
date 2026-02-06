@@ -179,6 +179,10 @@ router.post('/launch', generationRateLimiter, async (req: Request, res: Response
 
             const imageResult = await geminiService.generateImage(imagePrompt, {
               aspectRatio: '4:5',
+              contactInfo: {
+                phone: brandKit?.phone || undefined,
+                website: brandKit?.website || undefined,
+              },
             });
 
             let imageUrl: string;

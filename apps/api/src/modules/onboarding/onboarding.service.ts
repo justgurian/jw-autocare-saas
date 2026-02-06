@@ -2,6 +2,61 @@ import { prisma } from '../../db/client';
 import { BadRequestError, NotFoundError } from '../../middleware/error.middleware';
 import { logger } from '../../utils/logger';
 import Vibrant from 'node-vibrant';
+import sharp from 'sharp';
+
+/**
+ * Remove white/near-white background from a logo image using Sharp.
+ * Converts near-white pixels (R,G,B all >= 240) to transparent.
+ * Falls back to the original image if processing fails.
+ */
+async function removeLogoBackground(imageInput: string): Promise<string> {
+  let imageBuffer: Buffer;
+
+  if (imageInput.startsWith('data:image')) {
+    const base64Data = imageInput.split(',')[1];
+    if (!base64Data) return imageInput;
+    imageBuffer = Buffer.from(base64Data, 'base64');
+  } else {
+    try {
+      const response = await fetch(imageInput);
+      if (!response.ok) return imageInput;
+      imageBuffer = Buffer.from(await response.arrayBuffer());
+    } catch {
+      return imageInput;
+    }
+  }
+
+  try {
+    const { data, info } = await sharp(imageBuffer)
+      .ensureAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+
+    const { width, height, channels } = info;
+    const pixels = new Uint8Array(data);
+    const THRESHOLD = 240;
+
+    for (let i = 0; i < pixels.length; i += channels) {
+      const r = pixels[i];
+      const g = pixels[i + 1];
+      const b = pixels[i + 2];
+      if (r >= THRESHOLD && g >= THRESHOLD && b >= THRESHOLD) {
+        pixels[i + 3] = 0;
+      }
+    }
+
+    const resultBuffer = await sharp(Buffer.from(pixels), {
+      raw: { width, height, channels },
+    })
+      .png()
+      .toBuffer();
+
+    return `data:image/png;base64,${resultBuffer.toString('base64')}`;
+  } catch (error) {
+    logger.warn('Logo background removal failed, using original', { error });
+    return imageInput;
+  }
+}
 
 interface OnboardingStatus {
   currentStep: number;
@@ -148,16 +203,23 @@ export const onboardingService = {
     logger.info('Business info updated', { tenantId });
   },
 
-  // Upload logo and extract colors
+  // Upload logo, remove background, and extract colors
   async uploadLogo(tenantId: string, logoUrl: string): Promise<{ colors: string[] }> {
-    // Extract dominant colors from logo
+    // Step 1: Remove white background from logo
+    let processedLogoUrl = logoUrl;
+    try {
+      processedLogoUrl = await removeLogoBackground(logoUrl);
+      logger.info('Logo background removal completed', { tenantId });
+    } catch (error) {
+      logger.warn('Logo background removal failed, proceeding with original', { error });
+    }
+
+    // Step 2: Extract dominant colors from ORIGINAL image (not the transparency-modified one)
     let extractedColors: string[] = [];
 
     try {
-      // Handle base64 data URLs - convert to buffer for Vibrant
       let vibrantInput: string | Buffer = logoUrl;
       if (logoUrl.startsWith('data:image')) {
-        // Extract base64 data after the comma
         const base64Data = logoUrl.split(',')[1];
         if (base64Data) {
           vibrantInput = Buffer.from(base64Data, 'base64');
@@ -175,11 +237,11 @@ export const onboardingService = {
       extractedColors = ['#C53030', '#2C7A7B', '#1A365D'];
     }
 
-    // Update brand kit with logo
+    // Step 3: Save PROCESSED logo (with transparent background)
     await prisma.brandKit.update({
       where: { tenantId },
       data: {
-        logoUrl,
+        logoUrl: processedLogoUrl,
         primaryColor: extractedColors[0],
         secondaryColor: extractedColors[1],
         accentColor: extractedColors[2],

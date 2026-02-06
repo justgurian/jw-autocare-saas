@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" width="400" height="500">
+  <rect width="400" height="500" fill="#1a1a1a" rx="12"/>
+  <rect x="20" y="20" width="360" height="460" rx="8" fill="none" stroke="#00FF00" stroke-width="2" stroke-dasharray="8 4" opacity="0.4"/>
+  <text x="200" y="280" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="28" font-weight="700" fill="#FFFFFF" letter-spacing="1">Street Art</text>
+  <line x1="130" y1="310" x2="270" y2="310" stroke="#00FF00" stroke-width="1.5" opacity="0.6"/>
+  <text x="200" y="340" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="14" fill="#00FF00" opacity="0.8" letter-spacing="2">PREVIEW COMING SOON</text>
+</svg>

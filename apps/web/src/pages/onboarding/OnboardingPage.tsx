@@ -1,31 +1,16 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, ChevronRight, ChevronLeft, Upload, Loader2, Search, X } from 'lucide-react';
+import { Check, ChevronRight, ChevronLeft, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { onboardingApi } from '../../services/api';
-
-// All available services - extracted for search functionality
-const ALL_SERVICES = [
-  'Oil Change', 'Brake Service', 'Brake Pads', 'Brake Rotors',
-  'Engine Repair', 'Engine Diagnostics', 'Check Engine Light',
-  'AC Service', 'AC Repair', 'Heater Repair',
-  'Tire Service', 'Tire Rotation', 'Wheel Alignment', 'Wheel Balancing',
-  'Transmission Service', 'Transmission Repair', 'Transmission Flush',
-  'Battery Service', 'Battery Replacement', 'Electrical Repair',
-  'Suspension Repair', 'Shocks & Struts', 'Steering Repair',
-  'Exhaust Repair', 'Muffler Service', 'Catalytic Converter',
-  'Radiator Service', 'Coolant Flush', 'Overheating Repair',
-  'Fuel System Service', 'Fuel Injection Cleaning', 'Fuel Pump Repair',
-  'Timing Belt', 'Serpentine Belt', 'Belt Replacement',
-  'Spark Plugs', 'Tune Up', 'Emissions Testing',
-  'State Inspection', 'Pre-Purchase Inspection', 'Fleet Service',
-  'Diesel Repair', 'Hybrid Service', 'Electric Vehicle Service',
-  'Classic Car Service', 'Performance Upgrades', 'Custom Work',
-  'Windshield Repair', 'Wiper Blades', 'Headlight Restoration',
-  'Power Steering', 'Clutch Repair', 'Differential Service',
-  'Driveshaft Repair', 'CV Joint/Axle', 'Transfer Case Service',
-  '4x4 Service', 'Lift Kit Installation', 'Lowering Kits'
-];
+import BusinessInfoStep from './components/BusinessInfoStep';
+import LogoStep from './components/LogoStep';
+import ServicesStep from './components/ServicesStep';
+import BrandVoiceStep from './components/BrandVoiceStep';
+import SpecialsStep from './components/SpecialsStep';
+import CarPreferencesStep from './components/CarPreferencesStep';
+import StyleTasteTestStep from './components/StyleTasteTestStep';
+import { promoFlyerApi } from '../../services/api';
 
 const steps = [
   { id: 1, name: 'Business Info', description: 'Tell us about your shop' },
@@ -33,7 +18,8 @@ const steps = [
   { id: 3, name: 'Services', description: 'What services do you offer?' },
   { id: 4, name: 'Brand Voice', description: 'How should we sound?' },
   { id: 5, name: 'Specials Vault', description: 'Add recurring promotions' },
-  { id: 6, name: 'Default Vehicle', description: 'Corvette or Jeep mode?' },
+  { id: 6, name: 'Car Preferences', description: 'What cars do your customers drive?' },
+  { id: 7, name: 'Style Taste', description: 'Pick your favorite flyer styles' },
 ];
 
 export default function OnboardingPage() {
@@ -41,7 +27,6 @@ export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isUploading, setIsUploading] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     businessName: '',
     phone: '',
@@ -53,70 +38,10 @@ export default function OnboardingPage() {
     services: [] as string[],
     specials: [] as { title: string; discount: string; description: string }[],
     brandVoice: 'friendly',
-    defaultVehicle: 'corvette',
+    vehiclePreferences: { lovedMakes: [] as Array<{makeId: string; models?: string[]}>, neverMakes: [] as string[] },
     websiteUrl: '',
+    styleFamilyIds: [] as string[],
   });
-  const [showSpecialModal, setShowSpecialModal] = useState(false);
-  const [newSpecial, setNewSpecial] = useState({ title: '', discount: '', description: '' });
-  const [serviceSearch, setServiceSearch] = useState('');
-
-  // Filter services based on search - memoized for performance
-  const filteredServices = useMemo(() => {
-    if (!serviceSearch.trim()) return ALL_SERVICES;
-    const searchLower = serviceSearch.toLowerCase();
-    return ALL_SERVICES.filter(service =>
-      service.toLowerCase().includes(searchLower)
-    );
-  }, [serviceSearch]);
-
-  // Helper to highlight matching text
-  const highlightMatch = (text: string, search: string) => {
-    if (!search.trim()) return text;
-    const searchLower = search.toLowerCase();
-    const textLower = text.toLowerCase();
-    const index = textLower.indexOf(searchLower);
-    if (index === -1) return text;
-    return (
-      <>
-        {text.slice(0, index)}
-        <span className="bg-retro-mustard text-retro-navy">{text.slice(index, index + search.length)}</span>
-        {text.slice(index + search.length)}
-      </>
-    );
-  };
-
-  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    // Show preview immediately
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setLogoPreview(e.target?.result as string);
-    };
-    reader.readAsDataURL(file);
-
-    // Upload to server
-    setIsUploading(true);
-    try {
-      // Convert to base64 for upload
-      const base64 = await new Promise<string>((resolve) => {
-        const r = new FileReader();
-        r.onload = () => resolve(r.result as string);
-        r.readAsDataURL(file);
-      });
-
-      const response = await onboardingApi.uploadLogo(base64);
-      setFormData({ ...formData, logoUrl: response.data.logoUrl });
-      toast.success('Logo uploaded successfully!');
-    } catch (error) {
-      console.error('Logo upload failed:', error);
-      toast.error('Failed to upload logo. You can skip this step and add it later.');
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
   const [isSaving, setIsSaving] = useState(false);
 
   const handleNext = async () => {
@@ -164,11 +89,18 @@ export default function OnboardingPage() {
           await onboardingApi.addSpecials(specialsData);
         }
       } else if (currentStep === 6) {
-        // Step 6: Default Vehicle
-        await onboardingApi.setDefaultVehicle(formData.defaultVehicle);
+        // Step 6: Car Preferences (optional — skip if nothing selected)
+        if (formData.vehiclePreferences.lovedMakes.length > 0 || formData.vehiclePreferences.neverMakes.length > 0) {
+          await promoFlyerApi.saveVehiclePreferences(formData.vehiclePreferences);
+        }
+      } else if (currentStep === 7) {
+        // Step 7: Style Taste Test
+        if (formData.styleFamilyIds.length > 0) {
+          await promoFlyerApi.savePreferences(formData.styleFamilyIds);
+        }
       }
 
-      if (currentStep < 6) {
+      if (currentStep < 7) {
         setCurrentStep(currentStep + 1);
       } else {
         // Complete onboarding
@@ -242,402 +174,59 @@ export default function OnboardingPage() {
         {/* Form Content */}
         <div className="card-retro mb-8">
           {currentStep === 1 && (
-            <div className="space-y-4">
-              <div>
-                <label className="block font-heading uppercase text-sm mb-2">
-                  Business Name *
-                </label>
-                <input
-                  type="text"
-                  className="input-retro"
-                  placeholder="Your Auto Repair Shop"
-                  value={formData.businessName}
-                  onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-heading uppercase text-sm mb-2">
-                    Phone
-                  </label>
-                  <input
-                    type="tel"
-                    className="input-retro"
-                    placeholder="(555) 123-4567"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="block font-heading uppercase text-sm mb-2">
-                    City
-                  </label>
-                  <input
-                    type="text"
-                    className="input-retro"
-                    placeholder="Phoenix"
-                    value={formData.city}
-                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                  />
-                </div>
-              </div>
-            </div>
+            <BusinessInfoStep formData={formData} setFormData={setFormData} />
           )}
 
           {currentStep === 2 && (
-            <div className="text-center py-8">
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleLogoUpload}
-                accept="image/*"
-                className="hidden"
-              />
-              <div
-                className="w-32 h-32 mx-auto mb-4 bg-gray-200 border-2 border-black flex items-center justify-center overflow-hidden cursor-pointer hover:bg-gray-300 transition-colors"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                {logoPreview ? (
-                  <img src={logoPreview} alt="Logo preview" className="w-full h-full object-contain" />
-                ) : (
-                  <span className="text-gray-400">Your Logo</span>
-                )}
-              </div>
-              <button
-                className="btn-retro-secondary flex items-center gap-2 mx-auto"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading}
-              >
-                <Upload size={18} />
-                {isUploading ? 'Uploading...' : 'Upload Logo'}
-              </button>
-              <p className="text-sm text-gray-500 mt-4">
-                We'll extract colors from your logo automatically
-              </p>
-              <p className="text-xs text-gray-400 mt-2">
-                (Optional - you can skip and add later)
-              </p>
-            </div>
+            <LogoStep
+              formData={formData}
+              setFormData={setFormData}
+              logoPreview={logoPreview}
+              setLogoPreview={setLogoPreview}
+              isUploading={isUploading}
+              setIsUploading={setIsUploading}
+            />
           )}
 
           {currentStep === 3 && (
-            <div className="space-y-4">
-              {/* URL Import Option */}
-              <div className="bg-retro-navy/5 p-4 border-2 border-retro-navy/20 mb-6">
-                <p className="font-heading text-sm uppercase mb-2">Import from Website (Optional)</p>
-                <div className="flex gap-2">
-                  <input
-                    type="url"
-                    className="input-retro flex-1"
-                    placeholder="https://yourshop.com/services"
-                    value={formData.websiteUrl || ''}
-                    onChange={(e) => setFormData({ ...formData, websiteUrl: e.target.value })}
-                  />
-                  <button
-                    type="button"
-                    className="btn-retro-secondary text-sm"
-                    onClick={() => {
-                      if (formData.websiteUrl) {
-                        toast.loading('AI is scanning your website...');
-                        // TODO: Implement AI website scraping
-                        setTimeout(() => {
-                          toast.dismiss();
-                          toast.success('Services imported! Review below.');
-                        }, 2000);
-                      }
-                    }}
-                  >
-                    Import
-                  </button>
-                </div>
-                <p className="text-xs text-gray-500 mt-1">AI will extract services from your website</p>
-              </div>
-
-              {/* Search Bar for Services */}
-              <div className="sticky top-0 bg-white z-10 pb-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                  <input
-                    type="text"
-                    className="input-retro pl-10 pr-10"
-                    placeholder="Search services... (e.g., brake, oil, transmission)"
-                    value={serviceSearch}
-                    onChange={(e) => setServiceSearch(e.target.value)}
-                  />
-                  {serviceSearch && (
-                    <button
-                      onClick={() => setServiceSearch('')}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      <X size={20} />
-                    </button>
-                  )}
-                </div>
-                <div className="flex justify-between items-center mt-2 text-sm">
-                  <span className="text-gray-600">
-                    {serviceSearch
-                      ? `Showing ${filteredServices.length} of ${ALL_SERVICES.length} services`
-                      : `${ALL_SERVICES.length} services available`}
-                  </span>
-                  <span className="font-heading text-retro-teal">
-                    {formData.services.length} selected
-                  </span>
-                </div>
-              </div>
-
-              {/* Quick Select Buttons */}
-              {!serviceSearch && (
-                <div className="flex flex-wrap gap-2 pb-2">
-                  <button
-                    type="button"
-                    className="text-xs px-3 py-1 border border-retro-navy text-retro-navy hover:bg-retro-navy hover:text-white transition-colors"
-                    onClick={() => {
-                      const common = ['Oil Change', 'Brake Service', 'Tire Service', 'AC Service', 'Engine Diagnostics', 'Battery Service'];
-                      const newServices = [...new Set([...formData.services, ...common])];
-                      setFormData({ ...formData, services: newServices });
-                      toast.success('Common services added!');
-                    }}
-                  >
-                    + Common Services
-                  </button>
-                  <button
-                    type="button"
-                    className="text-xs px-3 py-1 border border-retro-navy text-retro-navy hover:bg-retro-navy hover:text-white transition-colors"
-                    onClick={() => {
-                      setFormData({ ...formData, services: [...ALL_SERVICES] });
-                      toast.success('All services selected!');
-                    }}
-                  >
-                    Select All
-                  </button>
-                  {formData.services.length > 0 && (
-                    <button
-                      type="button"
-                      className="text-xs px-3 py-1 border border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-colors"
-                      onClick={() => {
-                        setFormData({ ...formData, services: [] });
-                        toast.success('All services cleared');
-                      }}
-                    >
-                      Clear All
-                    </button>
-                  )}
-                </div>
-              )}
-
-              {/* Services Grid */}
-              <div className="grid grid-cols-2 gap-2 max-h-[350px] overflow-y-auto">
-                {filteredServices.length === 0 ? (
-                  <div className="col-span-2 text-center py-8 text-gray-500">
-                    <p className="font-heading">No services match "{serviceSearch}"</p>
-                    <p className="text-sm mt-1">Try a different search or add it as a custom service below</p>
-                  </div>
-                ) : (
-                  filteredServices.map((service) => (
-                    <label
-                      key={service}
-                      className={`flex items-center gap-2 p-2 border cursor-pointer text-sm transition-all ${
-                        formData.services.includes(service)
-                          ? 'border-retro-teal bg-retro-teal/10 border-2'
-                          : 'border-black hover:bg-gray-50'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        className="w-4 h-4 accent-retro-teal"
-                        checked={formData.services.includes(service)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setFormData({ ...formData, services: [...formData.services, service] });
-                          } else {
-                            setFormData({ ...formData, services: formData.services.filter(s => s !== service) });
-                          }
-                        }}
-                      />
-                      <span className="font-heading uppercase text-xs">
-                        {highlightMatch(service, serviceSearch)}
-                      </span>
-                    </label>
-                  ))
-                )}
-              </div>
-
-              {/* Custom service input */}
-              <div className="mt-4 pt-4 border-t border-gray-300">
-                <p className="font-heading text-sm uppercase mb-2">Add Custom Service</p>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    className="input-retro flex-1"
-                    placeholder="Enter custom service..."
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        const input = e.target as HTMLInputElement;
-                        if (input.value.trim()) {
-                          setFormData({ ...formData, services: [...formData.services, input.value.trim()] });
-                          input.value = '';
-                          toast.success('Custom service added!');
-                        }
-                      }
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
+            <ServicesStep
+              selectedServices={formData.services}
+              onServicesChange={(services) => setFormData({ ...formData, services })}
+              websiteUrl={formData.websiteUrl}
+              onWebsiteUrlChange={(url) => setFormData({ ...formData, websiteUrl: url })}
+            />
           )}
 
           {currentStep === 4 && (
-            <div className="space-y-4">
-              <p className="text-gray-600 mb-4">
-                How should your marketing content sound?
-              </p>
-              {['friendly', 'professional', 'humorous', 'authoritative'].map((voice) => (
-                <label
-                  key={voice}
-                  className={`flex items-center gap-3 p-4 border-2 border-black cursor-pointer ${
-                    formData.brandVoice === voice ? 'bg-retro-teal text-white' : 'hover:bg-gray-50'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="brandVoice"
-                    value={voice}
-                    checked={formData.brandVoice === voice}
-                    onChange={(e) => setFormData({ ...formData, brandVoice: e.target.value })}
-                    className="sr-only"
-                  />
-                  <span className="font-heading uppercase">{voice}</span>
-                </label>
-              ))}
-            </div>
+            <BrandVoiceStep
+              selectedVoice={formData.brandVoice}
+              onChange={(voice) => setFormData({ ...formData, brandVoice: voice })}
+            />
           )}
 
           {currentStep === 5 && (
-            <div className="py-4">
-              <p className="text-gray-600 mb-4 text-center">
-                Add recurring promotions to your Specials Vault (optional)
-              </p>
-
-              {/* Added Specials List */}
-              {formData.specials.length > 0 && (
-                <div className="space-y-2 mb-4">
-                  {formData.specials.map((special, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-retro-teal/10 border border-retro-teal">
-                      <div>
-                        <p className="font-heading uppercase">{special.title}</p>
-                        <p className="text-sm text-gray-600">{special.discount} - {special.description}</p>
-                      </div>
-                      <button
-                        onClick={() => setFormData({
-                          ...formData,
-                          specials: formData.specials.filter((_, i) => i !== index)
-                        })}
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Add Special Form */}
-              {showSpecialModal ? (
-                <div className="border-2 border-black p-4 space-y-3">
-                  <input
-                    type="text"
-                    className="input-retro"
-                    placeholder="Special name (e.g., Monday Oil Change)"
-                    value={newSpecial.title}
-                    onChange={(e) => setNewSpecial({ ...newSpecial, title: e.target.value })}
-                  />
-                  <input
-                    type="text"
-                    className="input-retro"
-                    placeholder="Discount (e.g., $10 Off, 15% Off)"
-                    value={newSpecial.discount}
-                    onChange={(e) => setNewSpecial({ ...newSpecial, discount: e.target.value })}
-                  />
-                  <input
-                    type="text"
-                    className="input-retro"
-                    placeholder="Description (e.g., Every Monday)"
-                    value={newSpecial.description}
-                    onChange={(e) => setNewSpecial({ ...newSpecial, description: e.target.value })}
-                  />
-                  <div className="flex gap-2">
-                    <button
-                      className="btn-retro-primary flex-1"
-                      onClick={() => {
-                        if (newSpecial.title && newSpecial.discount) {
-                          setFormData({
-                            ...formData,
-                            specials: [...formData.specials, newSpecial]
-                          });
-                          setNewSpecial({ title: '', discount: '', description: '' });
-                          setShowSpecialModal(false);
-                          toast.success('Special added!');
-                        } else {
-                          toast.error('Please fill in title and discount');
-                        }
-                      }}
-                    >
-                      Save Special
-                    </button>
-                    <button
-                      className="btn-retro-outline"
-                      onClick={() => {
-                        setShowSpecialModal(false);
-                        setNewSpecial({ title: '', discount: '', description: '' });
-                      }}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center">
-                  <button
-                    className="btn-retro-outline"
-                    onClick={() => setShowSpecialModal(true)}
-                  >
-                    Add Special
-                  </button>
-                </div>
-              )}
-
-              <p className="text-sm text-gray-500 mt-4 text-center">
-                {formData.specials.length === 0
-                  ? "You can add specials later from the dashboard"
-                  : `${formData.specials.length} special(s) added`
-                }
-              </p>
-            </div>
+            <SpecialsStep
+              specials={formData.specials}
+              onSpecialsChange={(specials) => setFormData({ ...formData, specials })}
+            />
           )}
 
           {currentStep === 6 && (
-            <div className="grid grid-cols-2 gap-6">
-              <button
-                onClick={() => setFormData({ ...formData, defaultVehicle: 'corvette' })}
-                className={`p-6 border-2 border-black text-center transition-all ${
-                  formData.defaultVehicle === 'corvette' ? 'bg-retro-red text-white' : 'hover:bg-gray-50'
-                }`}
-              >
-                <div className="text-6xl mb-4">🏎️</div>
-                <p className="font-heading text-xl uppercase">Corvette Mode</p>
-                <p className="text-sm mt-2 opacity-80">Sports car & performance focus</p>
-              </button>
-              <button
-                onClick={() => setFormData({ ...formData, defaultVehicle: 'jeep' })}
-                className={`p-6 border-2 border-black text-center transition-all ${
-                  formData.defaultVehicle === 'jeep' ? 'bg-retro-teal text-white' : 'hover:bg-gray-50'
-                }`}
-              >
-                <div className="text-6xl mb-4">🚙</div>
-                <p className="font-heading text-xl uppercase">Jeep Mode</p>
-                <p className="text-sm mt-2 opacity-80">Family & adventure focus</p>
-              </button>
-            </div>
+            <CarPreferencesStep
+              lovedMakes={formData.vehiclePreferences.lovedMakes}
+              neverMakes={formData.vehiclePreferences.neverMakes}
+              onChange={(loved, never) => setFormData({
+                ...formData,
+                vehiclePreferences: { lovedMakes: loved, neverMakes: never },
+              })}
+            />
+          )}
+
+          {currentStep === 7 && (
+            <StyleTasteTestStep
+              selectedFamilies={formData.styleFamilyIds}
+              onChange={(families) => setFormData({ ...formData, styleFamilyIds: families })}
+            />
           )}
         </div>
 
@@ -663,7 +252,7 @@ export default function OnboardingPage() {
               </>
             ) : (
               <>
-                {currentStep === 6 ? 'Complete Setup' : 'Next'}
+                {currentStep === 7 ? 'Complete Setup' : 'Next'}
                 <ChevronRight size={20} />
               </>
             )}

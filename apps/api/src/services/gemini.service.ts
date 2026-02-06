@@ -5,19 +5,30 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { getSeasonalEventsForMonth, getStateTips, getSeasonName } from '../prompts/calendar/seasonal-data';
 
+// Sanitize user input for AI prompts to prevent prompt injection
+function sanitizeForPrompt(input: string): string {
+  if (!input) return '';
+  // Remove potential prompt injection patterns
+  return input
+    .replace(/\b(ignore|disregard|forget|override)\s+(all\s+)?(previous|above|prior)\s+(instructions?|prompts?|rules?)/gi, '[filtered]')
+    .replace(/\b(system|assistant|user)\s*:/gi, '[filtered]')
+    .replace(/```[\s\S]*?```/g, '[code removed]')
+    .slice(0, 500); // Limit length
+}
+
 // Initialize Gemini client (build: 2026-01-26-v1)
 const apiKey = config.gemini.apiKey;
 if (!apiKey) {
-  console.error('CRITICAL: GEMINI_API_KEY is not set!');
+  logger.error('CRITICAL: GEMINI_API_KEY is not set!');
 }
 const genAI = new GoogleGenerativeAI(apiKey);
-console.log('Gemini API initialized with key:', apiKey ? `${apiKey.substring(0, 10)}...` : 'MISSING');
+logger.info('Gemini API initialized', { hasKey: !!apiKey });
 
 // Models - using available Gemini models
 const textModel = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 const visionModel = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
-// Image generation model - Nano Banana Pro (Gemini 3 Pro Image Preview)
+// Image generation model - Nano Banana Pro (gemini-3-pro-image-preview)
 const imageModel = genAI.getGenerativeModel({
   model: 'gemini-3-pro-image-preview',
   generationConfig: {
@@ -38,6 +49,35 @@ interface ImageGenerationOptions {
   style?: string;
   negativePrompt?: string;
   outputDir?: string;
+  logoImage?: { base64: string; mimeType: string };
+  contactInfo?: { phone?: string; website?: string };
+}
+
+function buildContactSection(contactInfo?: { phone?: string; website?: string }): string {
+  const hasPhone = contactInfo?.phone && contactInfo.phone.trim().length > 0;
+  const hasWebsite = contactInfo?.website && contactInfo.website.trim().length > 0;
+
+  if (!hasPhone && !hasWebsite) {
+    return `=== CALL TO ACTION ===
+Include a compelling call-to-action phrase prominently in the design. Choose one that fits the flyer content:
+- "Call Today!" or "Book Now!" or "Visit Us Today!" or "Schedule Your Service!"
+The CTA must be clearly visible and styled as a button or banner element.`;
+  }
+
+  const contactLines: string[] = [];
+  if (hasPhone) contactLines.push(`Phone: ${contactInfo!.phone!.trim()}`);
+  if (hasWebsite) contactLines.push(`Website: ${contactInfo!.website!.trim()}`);
+
+  return `=== CONTACT INFORMATION & CALL TO ACTION ===
+CRITICAL: The following contact information MUST appear on the flyer, clearly readable:
+${contactLines.map(l => `- ${l}`).join('\n')}
+
+Display the contact info in a clean footer bar, banner, or dedicated contact strip at the bottom of the flyer.
+Style it professionally — not cramped or as an afterthought. It should look intentionally designed.
+
+Also include a compelling call-to-action phrase prominently in the design:
+- "Call Today!" or "Book Now!" or "Visit Us Today!" or "Schedule Your Service!"
+Choose the CTA that best matches the flyer's content. The CTA should be styled as a button or banner element, visually distinct from the contact information.`;
 }
 
 interface GenerationResult {
@@ -85,9 +125,9 @@ export const geminiService = {
       return {
         text,
         usage: {
-          promptTokens: 0, // Gemini doesn't return token counts in the same way
-          completionTokens: 0,
-          totalTokens: 0,
+          promptTokens: (response as any).usageMetadata?.promptTokenCount || 0,
+          completionTokens: (response as any).usageMetadata?.candidatesTokenCount || 0,
+          totalTokens: (response as any).usageMetadata?.totalTokenCount || 0,
         },
       };
     } catch (error) {
@@ -102,12 +142,16 @@ export const geminiService = {
       logger.info('Starting image generation with Nano Banana Pro', { promptLength: prompt.length });
 
       // Build comprehensive prompt for high-quality auto repair marketing images
-      const fullPrompt = `You are a professional graphic designer creating a stunning social media marketing image for an auto repair shop.
+      const contactSection = buildContactSection(options.contactInfo);
+
+      const fullPrompt = `You are an elite professional graphic designer at a top-tier marketing agency, creating a STUNNING promotional image for a premium independent auto repair shop — the kind of shop trusted by its community, known for exceptional work, and proud of its reputation.
 
 CREATE A VISUALLY STRIKING, HIGH-QUALITY MARKETING IMAGE with the following specifications:
 
 === CORE CONTENT ===
 ${prompt}
+
+${contactSection}
 
 === VISUAL DESIGN REQUIREMENTS ===
 
@@ -138,16 +182,18 @@ VISUAL ELEMENTS:
 - Include design elements like racing stripes, checkered patterns, or gear shapes
 
 STYLE & MOOD:
-- Professional yet approachable - trustworthy auto shop aesthetic
+- Premium, trustworthy, expert auto shop aesthetic — the kind of place you'd trust with your family's car
 - Clean, modern design that stands out in social media feeds
 - Balance between eye-catching and professional
-- Convey expertise, reliability, and quality service
+- Convey decades of expertise, unshakable reliability, and top-quality service
 
 === QUALITY STANDARDS ===
-- This image will be used for REAL BUSINESS MARKETING on social media
-- It must look like it was created by a professional graphic designer
-- The image should make people STOP SCROLLING when they see it
-- Quality level: Ready to post on Instagram, Facebook, or print as a flyer
+- This image will be used for REAL BUSINESS MARKETING for a PREMIUM independent auto repair shop
+- It must look like it was created by a top-tier professional graphic designer at a real agency
+- The image should make people STOP SCROLLING when they see it in their feed
+- Quality level: Ready to post on Instagram, Facebook, or print as a professional flyer
+- The viewer should feel TRUST and CONFIDENCE in this shop after seeing this image
+- This shop is in the TOP 5% of independent repair shops — the image quality must reflect that
 
 === DO NOT INCLUDE ===
 - Realistic human faces or photographs of real people
@@ -156,13 +202,38 @@ STYLE & MOOD:
 - Tiny unreadable text
 - Cluttered or chaotic layouts
 - Generic stock photo aesthetic
+- Cheesy, cheap, or discount-store aesthetics
 ${options.negativePrompt ? `- ${options.negativePrompt}` : ''}
 
-Generate a single, stunning marketing image that an auto repair shop would be proud to post on their social media.`;
+Generate a single, stunning marketing image that a premium auto repair shop would be proud to post on their social media.`;
 
-      logger.info('Calling Nano Banana Pro model for image generation...');
+      logger.info('Calling Nano Banana Pro model for image generation...', {
+        hasLogo: !!options.logoImage,
+      });
 
-      const result = await imageModel.generateContent(fullPrompt);
+      let result;
+      if (options.logoImage) {
+        // Pass logo as inline image so the model can see and incorporate it
+        const logoPart: Part = {
+          inlineData: {
+            data: options.logoImage.base64,
+            mimeType: options.logoImage.mimeType,
+          },
+        };
+        result = await imageModel.generateContent({
+          contents: [
+            {
+              role: 'user',
+              parts: [
+                logoPart,
+                { text: fullPrompt + '\n\nIMPORTANT: The attached image is the business logo. You MUST incorporate this exact logo into the flyer design. Place it prominently where it is clearly visible — typically in the top or bottom area of the flyer. CRITICAL: If the logo has a white, colored, or solid background rectangle/box, IGNORE that background entirely — treat it as transparent. Only render the actual logo design/artwork itself, seamlessly integrated into the flyer. There should be NO visible bounding box, white rectangle, or background shape around the logo.' },
+              ],
+            },
+          ],
+        });
+      } else {
+        result = await imageModel.generateContent(fullPrompt);
+      }
       const response = result.response;
 
       logger.info('Received response from image model', {
@@ -176,16 +247,14 @@ Generate a single, stunning marketing image that an auto repair shop would be pr
 
       logger.info('Response parts analysis', {
         partsCount: parts.length,
-        partTypes: parts.map((p: any) => p.inlineData ? 'image' : p.text ? 'text' : 'unknown'),
+        partTypes: parts.map((p) => (p as any).inlineData ? 'image' : (p as any).text ? 'text' : 'unknown'),
       });
 
       for (const part of parts) {
-        // @ts-ignore - inlineData may contain image
-        if (part.inlineData) {
-          // @ts-ignore
-          const imageData = Buffer.from(part.inlineData.data, 'base64');
-          // @ts-ignore
-          const mimeType = part.inlineData.mimeType || 'image/png';
+        const inlineData = (part as any).inlineData;
+        if (inlineData) {
+          const imageData = Buffer.from(inlineData.data, 'base64');
+          const mimeType = inlineData.mimeType || 'image/png';
 
           logger.info('Image generated successfully with Nano Banana Pro', {
             size: imageData.length,
@@ -238,7 +307,7 @@ Generate a single, stunning marketing image that an auto repair shop would be pr
         errorDetails: JSON.stringify(error.errorDetails || error.details || {}),
         errorStack: error.stack?.substring(0, 500),
       });
-      console.error('FULL ERROR:', error);
+      logger.error('Full Gemini error details', { errorMessage: error.message, errorCode: error.code });
 
       // Check for specific errors
       if (error.message?.includes('SAFETY')) {
@@ -294,13 +363,13 @@ Generate a single, stunning marketing image that an auto repair shop would be pr
 
     // Build rich context from profile
     const contextParts: string[] = [];
-    if (profile.businessName) contextParts.push(`Business Name: ${profile.businessName}`);
+    if (profile.businessName) contextParts.push(`Business Name: ${sanitizeForPrompt(profile.businessName)}`);
     if (profile.city && profile.state) contextParts.push(`Location: ${profile.city}, ${profile.state}`);
-    if (profile.tagline) contextParts.push(`Tagline: "${profile.tagline}"`);
+    if (profile.tagline) contextParts.push(`Tagline: "${sanitizeForPrompt(profile.tagline)}"`);
     if (profile.specialties?.length) contextParts.push(`Specialties: ${profile.specialties.join(', ')}`);
     if (profile.uniqueSellingPoints?.length) contextParts.push(`Unique Selling Points: ${profile.uniqueSellingPoints.join('; ')}`);
-    if (profile.targetDemographics) contextParts.push(`Target Customers: ${profile.targetDemographics}`);
-    if (profile.targetPainPoints) contextParts.push(`Customer Pain Points: ${profile.targetPainPoints}`);
+    if (profile.targetDemographics) contextParts.push(`Target Customers: ${sanitizeForPrompt(profile.targetDemographics)}`);
+    if (profile.targetPainPoints) contextParts.push(`Customer Pain Points: ${sanitizeForPrompt(profile.targetPainPoints)}`);
 
     const businessContext = contextParts.length > 0
       ? `\n\nBUSINESS CONTEXT:\n${contextParts.join('\n')}`
@@ -428,9 +497,9 @@ Write 800-1200 words. Include:
 
     // Build business context
     const businessContext: string[] = [];
-    if (profile.businessName) businessContext.push(`Shop Name: ${profile.businessName}`);
+    if (profile.businessName) businessContext.push(`Shop Name: ${sanitizeForPrompt(profile.businessName)}`);
     if (profile.city && profile.state) businessContext.push(`Location: ${profile.city}, ${profile.state}`);
-    if (profile.tagline) businessContext.push(`Tagline: "${profile.tagline}"`);
+    if (profile.tagline) businessContext.push(`Tagline: "${sanitizeForPrompt(profile.tagline)}"`);
     if (profile.specialties?.length) businessContext.push(`Specialties: ${profile.specialties.slice(0, 3).join(', ')}`);
 
     // Determine brand personality for visual style
@@ -473,7 +542,7 @@ DO NOT include:
 - Copyrighted logos or characters
 - Offensive content
 - Realistic human faces
-- Phone numbers or addresses`;
+- Offensive or discriminatory content`;
 
     return prompt;
   },
@@ -522,7 +591,7 @@ DO NOT include:
 - Copyrighted logos or characters
 - Offensive content
 - Realistic human faces
-- Phone numbers or addresses`;
+- Offensive or discriminatory content`;
 
     return prompt;
   },
@@ -572,12 +641,10 @@ Aspect ratio: ${options.aspectRatio || '4:5'} (portrait orientation for social m
       const parts = response.candidates?.[0]?.content?.parts || [];
 
       for (const part of parts) {
-        // @ts-ignore - inlineData may contain image
-        if (part.inlineData) {
-          // @ts-ignore
-          const imageData = Buffer.from(part.inlineData.data, 'base64');
-          // @ts-ignore
-          const mimeType = part.inlineData.mimeType || 'image/png';
+        const inlineData = (part as any).inlineData;
+        if (inlineData) {
+          const imageData = Buffer.from(inlineData.data, 'base64');
+          const mimeType = inlineData.mimeType || 'image/png';
 
           logger.info('Image with reference generated successfully', {
             size: imageData.length,

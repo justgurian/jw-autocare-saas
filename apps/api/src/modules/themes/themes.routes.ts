@@ -5,6 +5,7 @@
 
 import { Router, Request, Response } from 'express';
 import { themeRegistry, THEME_CATEGORIES, ThemeDefinition } from '../../prompts/themes';
+import { cache } from '../../services/redis.service';
 
 const router = Router();
 
@@ -39,35 +40,36 @@ function toThemeResponse(theme: ThemeDefinition): ThemeResponse {
 router.get('/', async (req: Request, res: Response) => {
   const { category, tool, search, limit, offset } = req.query;
 
-  let themes = themeRegistry.getAllThemes();
+  // Build cache key from query params (themes are static, cache aggressively)
+  const cacheKey = `themes:list:${category || ''}:${tool || ''}:${search || ''}:${limit || ''}:${offset || ''}`;
 
-  // Filter by category
-  if (category && typeof category === 'string') {
-    themes = themes.filter(t => t.category === category);
-  }
+  const result = await cache(cacheKey, 3600, async () => {
+    let themes = themeRegistry.getAllThemes();
 
-  // Filter by compatible tool
-  if (tool && typeof tool === 'string') {
-    themes = themes.filter(t => t.compatibleTools.includes(tool));
-  }
+    if (category && typeof category === 'string') {
+      themes = themes.filter(t => t.category === category);
+    }
+    if (tool && typeof tool === 'string') {
+      themes = themes.filter(t => t.compatibleTools.includes(tool));
+    }
+    if (search && typeof search === 'string') {
+      themes = themeRegistry.searchThemes(search);
+    }
 
-  // Search filter
-  if (search && typeof search === 'string') {
-    themes = themeRegistry.searchThemes(search);
-  }
+    const totalCount = themes.length;
+    const offsetNum = parseInt(offset as string, 10) || 0;
+    const limitNum = parseInt(limit as string, 10) || 100;
+    themes = themes.slice(offsetNum, offsetNum + limitNum);
 
-  // Pagination
-  const totalCount = themes.length;
-  const offsetNum = parseInt(offset as string, 10) || 0;
-  const limitNum = parseInt(limit as string, 10) || 100;
-  themes = themes.slice(offsetNum, offsetNum + limitNum);
-
-  res.json({
-    themes: themes.map(toThemeResponse),
-    total: totalCount,
-    offset: offsetNum,
-    limit: limitNum,
+    return {
+      themes: themes.map(toThemeResponse),
+      total: totalCount,
+      offset: offsetNum,
+      limit: limitNum,
+    };
   });
+
+  res.json(result);
 });
 
 /**
@@ -75,15 +77,19 @@ router.get('/', async (req: Request, res: Response) => {
  * Get all theme categories with metadata
  */
 router.get('/categories', async (_req: Request, res: Response) => {
-  const categories = THEME_CATEGORIES.map(cat => ({
-    ...cat,
-    count: themeRegistry.getThemesByCategory(cat.id).length,
-  }));
+  const result = await cache('themes:categories', 3600, async () => {
+    const categories = THEME_CATEGORIES.map(cat => ({
+      ...cat,
+      count: themeRegistry.getThemesByCategory(cat.id).length,
+    }));
 
-  res.json({
-    categories,
-    total: themeRegistry.getThemeCount(),
+    return {
+      categories,
+      total: themeRegistry.getThemeCount(),
+    };
   });
+
+  res.json(result);
 });
 
 /**
@@ -104,25 +110,29 @@ router.get('/featured', async (req: Request, res: Response) => {
  * Get themes grouped by category
  */
 router.get('/grouped', async (_req: Request, res: Response) => {
-  const grouped = themeRegistry.getThemesGroupedByCategory();
+  const data = await cache('themes:grouped', 3600, async () => {
+    const grouped = themeRegistry.getThemesGroupedByCategory();
 
-  const result: Record<string, {
-    category: typeof THEME_CATEGORIES[0];
-    themes: ThemeResponse[];
-  }> = {};
+    const result: Record<string, {
+      category: typeof THEME_CATEGORIES[0];
+      themes: ThemeResponse[];
+    }> = {};
 
-  for (const [categoryId, themes] of Object.entries(grouped)) {
-    const categoryInfo = THEME_CATEGORIES.find(c => c.id === categoryId);
-    result[categoryId] = {
-      category: categoryInfo || { id: categoryId, name: categoryId, icon: '🎨', description: '' },
-      themes: themes.map(toThemeResponse),
+    for (const [categoryId, themes] of Object.entries(grouped)) {
+      const categoryInfo = THEME_CATEGORIES.find(c => c.id === categoryId);
+      result[categoryId] = {
+        category: categoryInfo || { id: categoryId, name: categoryId, icon: '🎨', description: '' },
+        themes: themes.map(toThemeResponse),
+      };
+    }
+
+    return {
+      grouped: result,
+      totalThemes: themeRegistry.getThemeCount(),
     };
-  }
-
-  res.json({
-    grouped: result,
-    totalThemes: themeRegistry.getThemeCount(),
   });
+
+  res.json(data);
 });
 
 /**

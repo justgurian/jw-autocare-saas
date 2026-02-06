@@ -4,6 +4,7 @@
  */
 
 import { geminiService } from '../../services/gemini.service';
+import { logger } from '../../utils/logger';
 import {
   BlogCategory,
   BlogGenerationInput,
@@ -79,7 +80,7 @@ Make ideas:
         return JSON.parse(jsonMatch[0]);
       }
     } catch (error) {
-      console.error('Failed to parse blog ideas:', error);
+      logger.error('Failed to parse blog ideas:', error);
     }
 
     // Return example ideas if parsing fails
@@ -139,7 +140,7 @@ Make the outline:
         return JSON.parse(jsonMatch[0]);
       }
     } catch (error) {
-      console.error('Failed to parse outline:', error);
+      logger.error('Failed to parse outline:', error);
     }
 
     // Return basic outline if parsing fails
@@ -234,7 +235,7 @@ Format the response as JSON:
         throw new Error('No JSON found');
       }
     } catch (error) {
-      console.error('Failed to parse blog:', error);
+      logger.error('Failed to parse blog:', error);
       // Create basic structure from raw response
       blogData = {
         title: input.topic,
@@ -309,7 +310,7 @@ Format as JSON:
         return JSON.parse(jsonMatch[0]);
       }
     } catch (error) {
-      console.error('Failed to parse SEO optimization:', error);
+      logger.error('Failed to parse SEO optimization:', error);
     }
 
     return {

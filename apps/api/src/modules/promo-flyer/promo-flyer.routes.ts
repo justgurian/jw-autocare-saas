@@ -11,10 +11,30 @@ import {
   EraVehicle,
   NOSTALGIC_ERAS,
   NOSTALGIC_STYLES,
+  getFamilyForTheme,
 } from '../../prompts/themes';
 import { ValidationError } from '../../middleware/error.middleware';
 import { logger } from '../../utils/logger';
 import { v4 as uuidv4 } from 'uuid';
+import {
+  getPreferences,
+  buildPreferencesUpdate,
+  recordThemeUsage,
+  addFeedback,
+  selectNextTheme,
+  selectWeekThemes,
+  type TenantStylePreferences,
+  type FeedbackEntry,
+} from '../../services/smart-rotation';
+import {
+  getVehiclePreferences,
+  buildVehiclePreferencesUpdate,
+  selectVehicleForFlyer,
+  buildVehiclePromptForFlyer,
+  getVehicleKey,
+  recordVehicleUsage as recordVehicleUsageHelper,
+} from '../../services/vehicle-selection';
+import { getAllCarMakes, isValidMakeId } from '../../data/car-makes';
 import {
   generateSchema,
   generatePackSchema,
@@ -26,6 +46,20 @@ import {
 } from './promo-flyer.types';
 
 const router = Router();
+
+// Fetch a logo URL and convert to base64 for passing to the image model
+async function fetchLogoAsBase64(logoUrl: string): Promise<{ base64: string; mimeType: string } | null> {
+  try {
+    const response = await fetch(logoUrl);
+    if (!response.ok) return null;
+    const buffer = Buffer.from(await response.arrayBuffer());
+    const mimeType = response.headers.get('content-type') || 'image/png';
+    return { base64: buffer.toString('base64'), mimeType };
+  } catch (err) {
+    logger.warn('Failed to fetch logo for image generation', { logoUrl });
+    return null;
+  }
+}
 
 router.use(authenticate);
 router.use(tenantContext);
@@ -194,6 +228,300 @@ router.get('/random-theme', async (req: Request, res: Response, next: NextFuncti
   }
 });
 
+// ============================================================================
+// STYLE FAMILY & PREFERENCE ENDPOINTS
+// ============================================================================
+
+// Get all style families
+router.get('/families', async (_req: Request, res: Response) => {
+  const families = themeRegistry.getAllFamilies();
+  res.json({
+    families: families.map(f => ({
+      id: f.id,
+      name: f.name,
+      description: f.description,
+      emoji: f.emoji,
+      previewImage: f.previewImage,
+      themeCount: f.themeIds.length,
+      tags: f.tags,
+    })),
+  });
+});
+
+// Get all car makes (for the selection grid)
+router.get('/car-makes', async (_req: Request, res: Response) => {
+  const makes = getAllCarMakes();
+  res.json({
+    makes: makes.map(m => ({
+      id: m.id,
+      name: m.name,
+      emoji: m.emoji,
+      color: m.color,
+      models: m.models,
+    })),
+  });
+});
+
+// Get vehicle preferences for the current tenant
+router.get('/vehicle-preferences', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: req.user!.tenantId },
+      select: { settings: true },
+    });
+    const prefs = getVehiclePreferences((tenant?.settings as Record<string, unknown>) || {});
+    res.json(prefs);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Save vehicle preferences
+router.post('/vehicle-preferences', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { lovedMakes, neverMakes } = req.body;
+
+    if (!Array.isArray(lovedMakes)) {
+      throw new ValidationError('Invalid vehicle preferences', {
+        lovedMakes: ['lovedMakes must be an array'],
+      });
+    }
+
+    // Validate make IDs
+    for (const entry of lovedMakes) {
+      if (!entry.makeId || !isValidMakeId(entry.makeId)) {
+        throw new ValidationError('Invalid make', { lovedMakes: [`Unknown make: ${entry.makeId}`] });
+      }
+    }
+    if (Array.isArray(neverMakes)) {
+      for (const makeId of neverMakes) {
+        if (!isValidMakeId(makeId)) {
+          throw new ValidationError('Invalid make', { neverMakes: [`Unknown make: ${makeId}`] });
+        }
+      }
+    }
+
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: req.user!.tenantId },
+      select: { settings: true },
+    });
+
+    const currentSettings = (tenant?.settings as Record<string, unknown>) || {};
+    const updatedSettings = buildVehiclePreferencesUpdate(currentSettings, {
+      lovedMakes: lovedMakes.map((e: any) => ({ makeId: e.makeId, models: e.models || [] })),
+      neverMakes: Array.isArray(neverMakes) ? neverMakes : [],
+    });
+
+    await prisma.tenant.update({
+      where: { id: req.user!.tenantId },
+      data: { settings: updatedSettings as any },
+    });
+
+    logger.info('Vehicle preferences saved', { tenantId: req.user!.tenantId, lovedCount: lovedMakes.length, neverCount: neverMakes?.length || 0 });
+    res.json({ success: true });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get style preferences for the current tenant
+router.get('/preferences', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: req.user!.tenantId },
+      select: { settings: true },
+    });
+    const prefs = getPreferences((tenant?.settings as Record<string, unknown>) || {});
+    res.json(prefs);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Save style preferences (from taste test or settings page)
+router.post('/preferences', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { styleFamilyIds } = req.body;
+    if (!Array.isArray(styleFamilyIds) || styleFamilyIds.length === 0 || styleFamilyIds.length > 3) {
+      throw new ValidationError('Select 1-3 style families', {
+        styleFamilyIds: ['Please select between 1 and 3 style families'],
+      });
+    }
+
+    // Validate family IDs exist
+    for (const id of styleFamilyIds) {
+      if (!themeRegistry.getFamilyById(id)) {
+        throw new ValidationError('Invalid family', { styleFamilyIds: [`Unknown family: ${id}`] });
+      }
+    }
+
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: req.user!.tenantId },
+      select: { settings: true },
+    });
+
+    const currentSettings = (tenant?.settings as Record<string, unknown>) || {};
+    const updatedSettings = buildPreferencesUpdate(currentSettings, { styleFamilyIds });
+
+    await prisma.tenant.update({
+      where: { id: req.user!.tenantId },
+      data: { settings: updatedSettings as any },
+    });
+
+    logger.info('Style preferences saved', { tenantId: req.user!.tenantId, styleFamilyIds });
+    res.json({ success: true, styleFamilyIds });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Submit feedback (fire / solid / meh)
+router.post('/feedback', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { contentId, rating } = req.body;
+
+    if (!contentId || !['fire', 'solid', 'meh'].includes(rating)) {
+      throw new ValidationError('Invalid feedback', {
+        rating: ['Rating must be fire, solid, or meh'],
+      });
+    }
+
+    // Find the content to get its theme info
+    const content = await prisma.content.findFirst({
+      where: { id: contentId, tenantId: req.user!.tenantId },
+      select: { theme: true, metadata: true },
+    });
+
+    if (!content) {
+      throw new ValidationError('Content not found');
+    }
+
+    const themeId = content.theme || '';
+    const family = getFamilyForTheme(themeId);
+    const familyId = family?.id || 'unknown';
+
+    const entry: FeedbackEntry = {
+      contentId,
+      familyId,
+      themeId,
+      rating,
+      timestamp: new Date().toISOString(),
+    };
+
+    // Update tenant preferences with new feedback
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: req.user!.tenantId },
+      select: { settings: true },
+    });
+
+    const currentSettings = (tenant?.settings as Record<string, unknown>) || {};
+    const updatedSettings = addFeedback(currentSettings, entry);
+
+    await prisma.tenant.update({
+      where: { id: req.user!.tenantId },
+      data: { settings: updatedSettings as any },
+    });
+
+    // Also store feedback on the content's metadata
+    const contentMeta = (content.metadata as Record<string, unknown>) || {};
+    await prisma.content.update({
+      where: { id: contentId },
+      data: {
+        metadata: { ...contentMeta, userRating: rating },
+      },
+    });
+
+    logger.info('Feedback recorded', { contentId, rating, familyId, tenantId: req.user!.tenantId });
+    res.json({ success: true, rating, familyId });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get weekly featured theme drop
+router.get('/weekly-drop', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const family = themeRegistry.getWeeklyDropFamily();
+    const weekString = themeRegistry.getCurrentWeekString();
+
+    // Check if user dismissed this week's drop
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: req.user!.tenantId },
+      select: { settings: true },
+    });
+    const prefs = getPreferences((tenant?.settings as Record<string, unknown>) || {});
+    const dismissed = prefs.weeklyDropDismissed === weekString;
+
+    res.json({
+      family: {
+        id: family.id,
+        name: family.name,
+        description: family.description,
+        emoji: family.emoji,
+        previewImage: family.previewImage,
+      },
+      weekString,
+      dismissed,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Dismiss weekly drop
+router.post('/weekly-drop/dismiss', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const weekString = themeRegistry.getCurrentWeekString();
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: req.user!.tenantId },
+      select: { settings: true },
+    });
+
+    const currentSettings = (tenant?.settings as Record<string, unknown>) || {};
+    const updatedSettings = buildPreferencesUpdate(currentSettings, {
+      weeklyDropDismissed: weekString,
+    });
+
+    await prisma.tenant.update({
+      where: { id: req.user!.tenantId },
+      data: { settings: updatedSettings as any },
+    });
+
+    res.json({ success: true, dismissed: weekString });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get week plan - returns 7 themes for the content calendar (no image generation)
+router.get('/calendar/week-plan', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: req.user!.tenantId },
+      select: { settings: true },
+    });
+    const prefs = getPreferences((tenant?.settings as Record<string, unknown>) || {});
+    const themes = selectWeekThemes(prefs);
+
+    const days = themes.map((theme, index) => {
+      const family = getFamilyForTheme(theme.id);
+      return {
+        dayIndex: index,
+        themeId: theme.id,
+        themeName: theme.name,
+        familyId: family?.id || 'unknown',
+        familyName: family?.name || 'Mixed',
+        emoji: family?.emoji || '🎨',
+        previewImage: family?.previewImage,
+      };
+    });
+
+    res.json({ days });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // PUSH TO START - One-click instant flyer generation
 router.post('/instant', generationRateLimiter, async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -278,9 +606,28 @@ router.post('/instant', generationRateLimiter, async (req: Request, res: Respons
     // Pick random content
     const content = contentPool[Math.floor(Math.random() * contentPool.length)];
 
-    // Pick random brand style (from the 8 premium styles)
-    const brandStyles = themeRegistry.getBrandStyles();
-    const randomStyle = brandStyles[Math.floor(Math.random() * brandStyles.length)];
+    // Use smart rotation to pick theme based on user preferences
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { settings: true },
+    });
+    const stylePrefs = getPreferences((tenant?.settings as Record<string, unknown>) || {});
+
+    // Allow optional themeId override (used by content calendar for progressive loading)
+    let smartTheme;
+    if (req.body?.themeId) {
+      const requestedTheme = themeRegistry.getTheme(req.body.themeId) || themeRegistry.getNostalgicTheme(req.body.themeId);
+      if (requestedTheme) {
+        smartTheme = requestedTheme;
+      } else {
+        smartTheme = selectNextTheme(stylePrefs);
+      }
+    } else {
+      smartTheme = selectNextTheme(stylePrefs);
+    }
+
+    // Use smartTheme as the selected style
+    const randomStyle = smartTheme;
 
     // Build profile context
     const profileContext = {
@@ -301,9 +648,17 @@ router.post('/instant', generationRateLimiter, async (req: Request, res: Respons
       details: content.details,
       businessName: profileContext.businessName,
       logoInstructions: brandKit?.logoUrl
-        ? `Incorporate the business logo aesthetically into the design`
+        ? `The business logo is attached as a reference image. You MUST incorporate this exact logo prominently into the flyer design. Place it where it is clearly visible.`
         : undefined,
     });
+
+    // Vehicle injection: 80% chance to feature a car from loved makes
+    const vehiclePrefs = getVehiclePreferences((tenant?.settings as Record<string, unknown>) || {});
+    const selectedVehicle2 = selectVehicleForFlyer(vehiclePrefs);
+    let finalImagePrompt = imagePrompt;
+    if (selectedVehicle2) {
+      finalImagePrompt += buildVehiclePromptForFlyer(selectedVehicle2);
+    }
 
     // Generate caption in parallel
     const captionPromise = geminiService.generateMarketingCopyWithProfile({
@@ -316,15 +671,24 @@ router.post('/instant', generationRateLimiter, async (req: Request, res: Respons
     // Generate content ID
     const contentId = uuidv4();
 
+    // Fetch logo if available (in parallel with other setup)
+    const logoImage = brandKit?.logoUrl ? await fetchLogoAsBase64(brandKit.logoUrl) : null;
+
     // Generate image
     logger.info('Push to Start: Generating instant flyer', {
       themeId: randomStyle.id,
       contentType: content.type,
       subject: content.subject,
+      hasLogo: !!logoImage,
     });
 
-    const imageResult = await geminiService.generateImage(imagePrompt, {
+    const imageResult = await geminiService.generateImage(finalImagePrompt, {
       aspectRatio: '4:5',
+      logoImage: logoImage || undefined,
+      contactInfo: {
+        phone: brandKit?.phone || undefined,
+        website: brandKit?.website || undefined,
+      },
     });
 
     let imageUrl: string;
@@ -352,7 +716,7 @@ router.post('/instant', generationRateLimiter, async (req: Request, res: Respons
         tool: 'promo_flyer',
         contentType: 'image',
         title: content.subject,
-        promptUsed: imagePrompt,
+        promptUsed: finalImagePrompt,
         theme: randomStyle.id,
         imageUrl,
         caption,
@@ -381,10 +745,26 @@ router.post('/instant', generationRateLimiter, async (req: Request, res: Respons
       },
     });
 
+    // Record theme usage for smart rotation
+    let usageSettings = recordThemeUsage(
+      (tenant?.settings as Record<string, unknown>) || {},
+      randomStyle.id
+    );
+    if (selectedVehicle2) {
+      usageSettings = recordVehicleUsageHelper(usageSettings, getVehicleKey(selectedVehicle2));
+    }
+    await prisma.tenant.update({
+      where: { id: tenantId },
+      data: { settings: usageSettings as any },
+    });
+
+    const selectedFamily = getFamilyForTheme(randomStyle.id);
+
     logger.info('Push to Start: Instant flyer generated successfully', {
       contentId: savedContent.id,
       tenantId,
       style: randomStyle.name,
+      familyId: selectedFamily?.id,
     });
 
     res.status(201).json({
@@ -394,6 +774,10 @@ router.post('/instant', generationRateLimiter, async (req: Request, res: Respons
       title: savedContent.title,
       theme: randomStyle.id,
       themeName: randomStyle.name,
+      familyId: selectedFamily?.id,
+      familyName: selectedFamily?.name,
+      vehicleMake: selectedVehicle2?.make,
+      vehicleModel: selectedVehicle2?.model,
       status: savedContent.status,
       instant: true,
     });
@@ -526,13 +910,21 @@ router.post('/generate', generationRateLimiter, async (req: Request, res: Respon
       );
     }
 
+    // Fetch logo if available
+    const logoImage = brandKit?.logoUrl ? await fetchLogoAsBase64(brandKit.logoUrl) : null;
+
     // Generate content ID early for storage
     const contentId = uuidv4();
 
-    // Generate actual image using Gemini 2.0 Flash
-    logger.info('Generating image with Gemini', { themeId: selectedThemeId, subject, vehicle: selectedVehicle?.name });
+    // Generate actual image using Nano Banana Pro
+    logger.info('Generating image with Nano Banana Pro', { themeId: selectedThemeId, subject, vehicle: selectedVehicle?.name, hasLogo: !!logoImage });
     const imageResult = await geminiService.generateImage(imagePrompt, {
       aspectRatio: '4:5',
+      logoImage: logoImage || undefined,
+      contactInfo: {
+        phone: brandKit?.phone || undefined,
+        website: brandKit?.website || undefined,
+      },
     });
 
     let imageUrl: string;
@@ -644,11 +1036,25 @@ router.post('/generate-pack', generationRateLimiter, async (req: Request, res: R
 
     // Select themes based on pack type
     let selectedThemes: NostalgicThemeDefinition[] = [];
+    let useSmartThemes = false; // Flag for week-7 using ThemeDefinition[] instead
+
+    // For week-7, use smart rotation (returns ThemeDefinition[], not NostalgicThemeDefinition[])
+    let smartSelectedThemes: import('../../prompts/themes').ThemeDefinition[] = [];
 
     switch (packType) {
+      case 'week-7': {
+        // Use smart rotation for content calendar
+        const tenantForPrefs = await prisma.tenant.findUnique({
+          where: { id: tenantId },
+          select: { settings: true },
+        });
+        const weekPrefs = getPreferences((tenantForPrefs?.settings as Record<string, unknown>) || {});
+        smartSelectedThemes = selectWeekThemes(weekPrefs);
+        useSmartThemes = true;
+        break;
+      }
       case 'variety-3':
-      case 'variety-5':
-      case 'week-7':
+      case 'variety-5': {
         // Random variety - pick from all nostalgic themes, trying to avoid duplicates
         const allNostalgic = [...NOSTALGIC_THEMES];
         for (let i = 0; i < count && allNostalgic.length > 0; i++) {
@@ -656,6 +1062,7 @@ router.post('/generate-pack', generationRateLimiter, async (req: Request, res: R
           selectedThemes.push(allNostalgic.splice(randomIndex, 1)[0]);
         }
         break;
+      }
 
       case 'era':
         // All styles from the same era + 1 bonus
@@ -705,14 +1112,30 @@ router.post('/generate-pack', generationRateLimiter, async (req: Request, res: R
       secondaryColor: brandKit?.secondaryColor || undefined,
     };
 
-    // Generate all flyers
+    // Fetch logo once for all flyers in the pack
+    const logoImage = brandKit?.logoUrl ? await fetchLogoAsBase64(brandKit.logoUrl) : null;
+
+    // Generate all flyers - handle both nostalgic and smart-selected themes
     const generatedFlyers: GeneratedFlyer[] = [];
 
-    for (const theme of selectedThemes) {
+    // Build unified theme list
+    type UnifiedTheme = { id: string; name: string; previewColors?: string[]; isNostalgic: boolean; nostalgic?: NostalgicThemeDefinition; standard?: import('../../prompts/themes').ThemeDefinition };
+    const unifiedThemes: UnifiedTheme[] = useSmartThemes
+      ? smartSelectedThemes.map(t => {
+          const nostalgic = themeRegistry.getNostalgicTheme(t.id);
+          return { id: t.id, name: t.name, previewColors: t.previewColors, isNostalgic: !!nostalgic, nostalgic, standard: t };
+        })
+      : selectedThemes.map(t => ({ id: t.id, name: t.name, previewColors: t.previewColors, isNostalgic: true, nostalgic: t }));
+
+    for (const theme of unifiedThemes) {
       // Select vehicle for this flyer
       let selectedVehicle: EraVehicle | undefined;
       if (vehicleId === 'random') {
-        selectedVehicle = themeRegistry.getRandomVehicleByEra(theme.era);
+        if (theme.nostalgic) {
+          selectedVehicle = themeRegistry.getRandomVehicleByEra(theme.nostalgic.era);
+        } else {
+          selectedVehicle = themeRegistry.getRandomVehicle();
+        }
       } else if (vehicleId) {
         selectedVehicle = themeRegistry.getVehicleById(vehicleId);
       }
@@ -723,24 +1146,43 @@ router.post('/generate-pack', generationRateLimiter, async (req: Request, res: R
         vehiclePromptAddition = `\n\nFEATURE THIS VEHICLE: ${themeRegistry.getVehicleImagePrompt(selectedVehicle)}`;
       }
 
-      // Build image prompt
-      const imagePrompt = buildNostalgicImagePrompt(theme, {
-        headline: message,
-        subject,
-        details,
-        businessName: profileContext.businessName,
-        logoInstructions: brandKit?.logoUrl
-          ? `Incorporate the business logo aesthetically into the design`
-          : undefined,
-        vehiclePrompt: vehiclePromptAddition,
-      });
+      // Build image prompt based on theme type
+      let imagePrompt: string;
+      if (theme.nostalgic) {
+        imagePrompt = buildNostalgicImagePrompt(theme.nostalgic, {
+          headline: message,
+          subject,
+          details,
+          businessName: profileContext.businessName,
+          logoInstructions: brandKit?.logoUrl
+            ? `Incorporate the business logo aesthetically into the design`
+            : undefined,
+          vehiclePrompt: vehiclePromptAddition,
+        });
+      } else {
+        imagePrompt = themeRegistry.buildImagePrompt(theme.id, {
+          headline: message,
+          subject,
+          details,
+          businessName: profileContext.businessName,
+          logoInstructions: brandKit?.logoUrl
+            ? `Incorporate the business logo aesthetically into the design`
+            : undefined,
+        }) + vehiclePromptAddition;
+      }
 
       const contentId = uuidv4();
 
       // Generate image
-      logger.info('Pack generation: Creating flyer', { themeId: theme.id, packType });
+      const family = getFamilyForTheme(theme.id);
+      logger.info('Pack generation: Creating flyer', { themeId: theme.id, familyId: family?.id, packType, hasLogo: !!logoImage });
       const imageResult = await geminiService.generateImage(imagePrompt, {
         aspectRatio: '4:5',
+        logoImage: logoImage || undefined,
+        contactInfo: {
+          phone: brandKit?.phone || undefined,
+          website: brandKit?.website || undefined,
+        },
       });
 
       let imageUrl: string;
@@ -801,9 +1243,10 @@ router.post('/generate-pack', generationRateLimiter, async (req: Request, res: R
             language,
             vehicleId: selectedVehicle?.id,
             vehicleName: selectedVehicle?.name,
-            isNostalgic: true,
-            era: theme.era,
-            style: theme.style,
+            isNostalgic: theme.isNostalgic,
+            era: theme.nostalgic?.era,
+            style: theme.nostalgic?.style,
+            familyId: family?.id,
             packType,
             aiGenerated: imageResult.success,
           },

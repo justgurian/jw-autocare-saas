@@ -67,6 +67,28 @@ api.interceptors.response.use(
       }
     }
 
+    // Add user-friendly error messages based on status codes
+    const err = error as AxiosError & { userMessage?: string };
+    if (!error.response) {
+      // Network error
+      if (!navigator.onLine) {
+        err.userMessage = "You're offline. Please check your internet connection.";
+      } else {
+        err.userMessage = 'Unable to reach the server. Please try again in a moment.';
+      }
+    } else {
+      const status = error.response.status;
+      if (status === 429) {
+        err.userMessage = 'Too many requests. Please wait a moment before trying again.';
+      } else if (status === 413) {
+        err.userMessage = 'The file is too large. Please try a smaller image.';
+      } else if (status >= 500) {
+        err.userMessage = 'Our server is having trouble. Please try again in a moment.';
+      } else if (status === 403) {
+        err.userMessage = "You don't have permission to do that.";
+      }
+    }
+
     return Promise.reject(error);
   }
 );
@@ -146,6 +168,38 @@ export const promoFlyerApi = {
     api.post('/tools/promo-flyer/mockup', { contentId, sceneIndex }),
 
   getPreview: (id: string) => api.get(`/tools/promo-flyer/preview/${id}`),
+
+  // Style Families
+  getFamilies: () => api.get('/tools/promo-flyer/families'),
+
+  // Style Preferences
+  getPreferences: () => api.get('/tools/promo-flyer/preferences'),
+  savePreferences: (styleFamilyIds: string[]) =>
+    api.post('/tools/promo-flyer/preferences', { styleFamilyIds }),
+
+  // Feedback
+  submitFeedback: (contentId: string, rating: 'fire' | 'solid' | 'meh') =>
+    api.post('/tools/promo-flyer/feedback', { contentId, rating }),
+
+  // Weekly Drop
+  getWeeklyDrop: () => api.get('/tools/promo-flyer/weekly-drop'),
+  dismissWeeklyDrop: () => api.post('/tools/promo-flyer/weekly-drop/dismiss'),
+
+  // Calendar week plan (returns 7 theme selections without generating images)
+  getWeekPlan: () => api.get('/tools/promo-flyer/calendar/week-plan'),
+
+  // Instant generation with optional theme override
+  instantThemed: (themeId: string) => api.post('/tools/promo-flyer/instant', { themeId }),
+
+  // Car makes registry
+  getCarMakes: () => api.get('/tools/promo-flyer/car-makes'),
+
+  // Vehicle preferences
+  getVehiclePreferences: () => api.get('/tools/promo-flyer/vehicle-preferences'),
+  saveVehiclePreferences: (data: {
+    lovedMakes: Array<{ makeId: string; models?: string[] }>;
+    neverMakes: string[];
+  }) => api.post('/tools/promo-flyer/vehicle-preferences', data),
 };
 
 export const memeApi = {

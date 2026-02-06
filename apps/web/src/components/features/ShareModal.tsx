@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { socialApi, downloadApi } from '../../services/api';
+import { socialApi } from '../../services/api';
 import {
   X,
   Share2,
@@ -18,6 +18,10 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
+import FocusTrap from '../ui/FocusTrap';
+import { useFileDownload } from '../../hooks/useFileDownload';
+import { useClipboard } from '../../hooks/useClipboard';
+import type { SocialAccount } from '../../types/content';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -30,14 +34,6 @@ interface ShareModalProps {
   };
 }
 
-interface SocialAccount {
-  id: string;
-  platform: 'facebook' | 'instagram';
-  accountName: string;
-  accountUsername?: string;
-  accountAvatar?: string;
-}
-
 export default function ShareModal({ isOpen, onClose, content }: ShareModalProps) {
   const [activeTab, setActiveTab] = useState<'share' | 'download'>('share');
   const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
@@ -45,8 +41,9 @@ export default function ShareModal({ isOpen, onClose, content }: ShareModalProps
   const [scheduleMode, setScheduleMode] = useState(false);
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('12:00');
-  const [copied, setCopied] = useState(false);
   const queryClient = useQueryClient();
+  const downloadFile = useFileDownload();
+  const [copied, handleCopyCaption] = useClipboard('Caption copied!');
 
   // Fetch connected accounts
   const { data: accountsData, isLoading: accountsLoading } = useQuery({
@@ -105,29 +102,8 @@ export default function ShareModal({ isOpen, onClose, content }: ShareModalProps
   });
 
   // Handle download
-  const handleDownload = async () => {
-    try {
-      const response = await downloadApi.downloadSingle(content.id);
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${content.title || content.id}.png`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      toast.success('Download started!');
-    } catch {
-      toast.error('Failed to download');
-    }
-  };
-
-  // Copy caption to clipboard
-  const handleCopyCaption = () => {
-    navigator.clipboard.writeText(caption);
-    setCopied(true);
-    toast.success('Caption copied!');
-    setTimeout(() => setCopied(false), 2000);
+  const handleDownload = () => {
+    downloadFile(content.id, content.title || content.id);
   };
 
   const toggleAccount = (accountId: string) => {
@@ -144,15 +120,16 @@ export default function ShareModal({ isOpen, onClose, content }: ShareModalProps
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-labelledby="share-modal-title">
+      <FocusTrap>
       <div className="bg-white border-4 border-black shadow-retro-lg max-w-lg w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b-2 border-black bg-gray-50">
-          <h2 className="font-heading text-lg uppercase flex items-center gap-2">
+          <h2 id="share-modal-title" className="font-heading text-lg uppercase flex items-center gap-2">
             <Share2 size={20} />
             Share Content
           </h2>
-          <button onClick={onClose} className="p-1 hover:bg-gray-200 transition-colors">
+          <button onClick={onClose} className="p-1 hover:bg-gray-200 transition-colors" aria-label="Close">
             <X size={20} />
           </button>
         </div>
@@ -275,7 +252,7 @@ export default function ShareModal({ isOpen, onClose, content }: ShareModalProps
                     <div className="flex justify-between text-xs text-gray-500 mt-1">
                       <span>{caption.length}/2200</span>
                       <button
-                        onClick={handleCopyCaption}
+                        onClick={() => handleCopyCaption(caption)}
                         className="flex items-center gap-1 hover:text-gray-700"
                       >
                         {copied ? <Check size={12} /> : <Copy size={12} />}
@@ -349,7 +326,7 @@ export default function ShareModal({ isOpen, onClose, content }: ShareModalProps
               </button>
 
               <button
-                onClick={handleCopyCaption}
+                onClick={() => handleCopyCaption(caption)}
                 className="w-full p-4 border-2 border-gray-200 hover:border-black transition-all flex items-center gap-3"
               >
                 <div className="w-10 h-10 bg-retro-mustard text-white flex items-center justify-center">
@@ -409,6 +386,7 @@ export default function ShareModal({ isOpen, onClose, content }: ShareModalProps
           </div>
         )}
       </div>
+      </FocusTrap>
     </div>
   );
 }

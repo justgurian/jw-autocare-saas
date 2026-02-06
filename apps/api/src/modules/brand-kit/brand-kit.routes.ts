@@ -4,6 +4,7 @@ import { authenticate } from '../../middleware/auth.middleware';
 import { tenantContext } from '../../middleware/tenant.middleware';
 import { prisma } from '../../db/client';
 import { ValidationError } from '../../middleware/error.middleware';
+import { cache, invalidateCache } from '../../services/redis.service';
 
 const router = Router();
 
@@ -94,11 +95,12 @@ function calculateProfileCompletion(brandKit: any, serviceCount: number): {
   };
 }
 
-// Get brand kit (basic)
+// Get brand kit (basic) - cached per tenant for 5 minutes
 router.get('/', async (req: Request, res: Response) => {
-  const brandKit = await prisma.brandKit.findUnique({
-    where: { tenantId: req.user!.tenantId },
-  });
+  const tenantId = req.user!.tenantId;
+  const brandKit = await cache(`brand-kit:${tenantId}`, 300, () =>
+    prisma.brandKit.findUnique({ where: { tenantId } })
+  );
   res.json(brandKit);
 });
 
@@ -169,10 +171,12 @@ router.get('/completion', async (req: Request, res: Response, next: NextFunction
 // Update brand kit
 router.put('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const tenantId = req.user!.tenantId;
     const brandKit = await prisma.brandKit.update({
-      where: { tenantId: req.user!.tenantId },
+      where: { tenantId },
       data: req.body,
     });
+    await invalidateCache(`brand-kit:${tenantId}*`);
     res.json(brandKit);
   } catch (error) {
     next(error);
@@ -245,6 +249,7 @@ router.put('/profile', async (req: Request, res: Response, next: NextFunction) =
     const serviceCount = await prisma.service.count({ where: { tenantId } });
     const completion = calculateProfileCompletion(brandKit, serviceCount);
 
+    await invalidateCache(`brand-kit:${tenantId}*`);
     res.json({
       brandKit,
       completion,
@@ -262,8 +267,9 @@ router.post('/specialties', async (req: Request, res: Response, next: NextFuncti
       throw new ValidationError('Specialty is required');
     }
 
+    const tenantId = req.user!.tenantId;
     const brandKit = await prisma.brandKit.update({
-      where: { tenantId: req.user!.tenantId },
+      where: { tenantId },
       data: {
         specialties: {
           push: specialty.trim(),
@@ -271,6 +277,7 @@ router.post('/specialties', async (req: Request, res: Response, next: NextFuncti
       },
     });
 
+    await invalidateCache(`brand-kit:${tenantId}*`);
     res.json(brandKit);
   } catch (error) {
     next(error);
@@ -302,6 +309,7 @@ router.delete('/specialties/:specialty', async (req: Request, res: Response, nex
       data: { specialties: updatedSpecialties },
     });
 
+    await invalidateCache(`brand-kit:${tenantId}*`);
     res.json(brandKit);
   } catch (error) {
     next(error);
@@ -316,8 +324,9 @@ router.post('/usps', async (req: Request, res: Response, next: NextFunction) => 
       throw new ValidationError('USP is required');
     }
 
+    const tenantId = req.user!.tenantId;
     const brandKit = await prisma.brandKit.update({
-      where: { tenantId: req.user!.tenantId },
+      where: { tenantId },
       data: {
         uniqueSellingPoints: {
           push: usp.trim(),
@@ -325,6 +334,7 @@ router.post('/usps', async (req: Request, res: Response, next: NextFunction) => 
       },
     });
 
+    await invalidateCache(`brand-kit:${tenantId}*`);
     res.json(brandKit);
   } catch (error) {
     next(error);
@@ -354,6 +364,7 @@ router.delete('/usps/:index', async (req: Request, res: Response, next: NextFunc
       data: { uniqueSellingPoints: updatedUSPs },
     });
 
+    await invalidateCache(`brand-kit:${tenantId}*`);
     res.json(brandKit);
   } catch (error) {
     next(error);

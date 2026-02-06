@@ -1,38 +1,52 @@
+import { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './stores/auth.store';
+import ErrorBoundary from './components/ErrorBoundary';
 
-// Layout
+// Layout - loaded eagerly since they're needed immediately
 import MainLayout from './components/layout/MainLayout';
 import AuthLayout from './components/layout/AuthLayout';
 
-// Pages
-import LoginPage from './pages/auth/LoginPage';
-import RegisterPage from './pages/auth/RegisterPage';
-import AuthCallbackPage from './pages/auth/AuthCallbackPage';
-import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
-import DashboardPage from './pages/dashboard/DashboardPage';
-import OnboardingPage from './pages/onboarding/OnboardingPage';
-import PromoFlyerPage from './pages/tools/promo-flyer/PromoFlyerPage';
-import BatchFlyerPage from './pages/tools/batch-flyer/BatchFlyerPage';
-import InstantPackPage from './pages/tools/instant-pack/InstantPackPage';
-import CampaignPage from './pages/tools/CampaignPage';
-import MemeGeneratorPage from './pages/tools/meme-generator/MemeGeneratorPage';
-import CheckInPage from './pages/tools/check-in/CheckInPage';
-import CarOfDayPage from './pages/tools/car-of-day/CarOfDayPage';
-import VideoCreatorPage from './pages/tools/video-creator/VideoCreatorPage';
-import ReviewReplyPage from './pages/tools/review-reply/ReviewReplyPage';
-import ThemeBrowserPage from './pages/tools/theme-browser/ThemeBrowserPage';
-import ImageEditorPage from './pages/tools/image-editor/ImageEditorPage';
-import JargonPage from './pages/tools/jargon/JargonPage';
-import SMSTemplatesPage from './pages/tools/sms-templates/SMSTemplatesPage';
-import BlogGeneratorPage from './pages/tools/blog-generator/BlogGeneratorPage';
-import BusinessCardsPage from './pages/tools/business-cards/BusinessCardsPage';
-import PhotoTunerPage from './pages/tools/photo-tuner/PhotoTunerPage';
-import CalendarPage from './pages/calendar/CalendarPage';
-import AnalyticsPage from './pages/analytics/AnalyticsPage';
-import ProfilePage from './pages/settings/ProfilePage';
-import SocialPage from './pages/settings/SocialPage';
-import AutoPilotPage from './pages/settings/AutoPilotPage';
+// Lazy-loaded pages
+const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
+const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'));
+const AuthCallbackPage = lazy(() => import('./pages/auth/AuthCallbackPage'));
+const ForgotPasswordPage = lazy(() => import('./pages/auth/ForgotPasswordPage'));
+const DashboardPage = lazy(() => import('./pages/dashboard/DashboardPage'));
+const OnboardingPage = lazy(() => import('./pages/onboarding/OnboardingPage'));
+const PromoFlyerPage = lazy(() => import('./pages/tools/promo-flyer/PromoFlyerPage'));
+const BatchFlyerPage = lazy(() => import('./pages/tools/batch-flyer/BatchFlyerPage'));
+const InstantPackPage = lazy(() => import('./pages/tools/instant-pack/InstantPackPage'));
+const CampaignPage = lazy(() => import('./pages/tools/CampaignPage'));
+const MemeGeneratorPage = lazy(() => import('./pages/tools/meme-generator/MemeGeneratorPage'));
+const CheckInPage = lazy(() => import('./pages/tools/check-in/CheckInPage'));
+const CarOfDayPage = lazy(() => import('./pages/tools/car-of-day/CarOfDayPage'));
+const VideoCreatorPage = lazy(() => import('./pages/tools/video-creator/VideoCreatorPage'));
+const ReviewReplyPage = lazy(() => import('./pages/tools/review-reply/ReviewReplyPage'));
+const ThemeBrowserPage = lazy(() => import('./pages/tools/theme-browser/ThemeBrowserPage'));
+const ImageEditorPage = lazy(() => import('./pages/tools/image-editor/ImageEditorPage'));
+const JargonPage = lazy(() => import('./pages/tools/jargon/JargonPage'));
+const SMSTemplatesPage = lazy(() => import('./pages/tools/sms-templates/SMSTemplatesPage'));
+const BlogGeneratorPage = lazy(() => import('./pages/tools/blog-generator/BlogGeneratorPage'));
+const BusinessCardsPage = lazy(() => import('./pages/tools/business-cards/BusinessCardsPage'));
+const PhotoTunerPage = lazy(() => import('./pages/tools/photo-tuner/PhotoTunerPage'));
+const CalendarPage = lazy(() => import('./pages/calendar/CalendarPage'));
+const AnalyticsPage = lazy(() => import('./pages/analytics/AnalyticsPage'));
+const ProfilePage = lazy(() => import('./pages/settings/ProfilePage'));
+const SocialPage = lazy(() => import('./pages/settings/SocialPage'));
+const AutoPilotPage = lazy(() => import('./pages/settings/AutoPilotPage'));
+
+// Page loading spinner
+function PageLoader() {
+  return (
+    <div className="min-h-[400px] flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin-slow w-12 h-12 border-4 border-retro-red border-t-transparent rounded-full mx-auto mb-3" />
+        <p className="font-heading text-retro-navy text-sm">Loading...</p>
+      </div>
+    </div>
+  );
+}
 
 // Protected route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -58,61 +72,67 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function App() {
   return (
-    <Routes>
-      {/* Auth routes */}
-      <Route element={<AuthLayout />}>
-        <Route path="/auth/login" element={<LoginPage />} />
-        <Route path="/auth/register" element={<RegisterPage />} />
-        <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/auth/callback" element={<AuthCallbackPage />} />
-      </Route>
+    <ErrorBoundary>
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          {/* Auth routes */}
+          <Route element={<AuthLayout />}>
+            <Route path="/auth/login" element={<LoginPage />} />
+            <Route path="/auth/register" element={<RegisterPage />} />
+            <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/auth/callback" element={<AuthCallbackPage />} />
+          </Route>
 
-      {/* Onboarding */}
-      <Route
-        path="/onboarding/*"
-        element={
-          <ProtectedRoute>
-            <OnboardingPage />
-          </ProtectedRoute>
-        }
-      />
+          {/* Onboarding */}
+          <Route
+            path="/onboarding/*"
+            element={
+              <ProtectedRoute>
+                <ErrorBoundary>
+                  <OnboardingPage />
+                </ErrorBoundary>
+              </ProtectedRoute>
+            }
+          />
 
-      {/* Main app routes */}
-      <Route
-        element={
-          <ProtectedRoute>
-            <MainLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/tools/promo-flyer" element={<PromoFlyerPage />} />
-        <Route path="/tools/batch-flyer" element={<BatchFlyerPage />} />
-        <Route path="/tools/instant-pack" element={<InstantPackPage />} />
-        <Route path="/tools/meme-generator" element={<MemeGeneratorPage />} />
-        <Route path="/tools/check-in" element={<CheckInPage />} />
-        <Route path="/tools/car-of-day" element={<CarOfDayPage />} />
-        <Route path="/tools/video-creator" element={<VideoCreatorPage />} />
-        <Route path="/tools/review-reply" element={<ReviewReplyPage />} />
-        <Route path="/tools/theme-browser" element={<ThemeBrowserPage />} />
-        <Route path="/tools/image-editor" element={<ImageEditorPage />} />
-        <Route path="/tools/jargon" element={<JargonPage />} />
-        <Route path="/tools/sms-templates" element={<SMSTemplatesPage />} />
-        <Route path="/tools/blog-generator" element={<BlogGeneratorPage />} />
-        <Route path="/tools/business-cards" element={<BusinessCardsPage />} />
-        <Route path="/tools/photo-tuner" element={<PhotoTunerPage />} />
-        <Route path="/tools/campaigns" element={<CampaignPage />} />
-        <Route path="/calendar" element={<CalendarPage />} />
-        <Route path="/analytics" element={<AnalyticsPage />} />
-        <Route path="/settings/profile" element={<ProfilePage />} />
-        <Route path="/settings/social" element={<SocialPage />} />
-        <Route path="/settings/auto-pilot" element={<AutoPilotPage />} />
-      </Route>
+          {/* Main app routes */}
+          <Route
+            element={
+              <ProtectedRoute>
+                <MainLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={<ErrorBoundary><DashboardPage /></ErrorBoundary>} />
+            <Route path="/tools/promo-flyer" element={<ErrorBoundary><PromoFlyerPage /></ErrorBoundary>} />
+            <Route path="/tools/batch-flyer" element={<ErrorBoundary><BatchFlyerPage /></ErrorBoundary>} />
+            <Route path="/tools/instant-pack" element={<ErrorBoundary><InstantPackPage /></ErrorBoundary>} />
+            <Route path="/tools/meme-generator" element={<ErrorBoundary><MemeGeneratorPage /></ErrorBoundary>} />
+            <Route path="/tools/check-in" element={<ErrorBoundary><CheckInPage /></ErrorBoundary>} />
+            <Route path="/tools/car-of-day" element={<ErrorBoundary><CarOfDayPage /></ErrorBoundary>} />
+            <Route path="/tools/video-creator" element={<ErrorBoundary><VideoCreatorPage /></ErrorBoundary>} />
+            <Route path="/tools/review-reply" element={<ErrorBoundary><ReviewReplyPage /></ErrorBoundary>} />
+            <Route path="/tools/theme-browser" element={<ErrorBoundary><ThemeBrowserPage /></ErrorBoundary>} />
+            <Route path="/tools/image-editor" element={<ErrorBoundary><ImageEditorPage /></ErrorBoundary>} />
+            <Route path="/tools/jargon" element={<ErrorBoundary><JargonPage /></ErrorBoundary>} />
+            <Route path="/tools/sms-templates" element={<ErrorBoundary><SMSTemplatesPage /></ErrorBoundary>} />
+            <Route path="/tools/blog-generator" element={<ErrorBoundary><BlogGeneratorPage /></ErrorBoundary>} />
+            <Route path="/tools/business-cards" element={<ErrorBoundary><BusinessCardsPage /></ErrorBoundary>} />
+            <Route path="/tools/photo-tuner" element={<ErrorBoundary><PhotoTunerPage /></ErrorBoundary>} />
+            <Route path="/tools/campaigns" element={<ErrorBoundary><CampaignPage /></ErrorBoundary>} />
+            <Route path="/calendar" element={<ErrorBoundary><CalendarPage /></ErrorBoundary>} />
+            <Route path="/analytics" element={<ErrorBoundary><AnalyticsPage /></ErrorBoundary>} />
+            <Route path="/settings/profile" element={<ErrorBoundary><ProfilePage /></ErrorBoundary>} />
+            <Route path="/settings/social" element={<ErrorBoundary><SocialPage /></ErrorBoundary>} />
+            <Route path="/settings/auto-pilot" element={<ErrorBoundary><AutoPilotPage /></ErrorBoundary>} />
+          </Route>
 
-      {/* 404 */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+          {/* 404 */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
+    </ErrorBoundary>
   );
 }
 

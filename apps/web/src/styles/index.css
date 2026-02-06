@@ -209,6 +209,12 @@
   }
 }
 
+/* Disabled button cursor */
+button:disabled,
+button[disabled] {
+  cursor: not-allowed;
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 12px;
@@ -377,6 +383,15 @@
   .list-touch li {
     @apply py-3 border-b border-gray-200;
   }
+}
+
+/* Tachometer loading animation utilities */
+.tach-needle {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tach-redline {
+  animation: tach-glow 1.5s ease-in-out infinite;
 }
 
 /* Reduce motion for users who prefer it */

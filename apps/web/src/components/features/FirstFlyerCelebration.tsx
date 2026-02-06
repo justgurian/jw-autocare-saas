@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Share2, Download, X, Sparkles } from 'lucide-react';
 import Confetti from './Confetti';
+import FocusTrap from '../ui/FocusTrap';
 
 interface FirstFlyerCelebrationProps {
   isOpen: boolean;
@@ -43,12 +44,14 @@ export default function FirstFlyerCelebration({
     <>
       <Confetti isActive={showConfetti} duration={4000} />
 
-      <div className="fixed inset-0 z-[9998] flex items-center justify-center p-4 bg-black/60">
+      <div className="fixed inset-0 z-[9998] flex items-center justify-center p-4 bg-black/60" role="dialog" aria-modal="true" aria-labelledby="celebration-title">
+        <FocusTrap>
         <div className="relative bg-white border-4 border-black shadow-retro-lg max-w-md w-full animate-bounce-in">
           {/* Close button */}
           <button
             onClick={onClose}
             className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+            aria-label="Close"
           >
             <X size={24} />
           </button>
@@ -60,7 +63,7 @@ export default function FirstFlyerCelebration({
               <Sparkles size={40} className="text-retro-navy" />
             </div>
 
-            <h2 className="font-display text-3xl text-retro-navy tracking-wide mb-2">
+            <h2 id="celebration-title" className="font-display text-3xl text-retro-navy tracking-wide mb-2">
               YOUR FIRST MASTERPIECE!
             </h2>
 
@@ -122,6 +125,7 @@ export default function FirstFlyerCelebration({
             </p>
           </div>
         </div>
+        </FocusTrap>
       </div>
 
       <style>{`

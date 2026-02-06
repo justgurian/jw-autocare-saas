@@ -844,7 +844,7 @@ async function generateFlyers(
     primaryColor?: string;
     secondaryColor?: string;
   },
-  brandKit: { logoUrl?: string | null } | null,
+  brandKit: { logoUrl?: string | null; phone?: string | null; website?: string | null } | null,
   language: 'en' | 'es' | 'both',
   vehicleId?: string
 ): Promise<void> {
@@ -907,6 +907,10 @@ async function generateFlyers(
 
         const imageResult = await geminiService.generateImage(imagePrompt, {
           aspectRatio: '4:5',
+          contactInfo: {
+            phone: brandKit?.phone || undefined,
+            website: brandKit?.website || undefined,
+          },
         });
 
         let imageUrl: string;

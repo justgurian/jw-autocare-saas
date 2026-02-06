@@ -2,34 +2,25 @@ import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { promoFlyerApi, downloadApi } from '../../../services/api';
-import { Wand2, Download, Share2, Copy, Check, Sparkles, Eye, EyeOff, PenTool } from 'lucide-react';
+import { Eye, PenTool } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ShareModal from '../../../components/features/ShareModal';
 import PushToStartButton from '../../../components/features/PushToStartButton';
-import NostalgicThemeGrid from '../../../components/features/NostalgicThemeGrid';
-import VehiclePicker from '../../../components/features/VehiclePicker';
-import LanguageToggle from '../../../components/features/LanguageToggle';
-import PackSelector from '../../../components/features/PackSelector';
+import ContentCalendar from '../../../components/features/ContentCalendar';
 import FirstFlyerCelebration, { hasSeenFirstFlyerCelebration } from '../../../components/features/FirstFlyerCelebration';
-import FunLoadingMessages from '../../../components/features/FunLoadingMessages';
+import FlyerPreview from './components/FlyerPreview';
+import type { GeneratedFlyer } from './components/FlyerPreview';
+import { ContentStep, StyleStep, OptionsStep, GenerateStep } from './components/WizardSteps';
 
 type PackType = 'variety-3' | 'variety-5' | 'week-7' | 'era' | 'style';
 
-interface GeneratedFlyer {
-  id: string;
-  imageUrl: string;
-  caption: string;
-  captionSpanish?: string | null;
-  title?: string;
-  theme: string;
-  themeName: string;
-  vehicle?: { id: string; name: string };
-}
-
 const wizardSteps = ['Content', 'Style', 'Options', 'Generate'];
+
+type PageMode = 'instant' | 'custom' | 'calendar';
 
 export default function PromoFlyerPage() {
   const [searchParams] = useSearchParams();
+  const [pageMode, setPageMode] = useState<PageMode>('instant');
   const [step, setStep] = useState(0);
   const [useNostalgicThemes, setUseNostalgicThemes] = useState(true);
   const [formData, setFormData] = useState({
@@ -201,30 +192,50 @@ export default function PromoFlyerPage() {
     <div className="max-w-4xl mx-auto space-y-8">
       {/* Header */}
       <div className="text-center">
-        <h1 className="heading-retro text-5xl">NOSTALGIC FLYER CREATOR</h1>
+        <h1 className="heading-retro text-5xl">FLYER CREATOR</h1>
         <p className="text-gray-600 mt-2 text-lg">
-          48 stunning retro styles: Comic Books, Movie Posters, Magazine Covers from the 1950s-1980s
+          10 style families, smart rotation, push-button marketing
         </p>
-        <div className="flex flex-wrap justify-center gap-3 mt-4">
-          <span className="bg-retro-red text-white px-3 py-1 text-sm font-heading">COMICS</span>
-          <span className="bg-retro-teal text-white px-3 py-1 text-sm font-heading">MOVIES</span>
-          <span className="bg-retro-mustard text-retro-navy px-3 py-1 text-sm font-heading">MAGAZINES</span>
-        </div>
       </div>
 
-      {/* PUSH TO START - Primary Action */}
-      <div className="card-retro bg-gradient-to-br from-gray-50 to-gray-100">
-        <div className="text-center">
-          <h2 className="font-heading text-2xl uppercase mb-2">Instant Flyer</h2>
-          <p className="text-gray-600 text-sm mb-4">
-            One-click creates a professional flyer from your services & specials
-          </p>
-        </div>
-        <PushToStartButton />
+      {/* Mode Tabs */}
+      <div className="flex border-2 border-black">
+        {[
+          { mode: 'instant' as PageMode, label: 'Instant', desc: 'One-click flyer' },
+          { mode: 'calendar' as PageMode, label: 'Week Plan', desc: '7-day calendar' },
+          { mode: 'custom' as PageMode, label: 'Custom', desc: 'Build your own' },
+        ].map(({ mode, label, desc }) => (
+          <button
+            key={mode}
+            onClick={() => setPageMode(mode)}
+            className={`flex-1 py-3 px-2 text-center border-r last:border-r-0 border-black transition-all ${
+              pageMode === mode
+                ? 'bg-retro-navy text-white'
+                : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
+            }`}
+          >
+            <span className="font-heading text-sm uppercase block">{label}</span>
+            <span className="text-xs opacity-70 hidden sm:block">{desc}</span>
+          </button>
+        ))}
       </div>
 
-      {/* Custom Flyer Builder - Always visible */}
-      {true && (
+      {/* INSTANT MODE - Push to Start */}
+      {pageMode === 'instant' && (
+        <div className="card-retro bg-gradient-to-br from-gray-50 to-gray-100">
+          <PushToStartButton />
+        </div>
+      )}
+
+      {/* CALENDAR MODE - Week Planner */}
+      {pageMode === 'calendar' && (
+        <div className="card-retro">
+          <ContentCalendar />
+        </div>
+      )}
+
+      {/* CUSTOM MODE - Wizard Builder */}
+      {pageMode === 'custom' && (
         <div className="space-y-6">
           {/* Wizard Progress */}
           <div className="flex items-center justify-between">
@@ -286,171 +297,41 @@ export default function PromoFlyerPage() {
                 {wizardSteps[step]}
               </h2>
 
-              {/* Step 0: Content */}
               {step === 0 && (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block font-heading uppercase text-sm mb-2">
-                      Main Message *
-                    </label>
-                    <input
-                      type="text"
-                      className="input-retro"
-                      placeholder="e.g., 20% OFF Oil Changes!"
-                      value={formData.message}
-                      onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-heading uppercase text-sm mb-2">
-                      Subject/Service *
-                    </label>
-                    <input
-                      type="text"
-                      className="input-retro"
-                      placeholder="e.g., Full Synthetic Oil Change"
-                      value={formData.subject}
-                      onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-heading uppercase text-sm mb-2">
-                      Additional Details
-                    </label>
-                    <textarea
-                      className="input-retro min-h-[80px]"
-                      placeholder="e.g., Includes filter, up to 5 quarts..."
-                      value={formData.details}
-                      onChange={(e) => setFormData({ ...formData, details: e.target.value })}
-                    />
-                  </div>
-                </div>
+                <ContentStep formData={formData} setFormData={setFormData} />
               )}
 
-              {/* Step 1: Style Selection */}
               {step === 1 && (
-                <div className="space-y-4">
-                  {/* Theme Type Toggle */}
-                  <div className="flex gap-2 mb-4">
-                    <button
-                      onClick={() => setUseNostalgicThemes(true)}
-                      className={`flex-1 py-2 px-3 border-2 flex items-center justify-center gap-2 transition-all ${
-                        useNostalgicThemes
-                          ? 'border-retro-red bg-red-50 text-retro-red'
-                          : 'border-gray-300 bg-white text-gray-600 hover:border-gray-500'
-                      }`}
-                    >
-                      <Sparkles size={16} />
-                      <span className="text-sm font-heading uppercase">Nostalgic</span>
-                    </button>
-                    <button
-                      onClick={() => setUseNostalgicThemes(false)}
-                      className={`flex-1 py-2 px-3 border-2 flex items-center justify-center gap-2 transition-all ${
-                        !useNostalgicThemes
-                          ? 'border-retro-red bg-red-50 text-retro-red'
-                          : 'border-gray-300 bg-white text-gray-600 hover:border-gray-500'
-                      }`}
-                    >
-                      <Wand2 size={16} />
-                      <span className="text-sm font-heading uppercase">Classic</span>
-                    </button>
-                  </div>
-
-                  {useNostalgicThemes ? (
-                    <NostalgicThemeGrid
-                      selectedThemeId={formData.themeId}
-                      onSelectTheme={(themeId) => setFormData({ ...formData, themeId })}
-                      onSurpriseMe={handleSurpriseMe}
-                    />
-                  ) : (
-                    <div className="grid grid-cols-1 gap-3 max-h-[400px] overflow-y-auto">
-                      {themesData?.brandStyles?.map((style: {
-                        id: string;
-                        name: string;
-                        category: string;
-                        shortDescription?: string;
-                        previewColors?: string[];
-                      }) => (
-                        <button
-                          key={style.id}
-                          onClick={() => setFormData({ ...formData, themeId: style.id })}
-                          className={`p-4 border-2 text-left transition-all ${
-                            formData.themeId === style.id
-                              ? 'border-retro-red bg-red-50 shadow-retro'
-                              : 'border-gray-300 hover:border-gray-500 bg-white'
-                          }`}
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="flex-1">
-                              <p className="font-heading uppercase text-sm">{style.name}</p>
-                              <p className="text-xs text-gray-500 mt-1">{style.shortDescription}</p>
-                            </div>
-                            {style.previewColors && style.previewColors.length > 0 && (
-                              <div className="flex gap-1">
-                                {style.previewColors.slice(0, 4).map((color, i) => (
-                                  <div
-                                    key={i}
-                                    className="w-5 h-5 rounded-sm border border-black/20"
-                                    style={{ backgroundColor: color }}
-                                  />
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <StyleStep
+                  formData={formData}
+                  setFormData={setFormData}
+                  useNostalgicThemes={useNostalgicThemes}
+                  setUseNostalgicThemes={setUseNostalgicThemes}
+                  themesData={themesData}
+                  onSurpriseMe={handleSurpriseMe}
+                />
               )}
 
-              {/* Step 2: Options */}
               {step === 2 && (
-                <div className="space-y-6">
-                  <VehiclePicker
-                    selectedVehicleId={formData.vehicleId}
-                    onSelectVehicle={(vehicleId) => setFormData({ ...formData, vehicleId })}
-                  />
-
-                  <LanguageToggle
-                    language={formData.language}
-                    onChange={(language) => setFormData({ ...formData, language })}
-                  />
-
-                  <PackSelector
-                    selectedPack={packType}
-                    onSelectPack={setPackType}
-                    selectedEra={packEra}
-                    onSelectEra={setPackEra}
-                    selectedStyle={packStyle}
-                    onSelectStyle={setPackStyle}
-                  />
-                </div>
+                <OptionsStep
+                  formData={formData}
+                  setFormData={setFormData}
+                  packType={packType}
+                  setPackType={setPackType}
+                  packEra={packEra}
+                  setPackEra={setPackEra}
+                  packStyle={packStyle}
+                  setPackStyle={setPackStyle}
+                />
               )}
 
-              {/* Step 3: Generate */}
               {step === 3 && (
-                <div className="text-center py-8">
-                  <Wand2 size={48} className="mx-auto mb-4 text-retro-red" />
-                  <p className="font-heading text-lg uppercase mb-2">Ready to Generate!</p>
-                  <p className="text-gray-600 mb-4">
-                    {packType
-                      ? `Create ${packType === 'variety-3' ? 3 : packType === 'variety-5' ? 5 : packType === 'week-7' ? 7 : 4} flyers`
-                      : 'Create your custom flyer'}
-                  </p>
-                  <div className="text-left bg-gray-50 p-4 border-2 border-black mb-4 text-sm">
-                    <p><strong>Message:</strong> {formData.message}</p>
-                    <p><strong>Subject:</strong> {formData.subject}</p>
-                    <p><strong>Theme:</strong> {formData.themeId}</p>
-                    {formData.vehicleId && (
-                      <p><strong>Vehicle:</strong> {formData.vehicleId === 'random' ? 'Random' : formData.vehicleId}</p>
-                    )}
-                    <p><strong>Language:</strong> {formData.language === 'both' ? 'English & Spanish' : formData.language === 'es' ? 'Spanish' : 'English'}</p>
-                    {packType && (
-                      <p><strong>Pack:</strong> {packType}{packEra ? ` (${packEra})` : ''}{packStyle ? ` (${packStyle})` : ''}</p>
-                    )}
-                  </div>
-                </div>
+                <GenerateStep
+                  formData={formData}
+                  packType={packType}
+                  packEra={packEra}
+                  packStyle={packStyle}
+                />
               )}
 
               <div className="flex justify-between mt-6">
@@ -479,127 +360,18 @@ export default function PromoFlyerPage() {
 
             {/* Preview - Hidden on mobile when form is active */}
             <div className={`card-retro ${!mobileShowPreview ? 'hidden lg:block' : ''}`}>
-              <h2 className="font-heading text-xl uppercase mb-4">Preview</h2>
-
-              {currentFlyer ? (
-                <div>
-                  {/* Pack Navigation */}
-                  {generatedPack.length > 0 && (
-                    <div className="flex items-center justify-between mb-4 p-2 bg-gray-100 border-2 border-black">
-                      <button
-                        onClick={() => setActivePackIndex(Math.max(0, activePackIndex - 1))}
-                        disabled={activePackIndex === 0}
-                        className="px-3 py-1 text-sm disabled:opacity-50"
-                      >
-                        Prev
-                      </button>
-                      <span className="font-heading text-sm">
-                        {activePackIndex + 1} / {generatedPack.length}
-                      </span>
-                      <button
-                        onClick={() => setActivePackIndex(Math.min(generatedPack.length - 1, activePackIndex + 1))}
-                        disabled={activePackIndex === generatedPack.length - 1}
-                        className="px-3 py-1 text-sm disabled:opacity-50"
-                      >
-                        Next
-                      </button>
-                    </div>
-                  )}
-
-                  <div className="aspect-[4/5] bg-gray-200 border-2 border-black mb-4">
-                    <img
-                      src={currentFlyer.imageUrl}
-                      alt="Generated flyer"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-
-                  {/* Theme & Vehicle Info */}
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    <span className="text-xs px-2 py-1 bg-gray-100 border border-gray-300">
-                      {currentFlyer.themeName}
-                    </span>
-                    {currentFlyer.vehicle && (
-                      <span className="text-xs px-2 py-1 bg-teal-50 border border-retro-teal text-retro-teal">
-                        {currentFlyer.vehicle.name}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Caption */}
-                  <div className="bg-gray-50 p-4 border-2 border-black mb-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="font-heading uppercase text-sm">Caption:</p>
-                      <button
-                        onClick={() => handleCopyCaption(currentFlyer.caption)}
-                        className="text-xs flex items-center gap-1 text-gray-500 hover:text-gray-700"
-                      >
-                        {captionCopied ? <Check size={12} /> : <Copy size={12} />}
-                        {captionCopied ? 'Copied!' : 'Copy'}
-                      </button>
-                    </div>
-                    <p className="text-sm">{currentFlyer.caption}</p>
-
-                    {currentFlyer.captionSpanish && (
-                      <div className="mt-3 pt-3 border-t border-gray-200">
-                        <div className="flex items-center justify-between mb-2">
-                          <p className="font-heading uppercase text-sm">Spanish:</p>
-                          <button
-                            onClick={() => handleCopyCaption(currentFlyer.captionSpanish!)}
-                            className="text-xs flex items-center gap-1 text-gray-500 hover:text-gray-700"
-                          >
-                            <Copy size={12} />
-                            Copy
-                          </button>
-                        </div>
-                        <p className="text-sm">{currentFlyer.captionSpanish}</p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Primary Download Button - Most Important Action */}
-                  <button
-                    onClick={() => handleDownload(currentFlyer)}
-                    className="w-full py-4 bg-retro-teal text-white border-2 border-black shadow-retro hover:shadow-none transition-all flex items-center justify-center gap-3 font-heading text-lg uppercase"
-                  >
-                    <Download size={24} />
-                    Download Image
-                  </button>
-
-                  {/* Mobile hint */}
-                  <p className="text-center text-xs text-gray-500 md:hidden">
-                    Tip: Long-press on image above to save directly
-                  </p>
-
-                  {/* Secondary actions */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      onClick={() => setShowShareModal(true)}
-                      className="btn-retro-primary flex items-center justify-center gap-2"
-                    >
-                      <Share2 size={18} />
-                      Share
-                    </button>
-                    <button
-                      onClick={resetForm}
-                      className="btn-retro-outline flex items-center justify-center gap-2"
-                    >
-                      Create Another
-                    </button>
-                  </div>
-                </div>
-              ) : isGenerating ? (
-                <div className="aspect-[4/5] bg-gradient-to-br from-gray-100 to-gray-200 border-2 border-retro-red flex items-center justify-center">
-                  <FunLoadingMessages isLoading={true} spinnerSize={48} />
-                </div>
-              ) : (
-                <div className="aspect-[4/5] bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center">
-                  <div className="text-center text-gray-400">
-                    <Wand2 size={48} className="mx-auto mb-2" />
-                    <p>Your flyer will appear here</p>
-                  </div>
-                </div>
-              )}
+              <FlyerPreview
+                currentFlyer={currentFlyer}
+                generatedPack={generatedPack}
+                activePackIndex={activePackIndex}
+                setActivePackIndex={setActivePackIndex}
+                isGenerating={isGenerating}
+                captionCopied={captionCopied}
+                onDownload={handleDownload}
+                onCopyCaption={handleCopyCaption}
+                onShare={() => setShowShareModal(true)}
+                onReset={resetForm}
+              />
             </div>
           </div>
         </div>

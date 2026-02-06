@@ -1,25 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { promoFlyerApi, downloadApi } from '../../services/api';
-import { Power, Loader2, Download, Share2, RefreshCw, Sparkles } from 'lucide-react';
+import { promoFlyerApi } from '../../services/api';
+import { Power, Download, Share2, RefreshCw, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ShareModal from './ShareModal';
-import { LOADING_MESSAGES } from './FunLoadingMessages';
-
-interface GeneratedContent {
-  id: string;
-  imageUrl: string;
-  caption: string;
-  title: string;
-  theme: string;
-  themeName: string;
-}
+import RetroLoadingStage from '../ui/RetroLoadingStage';
+import { useFileDownload } from '../../hooks/useFileDownload';
+import type { GeneratedContent } from '../../types/content';
+import FlyerFeedback from './FlyerFeedback';
 
 export default function PushToStartButton() {
   const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
-  const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
+  const download = useFileDownload();
 
   // Push to Start mutation
   const instantMutation = useMutation({
@@ -39,42 +33,15 @@ export default function PushToStartButton() {
     instantMutation.mutate();
   };
 
-  const handleDownload = async () => {
+  const handleDownload = () => {
     if (!generatedContent) return;
-    try {
-      const response = await downloadApi.downloadSingle(generatedContent.id);
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${generatedContent.title || 'flyer'}.png`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      toast.success('Download started!');
-    } catch {
-      toast.error('Failed to download');
-    }
+    download(generatedContent.id, generatedContent.title || 'flyer');
   };
 
   const handleGenerateAnother = () => {
     setGeneratedContent(null);
     instantMutation.mutate();
   };
-
-  // Cycle through loading messages
-  useEffect(() => {
-    if (!instantMutation.isPending) {
-      setLoadingMessageIndex(Math.floor(Math.random() * LOADING_MESSAGES.length));
-      return;
-    }
-
-    const interval = setInterval(() => {
-      setLoadingMessageIndex((prev) => (prev + 1) % LOADING_MESSAGES.length);
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, [instantMutation.isPending]);
 
   return (
     <div className="w-full">
@@ -88,6 +55,7 @@ export default function PushToStartButton() {
 
           <button
             onClick={handlePushToStart}
+            aria-label="Generate content"
             className={`
               relative w-40 h-40 rounded-full
               bg-gradient-to-b from-gray-800 to-gray-900
@@ -147,24 +115,14 @@ export default function PushToStartButton() {
         </div>
       )}
 
-      {/* Loading State - Engine Starting Animation */}
+      {/* Loading State */}
       {instantMutation.isPending && (
-        <div className="flex flex-col items-center justify-center py-8">
-          <div className="relative w-40 h-40 rounded-full bg-gradient-to-b from-gray-800 to-gray-900 border-8 border-gray-700 shadow-[0_0_0_8px_#1f2937,0_0_60px_rgba(239,68,68,0.5)]">
-            {/* Animated glow ring */}
-            <div className="absolute inset-0 rounded-full border-4 border-red-500 animate-ping opacity-30" />
-            <div className="absolute inset-0 rounded-full border-2 border-red-400 animate-pulse" />
-
-            {/* Inner button */}
-            <div className="absolute inset-4 rounded-full bg-gradient-to-b from-red-700 to-red-900 border-4 border-red-600 flex flex-col items-center justify-center">
-              <Loader2 size={48} className="text-red-300 animate-spin drop-shadow-[0_0_15px_rgba(239,68,68,1)]" />
-            </div>
-          </div>
-
-          <p className="text-sm font-heading uppercase mt-6 text-red-600 animate-pulse max-w-xs text-center">
-            {LOADING_MESSAGES[loadingMessageIndex]}
-          </p>
-        </div>
+        <RetroLoadingStage
+          isLoading={true}
+          estimatedDuration={10000}
+          size="lg"
+          showExhaust={true}
+        />
       )}
 
       {/* Result Display */}
@@ -205,6 +163,9 @@ export default function PushToStartButton() {
           <p className="text-center text-xs text-gray-500 md:hidden">
             Tip: Long-press on image above to save directly
           </p>
+
+          {/* Feedback */}
+          <FlyerFeedback contentId={generatedContent.id} />
 
           {/* Secondary Actions */}
           <div className="grid grid-cols-2 gap-3">
