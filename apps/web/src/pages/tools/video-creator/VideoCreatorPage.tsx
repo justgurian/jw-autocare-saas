@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { videoCreatorApi, downloadApi } from '../../../services/api';
+import { videoCreatorApi } from '../../../services/api';
 import {
   Video,
   Film,
@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ShareModal from '../../../components/features/ShareModal';
+import { usePollJob } from '../../../hooks/usePollJob';
 
 // Types
 type VideoStyle = 'cinematic' | 'commercial' | 'social-media' | 'documentary' | 'animated' | 'retro';
@@ -33,17 +34,6 @@ interface VideoTemplate {
   duration: VideoDuration;
   aspectRatio: VideoAspectRatio;
   category: string;
-}
-
-interface VideoJob {
-  id: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-  progress: number;
-  videoUrl?: string;
-  thumbnailUrl?: string;
-  caption?: string;
-  error?: string;
-  metadata?: Record<string, unknown>;
 }
 
 interface GeneratedVideo {
@@ -78,9 +68,33 @@ export default function VideoCreatorPage() {
     resolution: '1080p' as VideoResolution,
     voiceoverText: '',
   });
-  const [currentJob, setCurrentJob] = useState<VideoJob | null>(null);
   const [generatedVideo, setGeneratedVideo] = useState<GeneratedVideo | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
+
+  // Shared polling hook
+  const { job: currentJob, startPolling } = usePollJob({
+    onComplete: (job) => {
+      setGeneratedVideo({
+        id: job.id,
+        videoUrl: job.videoUrl || '',
+        thumbnailUrl: job.thumbnailUrl || '',
+        caption: job.caption || '',
+        duration: formData.duration,
+        aspectRatio: formData.aspectRatio,
+        style: formData.style,
+      });
+      setStep('result');
+      toast.success('Video generated successfully!');
+    },
+    onFailed: (job) => {
+      toast.error(job.error || 'Video generation failed');
+      setStep('customize');
+    },
+    onTimeout: () => {
+      toast.error('Video generation timed out. Please try again.');
+      setStep('customize');
+    },
+  });
 
   // Fetch templates
   const { data: templatesData, isLoading: templatesLoading } = useQuery({
@@ -103,50 +117,13 @@ export default function VideoCreatorPage() {
       videoCreatorApi.generate(data),
     onSuccess: (response) => {
       const job = response.data.data.job;
-      setCurrentJob(job);
       setStep('generating');
-      pollJobStatus(job.id);
+      startPolling(job.id);
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.error || 'Failed to start video generation');
     },
   });
-
-  // Poll job status
-  const pollJobStatus = async (jobId: string) => {
-    const poll = async () => {
-      try {
-        const response = await videoCreatorApi.getJob(jobId);
-        const job = response.data.data as VideoJob;
-        setCurrentJob(job);
-
-        if (job.status === 'completed') {
-          setGeneratedVideo({
-            id: jobId,
-            videoUrl: job.videoUrl || (job.metadata?.videoUrl as string) || '',
-            thumbnailUrl: job.thumbnailUrl || (job.metadata?.thumbnailUrl as string) || '',
-            caption: job.caption || '',
-            duration: formData.duration,
-            aspectRatio: formData.aspectRatio,
-            style: formData.style,
-          });
-          setStep('result');
-          toast.success('Video generated successfully!');
-        } else if (job.status === 'failed') {
-          toast.error(job.error || 'Video generation failed');
-          setStep('customize');
-        } else {
-          // Continue polling
-          setTimeout(poll, 5000);
-        }
-      } catch (error) {
-        toast.error('Failed to check job status');
-        setStep('customize');
-      }
-    };
-
-    poll();
-  };
 
   // Handle template selection
   const handleSelectTemplate = (template: VideoTemplate) => {
@@ -192,11 +169,10 @@ export default function VideoCreatorPage() {
       resolution: '1080p',
       voiceoverText: '',
     });
-    setCurrentJob(null);
     setGeneratedVideo(null);
   };
 
-  // Handle download
+  // Handle download with fetch + blob
   const handleDownload = async () => {
     if (!generatedVideo?.videoUrl) {
       toast.error('No video to download');
@@ -204,16 +180,20 @@ export default function VideoCreatorPage() {
     }
 
     try {
-      // Create download link for video (works with both data URLs and regular URLs)
+      const response = await fetch(generatedVideo.videoUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = generatedVideo.videoUrl;
-      a.download = `video-${Date.now()}.mp4`;
+      a.href = url;
+      a.download = `bayfiller-video-${Date.now()}.mp4`;
       document.body.appendChild(a);
       a.click();
+      window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
       toast.success('Downloading video...');
     } catch {
-      toast.error('Failed to download');
+      // Fallback: open in new tab
+      window.open(generatedVideo.videoUrl, '_blank');
     }
   };
 

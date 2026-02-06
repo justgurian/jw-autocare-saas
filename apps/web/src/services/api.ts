@@ -272,8 +272,6 @@ export const videoCreatorApi = {
     aspectRatio: '16:9' | '9:16';
     duration: '4s' | '6s' | '8s';
     resolution?: '720p' | '1080p';
-    includeLogoOverlay?: boolean;
-    includeMusicTrack?: boolean;
     voiceoverText?: string;
     referenceImages?: Array<{ base64: string; mimeType: string; description?: string }>;
   }) => api.post('/tools/video-creator/generate', data),
@@ -287,6 +285,18 @@ export const videoCreatorApi = {
 
   // Delete a video
   delete: (id: string) => api.delete(`/tools/video-creator/${id}`),
+
+  // Animate a flyer into a video
+  generateFromFlyer: (flyerId: string, options?: {
+    style?: 'cinematic' | 'commercial' | 'social-media' | 'documentary' | 'animated' | 'retro';
+    aspectRatio?: '16:9' | '9:16';
+    duration?: '4s' | '6s' | '8s';
+    resolution?: '720p' | '1080p';
+    animationPreset?: 'burnout' | 'money-rain' | 'cinematic-reveal' | 'neon-sign';
+  }) => api.post(`/tools/video-creator/from-flyer/${flyerId}`, options || {}),
+
+  // One-click instant commercial generation
+  instant: () => api.post('/tools/video-creator/instant'),
 };
 
 export const reviewReplyApi = {

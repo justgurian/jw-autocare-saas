@@ -11,6 +11,7 @@ import {
   Gift,
 } from 'lucide-react';
 import PushToStartButton from '../../components/features/PushToStartButton';
+import EasyVideoButton from '../../components/features/EasyVideoButton';
 import SmartSuggestions from './components/SmartSuggestions';
 import MarketingScoreCard from './components/MarketingScoreCard';
 import ThemeShowcase from './components/ThemeShowcase';
@@ -51,9 +52,12 @@ export default function DashboardPage() {
 
       {/* MAGIC BUTTONS - Big, Bold, One-Tap Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* The Easy Button - Hero CTA */}
-        <div className="col-span-1 md:col-span-3 card-retro bg-gradient-to-br from-gray-50 to-gray-100">
+        {/* The Easy Button + Easy Video - Side by Side */}
+        <div className="col-span-1 md:col-span-2 card-retro bg-gradient-to-br from-gray-50 to-gray-100">
           <PushToStartButton size="hero" />
+        </div>
+        <div className="col-span-1 card-retro bg-gradient-to-br from-gray-50 to-gray-100">
+          <EasyVideoButton size="default" />
         </div>
 
         {/* Remind My Customers */}

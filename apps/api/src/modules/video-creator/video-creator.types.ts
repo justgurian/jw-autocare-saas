@@ -3,6 +3,8 @@
  * Type definitions for AI-powered video generation using Veo 3.1
  */
 
+import { VideoAnimationPreset } from './video-creator.prompts';
+
 export type VideoStyle =
   | 'cinematic'
   | 'commercial'
@@ -46,8 +48,6 @@ export interface VideoGenerationInput {
   resolution?: VideoResolution;
 
   // Branding
-  includeLogoOverlay?: boolean;
-  includeMusicTrack?: boolean;
   voiceoverText?: string;
 
   // Reference images
@@ -56,6 +56,12 @@ export interface VideoGenerationInput {
     mimeType: string;
     description?: string;
   }>;
+
+  // Animation preset (Animate My Flyer)
+  animationPreset?: VideoAnimationPreset;
+
+  // Negative prompt for quality control
+  negativePrompt?: string;
 }
 
 export interface VideoGenerationJob {
@@ -285,9 +291,11 @@ export function buildVideoPrompt(options: {
   prompt += `\n- Aspect Ratio: ${input.aspectRatio}`;
   prompt += `\n- Style: ${input.style}`;
 
-  // Add voiceover if provided
+  // Add voiceover/audio instructions for Veo 3.1
   if (input.voiceoverText) {
-    prompt += `\n\nVOICEOVER SCRIPT:\n"${input.voiceoverText}"`;
+    prompt += `\n\nAUDIO/VOICEOVER: The video MUST include spoken audio. A confident, professional voice speaks these words clearly: '${input.voiceoverText}'. The voiceover should be timed to match the video pacing and be clearly audible over any background music or sound effects.`;
+  } else {
+    prompt += `\n\nAUDIO: Include appropriate background music and sound effects that match the style. Make the audio energetic and attention-grabbing for social media.`;
   }
 
   // Safety guidelines

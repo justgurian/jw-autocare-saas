@@ -1,9 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { contentApi } from '../../services/api';
-import { Download, Share2, Edit3, Trash2, ArrowLeft, Copy, Check } from 'lucide-react';
+import { Download, Share2, Edit3, Trash2, ArrowLeft, Copy, Check, Video } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useState } from 'react';
+import VideoFromFlyerModal from '../../components/features/VideoFromFlyerModal';
 
 interface ContentDetail {
   id: string;
@@ -22,6 +23,7 @@ export default function ContentDetailPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [copied, setCopied] = useState(false);
+  const [showVideoModal, setShowVideoModal] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ['content-detail', id],
@@ -191,6 +193,15 @@ export default function ContentDetailPage() {
             <Share2 size={18} />
             Share
           </button>
+          {content.tool !== 'video_creator' && (
+            <button
+              onClick={() => setShowVideoModal(true)}
+              className="btn-retro-outline flex items-center gap-2"
+            >
+              <Video size={18} />
+              Turn into Video
+            </button>
+          )}
           <Link
             to={`/tools/image-editor?contentId=${id}`}
             className="btn-retro-outline flex items-center gap-2"
@@ -208,6 +219,17 @@ export default function ContentDetailPage() {
           </button>
         </div>
       </div>
+
+      {/* Video From Flyer Modal */}
+      {content && (
+        <VideoFromFlyerModal
+          isOpen={showVideoModal}
+          onClose={() => setShowVideoModal(false)}
+          flyerId={content.id}
+          flyerTitle={content.title}
+          flyerImageUrl={content.imageUrl}
+        />
+      )}
     </div>
   );
 }

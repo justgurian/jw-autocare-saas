@@ -13,6 +13,7 @@ const ensureDirectories = () => {
     path.join(UPLOAD_DIR, 'images'),
     path.join(UPLOAD_DIR, 'thumbnails'),
     path.join(UPLOAD_DIR, 'pdfs'),
+    path.join(UPLOAD_DIR, 'videos'),
   ];
 
   for (const dir of dirs) {
@@ -59,6 +60,30 @@ export const storageService = {
       url,
       localPath,
     };
+  },
+
+  // Save video from buffer
+  async saveVideo(
+    videoData: Buffer,
+    tenantId: string,
+    contentId: string
+  ): Promise<{ url: string; localPath: string }> {
+    const filename = `${contentId}.mp4`;
+    const tenantDir = path.join(UPLOAD_DIR, 'videos', tenantId);
+
+    // Ensure tenant directory exists
+    if (!fs.existsSync(tenantDir)) {
+      fs.mkdirSync(tenantDir, { recursive: true });
+    }
+
+    const localPath = path.join(tenantDir, filename);
+    fs.writeFileSync(localPath, videoData);
+
+    const url = `${config.apiUrl}/uploads/videos/${tenantId}/${filename}`;
+
+    logger.debug('Video saved', { localPath, url });
+
+    return { url, localPath };
   },
 
   // Save image from URL (download and save)

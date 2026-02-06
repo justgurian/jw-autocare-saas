@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { contentApi } from '../../services/api';
-import { Download, Share2, Image as ImageIcon } from 'lucide-react';
+import { Download, Share2, Image as ImageIcon, Video } from 'lucide-react';
 import toast from 'react-hot-toast';
+import VideoFromFlyerModal from '../../components/features/VideoFromFlyerModal';
 
 interface ContentItem {
   id: string;
@@ -20,7 +22,10 @@ export default function ContentGalleryPage() {
     queryFn: () => contentApi.getAll().then((res) => res.data),
   });
 
+  const [videoModalFlyerId, setVideoModalFlyerId] = useState<string | null>(null);
+
   const contents: ContentItem[] = data?.content || data?.items || data || [];
+  const videoModalItem = contents.find((c) => c.id === videoModalFlyerId);
 
   const handleDownload = async (id: string, e: React.MouseEvent) => {
     e.preventDefault();
@@ -134,7 +139,7 @@ export default function ContentGalleryPage() {
               <p className="text-xs text-gray-500 mt-1">
                 {new Date(item.createdAt).toLocaleDateString()}
               </p>
-              <div className="flex gap-2 mt-3">
+              <div className="flex gap-1 mt-3">
                 <button
                   onClick={(e) => handleDownload(item.id, e)}
                   className="flex-1 flex items-center justify-center gap-1 py-1.5 border-2 border-black text-xs font-heading uppercase hover:bg-retro-navy hover:text-white transition-colors"
@@ -149,11 +154,35 @@ export default function ContentGalleryPage() {
                   <Share2 size={14} />
                   Share
                 </button>
+                {item.tool !== 'video_creator' && (
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setVideoModalFlyerId(item.id);
+                    }}
+                    className="flex items-center justify-center gap-1 py-1.5 px-2 border-2 border-black text-xs font-heading uppercase hover:bg-retro-red hover:text-white transition-colors"
+                    title="Turn into Video"
+                  >
+                    <Video size={14} />
+                  </button>
+                )}
               </div>
             </div>
           </Link>
         ))}
       </div>
+
+      {/* Video From Flyer Modal */}
+      {videoModalFlyerId && videoModalItem && (
+        <VideoFromFlyerModal
+          isOpen={!!videoModalFlyerId}
+          onClose={() => setVideoModalFlyerId(null)}
+          flyerId={videoModalFlyerId}
+          flyerTitle={videoModalItem.title}
+          flyerImageUrl={videoModalItem.imageUrl}
+        />
+      )}
     </div>
   );
 }

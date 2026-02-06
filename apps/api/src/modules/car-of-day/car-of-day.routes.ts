@@ -7,8 +7,14 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { carOfDayService } from './car-of-day.service';
 import { ASSET_TYPE_INFO, AssetType } from './car-of-day.types';
 import { logger } from '../../utils/logger';
+import { authenticate } from '../../middleware/auth.middleware';
+import { tenantContext } from '../../middleware/tenant.middleware';
 
 const router = Router();
+
+// Apply auth and tenant middleware to all routes
+router.use(authenticate);
+router.use(tenantContext);
 
 /**
  * GET /api/v1/tools/car-of-day/asset-types

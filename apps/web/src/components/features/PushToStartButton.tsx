@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { promoFlyerApi } from '../../services/api';
-import { Power, Download, Share2, RefreshCw, Sparkles } from 'lucide-react';
+import { Power, Download, Share2, RefreshCw, Sparkles, Video } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ShareModal from './ShareModal';
+import VideoFromFlyerModal from './VideoFromFlyerModal';
 import RetroLoadingStage from '../ui/RetroLoadingStage';
 import { useFileDownload } from '../../hooks/useFileDownload';
 import type { GeneratedContent } from '../../types/content';
@@ -16,6 +17,7 @@ interface PushToStartButtonProps {
 export default function PushToStartButton({ size = 'default' }: PushToStartButtonProps) {
   const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showVideoModal, setShowVideoModal] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
   const download = useFileDownload();
 
@@ -190,13 +192,20 @@ export default function PushToStartButton({ size = 'default' }: PushToStartButto
           <FlyerFeedback contentId={generatedContent.id} />
 
           {/* Secondary Actions */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <button
               onClick={() => setShowShareModal(true)}
               className="btn-retro-primary flex items-center justify-center gap-2"
             >
               <Share2 size={18} />
               Share
+            </button>
+            <button
+              onClick={() => setShowVideoModal(true)}
+              className="btn-retro-outline flex items-center justify-center gap-2"
+            >
+              <Video size={18} />
+              Animate
             </button>
             <button
               onClick={handleGenerateAnother}
@@ -220,6 +229,17 @@ export default function PushToStartButton({ size = 'default' }: PushToStartButto
             imageUrl: generatedContent.imageUrl,
             caption: generatedContent.caption,
           }}
+        />
+      )}
+
+      {/* Video From Flyer Modal */}
+      {generatedContent && (
+        <VideoFromFlyerModal
+          isOpen={showVideoModal}
+          onClose={() => setShowVideoModal(false)}
+          flyerId={generatedContent.id}
+          flyerTitle={generatedContent.title}
+          flyerImageUrl={generatedContent.imageUrl}
         />
       )}
     </div>
