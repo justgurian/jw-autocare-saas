@@ -9,6 +9,7 @@ import { ASSET_TYPE_INFO, AssetType } from './car-of-day.types';
 import { logger } from '../../utils/logger';
 import { authenticate } from '../../middleware/auth.middleware';
 import { tenantContext } from '../../middleware/tenant.middleware';
+import { fetchMascotAsBase64 } from '../../services/mascot.util';
 
 const router = Router();
 
@@ -64,6 +65,7 @@ router.post('/generate', async (req: Request, res: Response, next: NextFunction)
       ownerHandle,
       assetTypes,
       logos,
+      mascotId,
     } = req.body;
 
     // Validate required fields
@@ -86,12 +88,24 @@ router.post('/generate', async (req: Request, res: Response, next: NextFunction)
       }
     }
 
+    // Fetch mascot data if mascotId provided
+    let mascotImageData: { base64: string; mimeType: string } | undefined;
+    let mascotCharacterPrompt: string | undefined;
+    if (mascotId) {
+      const mascot = await fetchMascotAsBase64(mascotId, tenantId);
+      if (mascot) {
+        mascotCharacterPrompt = mascot.characterPrompt;
+        mascotImageData = { base64: mascot.base64, mimeType: mascot.mimeType };
+      }
+    }
+
     logger.info('Car of the Day generation requested', {
       tenantId,
       userId,
       carMake,
       carModel,
       assetTypes,
+      hasMascot: !!mascotImageData,
     });
 
     const result = await carOfDayService.generateCarOfDay(tenantId, userId, {
@@ -106,6 +120,8 @@ router.post('/generate', async (req: Request, res: Response, next: NextFunction)
       ownerHandle,
       assetTypes,
       logos,
+      mascotImage: mascotImageData,
+      mascotCharacterPrompt,
     });
 
     res.json({
@@ -146,6 +162,7 @@ router.post('/generate-single', async (req: Request, res: Response, next: NextFu
       ownerName,
       ownerHandle,
       logos,
+      mascotId,
     } = req.body;
 
     // Validate required fields
@@ -171,6 +188,17 @@ router.post('/generate-single', async (req: Request, res: Response, next: NextFu
       });
     }
 
+    // Fetch mascot data if mascotId provided
+    let mascotImageData: { base64: string; mimeType: string } | undefined;
+    let mascotCharacterPrompt: string | undefined;
+    if (mascotId) {
+      const mascot = await fetchMascotAsBase64(mascotId, tenantId);
+      if (mascot) {
+        mascotCharacterPrompt = mascot.characterPrompt;
+        mascotImageData = { base64: mascot.base64, mimeType: mascot.mimeType };
+      }
+    }
+
     const result = await carOfDayService.generateCarOfDay(tenantId, userId, {
       carImage,
       personImage,
@@ -183,6 +211,8 @@ router.post('/generate-single', async (req: Request, res: Response, next: NextFu
       ownerHandle,
       assetTypes: [assetType as AssetType],
       logos,
+      mascotImage: mascotImageData,
+      mascotCharacterPrompt,
     });
 
     res.json({

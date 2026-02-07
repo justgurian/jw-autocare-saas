@@ -71,6 +71,28 @@ export const MASCOT_OPTIONS = {
       description:
         'Wearing a leather tool belt around the waist with wrenches and screwdrivers',
     },
+    { id: 'wrench', name: 'Wrench', description: 'Holding a large shiny wrench in one hand' },
+    { id: 'clipboard', name: 'Clipboard', description: 'Holding a clipboard with a checklist' },
+    { id: 'coffee-mug', name: 'Coffee Mug', description: 'Holding a steaming coffee mug' },
+    { id: 'keys', name: 'Car Keys', description: 'Dangling a set of car keys from one hand' },
+  ],
+  outfitTypes: [
+    { id: 'jumpsuit', name: 'Mechanic Jumpsuit', description: "a miniature mechanic's jumpsuit" },
+    { id: 'polo', name: 'Polo Shirt', description: 'a neat polo shirt tucked into work pants' },
+    { id: 'hoodie', name: 'Hoodie', description: 'a comfortable zip-up hoodie' },
+    { id: 'hawaiian', name: 'Hawaiian Shirt', description: 'a loud Hawaiian shirt with tropical print' },
+    { id: 'lab-coat', name: 'Lab Coat', description: 'a white lab coat like an automotive scientist' },
+    { id: 'vest', name: 'Work Vest', description: 'a high-visibility safety vest over a t-shirt' },
+    { id: 'apron', name: 'Shop Apron', description: 'a heavy canvas shop apron with pockets' },
+  ],
+  seasonalAccessories: [
+    { id: 'none', name: 'None', description: '' },
+    { id: 'santa-hat', name: 'Santa Hat', description: 'Wearing a red Santa hat with white trim' },
+    { id: 'sunglasses', name: 'Sunglasses', description: 'Wearing cool aviator sunglasses' },
+    { id: 'rain-gear', name: 'Rain Gear', description: 'Wearing a yellow rain slicker and rain hat' },
+    { id: 'bunny-ears', name: 'Bunny Ears', description: 'Wearing a springtime bunny ears headband' },
+    { id: 'flag-cape', name: 'July 4th Cape', description: 'Draped in a small American flag cape' },
+    { id: 'fall-scarf', name: 'Fall Scarf', description: 'Wearing a cozy autumn-colored knit scarf' },
   ],
 };
 
@@ -81,6 +103,13 @@ export interface MascotCustomization {
   hairstyle: string;
   outfitColor: string;
   accessory?: string;
+  outfitType?: string;
+  seasonalAccessory?: string;
+  personality?: {
+    presetId: string;
+    catchphrase?: string;
+    energyLevel?: 'low' | 'medium' | 'high' | 'maximum';
+  };
 }
 
 export interface MascotResult {
@@ -88,3 +117,61 @@ export interface MascotResult {
   imageUrl: string;
   characterPrompt: string;
 }
+
+export interface PersonalityPreset {
+  id: string;
+  name: string;
+  description: string;
+  energyLevel: 'low' | 'medium' | 'high' | 'maximum';
+  speakingStyle: string;
+  defaultCatchphrase: string;
+  icon: string;
+}
+
+export const PERSONALITY_PRESETS: PersonalityPreset[] = [
+  {
+    id: 'hype-man',
+    name: 'The Hype Man',
+    description: 'Over-the-top excited about every service',
+    energyLevel: 'maximum',
+    speakingStyle: 'Fast-talking, uses superlatives, lots of exclamation points',
+    defaultCatchphrase: "LET'S GOOOOO! Your car is gonna LOVE this!",
+    icon: '🔥',
+  },
+  {
+    id: 'trusted-expert',
+    name: 'The Trusted Expert',
+    description: 'Calm, knowledgeable, explains things clearly',
+    energyLevel: 'medium',
+    speakingStyle: 'Measured, confident, uses technical terms but explains them simply',
+    defaultCatchphrase: "Here's the deal — we'll take great care of your ride.",
+    icon: '🔧',
+  },
+  {
+    id: 'funny-friend',
+    name: 'The Funny Friend',
+    description: 'Makes everything a joke, self-deprecating humor',
+    energyLevel: 'high',
+    speakingStyle: 'Jokes, puns, playful sarcasm, breaks the fourth wall',
+    defaultCatchphrase: "Your car called... it says it misses us!",
+    icon: '😂',
+  },
+  {
+    id: 'neighborhood-buddy',
+    name: 'The Neighborhood Buddy',
+    description: 'Your neighbor who happens to be an amazing mechanic',
+    energyLevel: 'low',
+    speakingStyle: 'Conversational, warm, uses "we" and "our community"',
+    defaultCatchphrase: "We treat every car like it belongs to family.",
+    icon: '🏘️',
+  },
+  {
+    id: 'drill-sergeant',
+    name: 'The Drill Sergeant',
+    description: 'Barks orders at engines, inspects with military precision',
+    energyLevel: 'high',
+    speakingStyle: 'Short commands, intense, dramatic pauses, military metaphors',
+    defaultCatchphrase: "DROP AND GIVE ME AN OIL CHANGE, SOLDIER!",
+    icon: '🫡',
+  },
+];

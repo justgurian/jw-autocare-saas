@@ -29,6 +29,14 @@ export const mascotBuilderService = {
       ? MASCOT_OPTIONS.accessories.find((a) => a.id === input.accessory)
       : null;
 
+    // Look up outfit type description
+    const outfitType = MASCOT_OPTIONS.outfitTypes.find(o => o.id === input.outfitType) || MASCOT_OPTIONS.outfitTypes[0];
+    const outfitDesc = outfitType.description;
+
+    // Look up seasonal accessory
+    const seasonalAcc = input.seasonalAccessory ? MASCOT_OPTIONS.seasonalAccessories.find(s => s.id === input.seasonalAccessory) : null;
+    const seasonalDesc = seasonalAcc && seasonalAcc.id !== 'none' && seasonalAcc.description ? ` ${seasonalAcc.description}.` : '';
+
     const furName = furColor?.name || 'Orange';
     const eyeDesc = eyeStyle?.description || 'Large round googly eyes';
     const hairDesc = hairstyle?.description || 'Short cropped black hair';
@@ -38,7 +46,7 @@ export const mascotBuilderService = {
         ? ` ${accessory.description}.`
         : '';
 
-    return `A handmade Muppet-style puppet mechanic character. ${furName} shaggy faux-fur covering entire body. ${eyeDesc}. ${hairDesc}. Wide hinged felt mouth with a friendly grin. A small round felt nose. Wearing a miniature ${outfitName} mechanic's jumpsuit with a white nametag patch that says '${input.shirtName}'.${accessoryDesc} Three fuzzy fingers on each hand. Practical puppet photography, studio lighting, Jim Henson workshop aesthetic. Full body shot, white/neutral background.`;
+    return `A handmade Muppet-style puppet mechanic character. ${furName} shaggy faux-fur covering entire body. ${eyeDesc}. ${hairDesc}. Wide hinged felt mouth with a friendly grin. A small round felt nose. Wearing ${outfitDesc} in ${outfitName} color with a white nametag patch that says '${input.shirtName}'.${accessoryDesc}${seasonalDesc} Three fuzzy fingers on each hand. Practical puppet photography, studio lighting, Jim Henson workshop aesthetic. Full body shot, white/neutral background.`;
   },
 
   async generateMascot(
@@ -113,8 +121,11 @@ export const mascotBuilderService = {
           hairstyle: input.hairstyle,
           outfitColor: input.outfitColor,
           accessory: input.accessory || 'none',
+          outfitType: input.outfitType || 'jumpsuit',
+          seasonalAccessory: input.seasonalAccessory || 'none',
+          personality: input.personality || null,
           characterPrompt,
-        },
+        } as any,
       },
     });
 

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { promoFlyerApi, downloadApi } from '../../../services/api';
+import MascotSelector from '../../../components/features/MascotSelector';
 import { Eye, PenTool } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ShareModal from '../../../components/features/ShareModal';
@@ -33,6 +34,8 @@ export default function PromoFlyerPage() {
     language: 'en' as 'en' | 'es' | 'both',
   });
 
+  const [mascotId, setMascotId] = useState<string | null>(null);
+
   // Pack generation state
   const [packType, setPackType] = useState<PackType | null>(null);
   const [packEra, setPackEra] = useState<string | null>(null);
@@ -59,6 +62,7 @@ export default function PromoFlyerPage() {
       promoFlyerApi.generate({
         ...formData,
         vehicleId: formData.vehicleId || undefined,
+        mascotId: mascotId || undefined,
       }),
     onSuccess: (res) => {
       setGeneratedContent({
@@ -187,6 +191,7 @@ export default function PromoFlyerPage() {
     setPackType(null);
     setPackEra(null);
     setPackStyle(null);
+    setMascotId(null);
     setMobileShowPreview(false); // Back to form on mobile
   };
 
@@ -335,6 +340,12 @@ export default function PromoFlyerPage() {
                   packStyle={packStyle}
                 />
               )}
+
+              {/* Mascot Selector (visible across all steps) */}
+              <div className="mt-6 pt-4 border-t border-gray-200">
+                <label className="block font-heading text-sm uppercase mb-2">Feature Your Mascot</label>
+                <MascotSelector onSelect={setMascotId} selectedMascotId={mascotId} />
+              </div>
 
               <div className="flex justify-between mt-6">
                 <button

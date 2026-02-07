@@ -1,4 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
+import { Plus } from 'lucide-react';
 import { mascotBuilderApi } from '../../services/api';
 
 interface MascotSelectorProps {
@@ -10,7 +12,20 @@ interface Mascot {
   id: string;
   name: string;
   imageUrl: string;
+  personality?: {
+    presetId: string;
+    catchphrase: string;
+    energyLevel: string;
+  };
 }
+
+const PERSONALITY_ICONS: Record<string, string> = {
+  'hype-man': '🔥',
+  'trusted-expert': '🔧',
+  'funny-friend': '😂',
+  'neighborhood-buddy': '🏘️',
+  'drill-sergeant': '🫡',
+};
 
 export default function MascotSelector({ onSelect, selectedMascotId }: MascotSelectorProps) {
   const { data: mascotsData, isLoading } = useQuery({
@@ -28,9 +43,18 @@ export default function MascotSelector({ onSelect, selectedMascotId }: MascotSel
 
   if (mascots.length === 0) {
     return (
-      <p className="text-sm text-gray-500 font-heading uppercase">
-        No mascots yet -- create one in Mascot Builder
-      </p>
+      <div className="flex gap-3">
+        <p className="text-sm text-gray-500 font-heading uppercase">
+          No mascots yet --
+        </p>
+        <Link
+          to="/tools/mascot-builder"
+          className="flex-shrink-0 w-20 h-24 flex flex-col items-center justify-center rounded border-2 border-dashed border-gray-300 hover:border-retro-red hover:bg-red-50 transition-all"
+        >
+          <Plus size={20} className="text-gray-400" />
+          <span className="text-xs text-gray-500 mt-1">Create</span>
+        </Link>
+      </div>
     );
   }
 
@@ -68,8 +92,20 @@ export default function MascotSelector({ onSelect, selectedMascotId }: MascotSel
           <span className="font-heading text-xs uppercase mt-1 truncate w-full text-center px-1">
             {mascot.name}
           </span>
+          {mascot.personality?.presetId && PERSONALITY_ICONS[mascot.personality.presetId] && (
+            <span className="text-xs">{PERSONALITY_ICONS[mascot.personality.presetId]}</span>
+          )}
         </button>
       ))}
+
+      {/* Create New + */}
+      <Link
+        to="/tools/mascot-builder"
+        className="flex-shrink-0 w-20 h-24 flex flex-col items-center justify-center rounded border-2 border-dashed border-gray-300 hover:border-retro-red hover:bg-red-50 transition-all"
+      >
+        <Plus size={20} className="text-gray-400" />
+        <span className="text-xs text-gray-500 mt-1">Create</span>
+      </Link>
     </div>
   );
 }

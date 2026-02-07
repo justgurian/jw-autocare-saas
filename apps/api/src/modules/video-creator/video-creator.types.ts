@@ -62,6 +62,9 @@ export interface VideoGenerationInput {
 
   // Negative prompt for quality control
   negativePrompt?: string;
+
+  // Mascot support
+  mascotId?: string;
 }
 
 export interface VideoGenerationJob {

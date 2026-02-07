@@ -10,6 +10,7 @@ import { veoService, VeoConfig } from '../../services/veo.service';
 import { Character, CHARACTERS, getCharacterById } from './characters';
 import { Scene, SCENES, getSceneById, getScenesByCategory } from './scenes';
 import { buildUgcPrompt, CarDetails } from './prompt-builder';
+import { fetchMascotAsBase64, MascotData, buildMascotVideoPrompt } from '../../services/mascot.util';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -132,6 +133,19 @@ export const ugcCreatorService = {
       if (forcedChar) character = forcedChar;
     }
 
+    // Detect custom mascot and fetch image for image-to-video
+    let mascotImageData: { imageBytes: string; mimeType: string } | null = null;
+    let mascotPersonality: MascotData['personality'] | undefined;
+
+    if (!character.isBuiltIn && input.characterId.startsWith('custom-')) {
+      const realMascotId = input.characterId.replace('custom-', '');
+      const mascotData = await fetchMascotAsBase64(realMascotId, tenantId);
+      if (mascotData) {
+        mascotImageData = { imageBytes: mascotData.base64, mimeType: mascotData.mimeType };
+        mascotPersonality = mascotData.personality || undefined;
+      }
+    }
+
     // Get tenant info for business name
     const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
     const businessName = tenant?.name || 'JW Auto Care';
@@ -172,7 +186,7 @@ export const ugcCreatorService = {
     });
 
     // Fire-and-forget async generation
-    this.processGeneration(job.id, tenantId, userId, prompt, input, scene).catch((err) => {
+    this.processGeneration(job.id, tenantId, userId, prompt, input, scene, mascotImageData, mascotPersonality, character.name).catch((err) => {
       logger.error('UGC video generation failed', { jobId: job.id, error: err });
     });
 
@@ -195,7 +209,10 @@ export const ugcCreatorService = {
     userId: string,
     prompt: string,
     input: UgcGenerationInput,
-    scene: Scene
+    scene: Scene,
+    mascotImage?: { imageBytes: string; mimeType: string } | null,
+    mascotPersonality?: MascotData['personality'],
+    mascotName?: string,
   ): Promise<void> {
     try {
       await prisma.batchJob.update({
@@ -209,7 +226,24 @@ export const ugcCreatorService = {
         resolution: '720p',
       };
 
-      const result = await veoService.generateVideo(prompt, veoConfig);
+      // Get tenant business name for mascot video prompt
+      let result;
+      if (mascotImage) {
+        // Custom mascot: use image-to-video for visual consistency
+        const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
+        const businessName = tenant?.name || 'JW Auto Care';
+        const mascotPrompt = buildMascotVideoPrompt({
+          mascotName: mascotName || 'Shop Mascot',
+          characterPrompt: prompt,
+          personality: mascotPersonality,
+          sceneDescription: scene.prompt,
+          businessName,
+        });
+        result = await veoService.generateVideoFromImage(mascotPrompt, mascotImage, veoConfig);
+      } else {
+        // Built-in character: text-only (existing behavior)
+        result = await veoService.generateVideo(prompt, veoConfig);
+      }
 
       if (!result.success) {
         throw new Error(result.error || 'Video generation failed');

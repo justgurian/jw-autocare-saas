@@ -17,14 +17,22 @@ export interface CelebrationTemplate {
 }
 
 export interface CelebrationInput {
-  celebrationType: CelebrationType;
+  // Legacy fields (kept for backward compat)
+  celebrationType?: CelebrationType;
+  // New scenario-based fields
+  scenarioId?: string;
+  personTags?: string[];
+  inputSource?: 'photo' | 'mascot' | 'generic';
+  mascotId?: string;
+  // Common fields
   personName: string;
   customMessage?: string;
   customDetails?: string;
-  photoBase64: string;
-  photoMimeType: string;
+  photoBase64?: string;
+  photoMimeType?: string;
   aspectRatio?: '16:9' | '9:16';
   duration?: '4s' | '6s' | '8s';
+  occasion?: string;
 }
 
 export const CELEBRATION_TEMPLATES: CelebrationTemplate[] = [

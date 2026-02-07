@@ -15,6 +15,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { batchFlyerApi, promoFlyerApi } from '../../../services/api';
+import MascotSelector from '../../../components/features/MascotSelector';
 import toast from 'react-hot-toast';
 import ModeSelector from '../../../components/batch-flyer/ModeSelector';
 import ContentSelector from '../../../components/batch-flyer/ContentSelector';
@@ -66,6 +67,7 @@ export default function BatchFlyerPage() {
   const [themeStrategy, setThemeStrategy] = useState<ThemeStrategy>('auto');
   const [singleThemeId, setSingleThemeId] = useState<string>('');
   const [language, setLanguage] = useState<'en' | 'es' | 'both'>('en');
+  const [mascotId, setMascotId] = useState<string | null>(null);
 
   // Generation
   const [jobId, setJobId] = useState<string | null>(null);
@@ -112,6 +114,7 @@ export default function BatchFlyerPage() {
         themeStrategy,
         singleThemeId: themeStrategy === 'single' ? singleThemeId : undefined,
         language,
+        mascotId: mascotId || undefined,
       });
     },
     onSuccess: (response) => {
@@ -369,15 +372,21 @@ export default function BatchFlyerPage() {
 
         {/* Theme Selection */}
         {currentStep === 'theme' && (
-          <ThemeSelector
-            strategy={themeStrategy}
-            onStrategyChange={setThemeStrategy}
-            singleThemeId={singleThemeId}
-            onSingleThemeChange={setSingleThemeId}
-            language={language}
-            onLanguageChange={setLanguage}
-            themes={themesData?.nostalgicThemes || []}
-          />
+          <>
+            <ThemeSelector
+              strategy={themeStrategy}
+              onStrategyChange={setThemeStrategy}
+              singleThemeId={singleThemeId}
+              onSingleThemeChange={setSingleThemeId}
+              language={language}
+              onLanguageChange={setLanguage}
+              themes={themesData?.nostalgicThemes || []}
+            />
+            <div className="mt-6 pt-4 border-t border-gray-200">
+              <label className="block font-heading text-sm uppercase mb-2">Feature Your Mascot</label>
+              <MascotSelector onSelect={setMascotId} selectedMascotId={mascotId} />
+            </div>
+          </>
         )}
 
         {/* Generation Progress */}

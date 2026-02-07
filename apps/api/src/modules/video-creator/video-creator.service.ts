@@ -18,7 +18,8 @@ import {
 } from './video-creator.types';
 import { ANIMATION_PRESETS, COMMERCIAL_VIBES, VideoAnimationPreset } from './video-creator.prompts';
 import { storageService } from '../../services/storage.service';
-import { veoService, VeoConfig } from '../../services/veo.service';
+import { veoService, VeoConfig, VeoImage } from '../../services/veo.service';
+import { fetchMascotAsBase64, MascotData, buildMascotVideoPrompt } from '../../services/mascot.util';
 
 export const videoCreatorService = {
   /**
@@ -62,12 +63,29 @@ export const videoCreatorService = {
     }
 
     // Build the video generation prompt
-    const prompt = buildVideoPrompt({
+    let prompt = buildVideoPrompt({
       template,
       input,
       businessName,
       tagline: tagline || undefined,
     });
+
+    // Fetch mascot data if mascotId is provided
+    let mascotImage: VeoImage | null = null;
+    if (input.mascotId) {
+      const mascotData = await fetchMascotAsBase64(input.mascotId, tenantId);
+      if (mascotData) {
+        mascotImage = { imageBytes: mascotData.base64, mimeType: mascotData.mimeType };
+        // Build mascot-specific video prompt
+        prompt = buildMascotVideoPrompt({
+          mascotName: mascotData.shirtName || 'Shop Mascot',
+          characterPrompt: mascotData.characterPrompt,
+          personality: mascotData.personality,
+          sceneDescription: prompt,
+          businessName,
+        });
+      }
+    }
 
     // Create job record in database
     const job = await prisma.batchJob.create({
@@ -93,7 +111,7 @@ export const videoCreatorService = {
     });
 
     // Start async generation (in real implementation, this would queue the job)
-    this.processVideoGeneration(job.id, tenantId, userId, prompt, input).catch(
+    this.processVideoGeneration(job.id, tenantId, userId, prompt, input, mascotImage).catch(
       (error) => {
         logger.error('Video generation failed', { jobId: job.id, error });
       }
@@ -118,7 +136,8 @@ export const videoCreatorService = {
     tenantId: string,
     userId: string,
     prompt: string,
-    input: VideoGenerationInput
+    input: VideoGenerationInput,
+    mascotImage?: VeoImage | null,
   ): Promise<void> {
     try {
       // Update job status to processing
@@ -138,9 +157,12 @@ export const videoCreatorService = {
         negativePrompt: input.negativePrompt,
       };
 
-      // Call shared Veo service — text-to-video or image-to-video
+      // Call shared Veo service — mascot image-to-video, reference image-to-video, or text-to-video
       let videoResult;
-      if (input.referenceImages?.length) {
+      if (mascotImage) {
+        // Mascot: use image-to-video with mascot image (takes priority)
+        videoResult = await veoService.generateVideoFromImage(prompt, mascotImage, veoConfig);
+      } else if (input.referenceImages?.length) {
         videoResult = await veoService.generateVideoFromImage(
           prompt,
           { imageBytes: input.referenceImages[0].base64, mimeType: input.referenceImages[0].mimeType },

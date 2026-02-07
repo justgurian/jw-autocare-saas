@@ -14,6 +14,8 @@ import {
   CelebrationType,
   CELEBRATION_TEMPLATES,
 } from './celebration.types';
+import { CELEBRATION_SCENARIOS, buildCelebrationPrompt } from './scenarios';
+import { fetchMascotAsBase64 } from '../../services/mascot.util';
 
 interface CelebrationJob {
   id: string;
@@ -43,23 +45,56 @@ export const celebrationService = {
     userId: string,
     input: CelebrationInput
   ): Promise<CelebrationJob> {
-    const template = CELEBRATION_TEMPLATES.find(
-      (t) => t.id === input.celebrationType
-    );
-    if (!template) {
-      throw new Error(`Unknown celebration type: ${input.celebrationType}`);
-    }
+    let prompt: string;
+    let title: string;
 
-    // Build prompt from template
-    const message = input.customMessage
-      ? `${input.personName} - ${input.customMessage}`
-      : `${input.personName} - ${template.defaultMessage}`;
+    if (input.scenarioId) {
+      // NEW scenario-based path
+      const scenario = CELEBRATION_SCENARIOS.find(s => s.id === input.scenarioId);
+      if (!scenario) throw new Error(`Unknown scenario: ${input.scenarioId}`);
 
-    let prompt = template.prompt.replace('[MESSAGE]', message);
-    if (input.customDetails) {
-      prompt = prompt.replace('[CUSTOM_DETAILS]', input.customDetails);
+      // Get business name from tenant
+      const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
+      const businessName = tenant?.name || 'the auto shop';
+
+      // Handle mascot source
+      let mascotDescription: string | undefined;
+      if (input.inputSource === 'mascot' && input.mascotId) {
+        const mascotData = await fetchMascotAsBase64(input.mascotId, tenantId);
+        if (mascotData) {
+          mascotDescription = mascotData.characterPrompt;
+        }
+      }
+
+      prompt = buildCelebrationPrompt({
+        scenario,
+        personName: input.personName,
+        personTags: input.personTags || [],
+        occasion: input.occasion,
+        customMessage: input.customMessage,
+        inputSource: input.inputSource || 'photo',
+        mascotDescription,
+        businessName,
+      });
+
+      title = `${scenario.name} - ${input.personName}`;
     } else {
-      prompt = prompt.replace('[CUSTOM_DETAILS]', '');
+      // LEGACY template-based path
+      const template = CELEBRATION_TEMPLATES.find(t => t.id === input.celebrationType);
+      if (!template) throw new Error(`Unknown celebration type: ${input.celebrationType}`);
+
+      const message = input.customMessage
+        ? `${input.personName} - ${input.customMessage}`
+        : `${input.personName} - ${template.defaultMessage}`;
+
+      prompt = template.prompt.replace('[MESSAGE]', message);
+      if (input.customDetails) {
+        prompt = prompt.replace('[CUSTOM_DETAILS]', input.customDetails);
+      } else {
+        prompt = prompt.replace('[CUSTOM_DETAILS]', '');
+      }
+
+      title = `${template.name} - ${input.personName}`;
     }
 
     // Create batch job
@@ -72,10 +107,14 @@ export const celebrationService = {
         completedItems: 0,
         status: 'pending',
         metadata: {
+          scenarioId: input.scenarioId,
           celebrationType: input.celebrationType,
           personName: input.personName,
           customMessage: input.customMessage,
+          inputSource: input.inputSource || 'photo',
+          mascotId: input.mascotId,
           prompt,
+          title,
         } as any,
       },
     });
@@ -83,7 +122,7 @@ export const celebrationService = {
     logger.info('Celebration video job created', {
       jobId: job.id,
       tenantId,
-      celebrationType: input.celebrationType,
+      scenarioId: input.scenarioId || input.celebrationType,
       personName: input.personName,
     });
 
@@ -127,15 +166,33 @@ export const celebrationService = {
         resolution: '720p',
       };
 
-      // Generate video from photo using Veo
-      const result = await veoService.generateVideoFromImage(
-        prompt,
-        {
-          imageBytes: input.photoBase64,
-          mimeType: input.photoMimeType,
-        },
-        veoConfig
-      );
+      let result;
+      const source = input.inputSource || 'photo';
+
+      if (source === 'photo' && input.photoBase64) {
+        // Photo mode — image-to-video
+        result = await veoService.generateVideoFromImage(
+          prompt,
+          { imageBytes: input.photoBase64, mimeType: input.photoMimeType || 'image/jpeg' },
+          veoConfig
+        );
+      } else if (source === 'mascot' && input.mascotId) {
+        // Mascot mode — fetch mascot image, use as reference
+        const mascotData = await fetchMascotAsBase64(input.mascotId, tenantId);
+        if (mascotData) {
+          result = await veoService.generateVideoFromImage(
+            prompt,
+            { imageBytes: mascotData.base64, mimeType: mascotData.mimeType },
+            veoConfig
+          );
+        } else {
+          // Fallback to text-only if mascot not found
+          result = await veoService.generateVideo(prompt, veoConfig);
+        }
+      } else {
+        // Generic mode — text-only
+        result = await veoService.generateVideo(prompt, veoConfig);
+      }
 
       if (!result.success) {
         throw new Error(result.error || 'Celebration video generation failed');
@@ -149,26 +206,29 @@ export const celebrationService = {
         contentId
       );
 
+      // Get title from job metadata
+      const jobRecord = await prisma.batchJob.findUnique({ where: { id: jobId } });
+      const jobMeta = jobRecord?.metadata as Record<string, unknown>;
+      const videoTitle = (jobMeta?.title as string) || `Celebration - ${input.personName}`;
+
       // Create Content record
-      const template = CELEBRATION_TEMPLATES.find(
-        (t) => t.id === input.celebrationType
-      );
       const content = await prisma.content.create({
         data: {
           tenantId,
           userId,
           tool: 'celebration',
           contentType: 'video',
-          title: `${template?.name || 'Celebration'} - ${input.personName}`,
+          title: videoTitle,
           imageUrl: '',
-          caption: input.customMessage || template?.defaultMessage || '',
+          caption: input.customMessage || '',
           status: 'approved',
           moderationStatus: 'passed',
           metadata: {
             videoUrl,
+            scenarioId: input.scenarioId,
             celebrationType: input.celebrationType,
             personName: input.personName,
-            customMessage: input.customMessage,
+            inputSource: source,
             duration: input.duration || '8s',
             aspectRatio: input.aspectRatio || '9:16',
             jobId,

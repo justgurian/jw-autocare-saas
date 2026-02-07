@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { carOfDayApi, checkInApi, downloadApi } from '../../../services/api';
+import MascotSelector from '../../../components/features/MascotSelector';
 import {
   Car,
   Star,
@@ -97,6 +98,7 @@ export default function CarOfDayPage() {
     'movie-poster',
   ]);
   const [generatedResult, setGeneratedResult] = useState<GenerationResult | null>(null);
+  const [mascotId, setMascotId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<GeneratedAsset | null>(null);
@@ -147,6 +149,7 @@ export default function CarOfDayPage() {
         ownerName: formData.ownerName,
         ownerHandle: formData.ownerHandle,
         assetTypes: selectedAssetTypes,
+        mascotId: mascotId || undefined,
       });
 
       setGeneratedResult(response.data.data);
@@ -215,6 +218,7 @@ export default function CarOfDayPage() {
     setCarImage(null);
     setPersonImage(null);
     setSelectedAssetTypes(['official', 'comic', 'action-figure', 'movie-poster']);
+    setMascotId(null);
     setGeneratedResult(null);
     setSelectedAsset(null);
   };
@@ -298,11 +302,17 @@ export default function CarOfDayPage() {
         )}
 
         {currentStep === 3 && (
-          <Step3_Settings
-            assetTypes={ASSET_TYPES}
-            selectedTypes={selectedAssetTypes}
-            onComplete={handleSettingsComplete}
-          />
+          <>
+            <Step3_Settings
+              assetTypes={ASSET_TYPES}
+              selectedTypes={selectedAssetTypes}
+              onComplete={handleSettingsComplete}
+            />
+            <div className="mt-6 pt-4 border-t border-gray-200">
+              <label className="block font-heading text-sm uppercase mb-2">Feature Your Mascot</label>
+              <MascotSelector onSelect={setMascotId} selectedMascotId={mascotId} />
+            </div>
+          </>
         )}
 
         {currentStep === 4 && (

@@ -46,6 +46,7 @@ export const batchGenerateSchema = z.object({
   // Options
   language: z.enum(['en', 'es', 'both']).default('en'),
   vehicleId: z.string().optional(),
+  mascotId: z.string().optional(),
 });
 
 // Approve flyer with scheduling

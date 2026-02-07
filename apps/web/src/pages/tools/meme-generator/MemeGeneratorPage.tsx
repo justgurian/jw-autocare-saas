@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { memeApi, downloadApi } from '../../../services/api';
+import MascotSelector from '../../../components/features/MascotSelector';
 import {
   Laugh,
   Shuffle,
@@ -49,6 +50,7 @@ export default function MemeGeneratorPage() {
   const [topic, setTopic] = useState('');
   const [customText, setCustomText] = useState('');
   const [generatedMeme, setGeneratedMeme] = useState<GeneratedMeme | null>(null);
+  const [mascotId, setMascotId] = useState<string | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [captionCopied, setCaptionCopied] = useState(false);
 
@@ -64,6 +66,7 @@ export default function MemeGeneratorPage() {
       styleId: selectedStyle!.id,
       topic,
       customText: customText || undefined,
+      mascotId: mascotId || undefined,
     }),
     onSuccess: (res) => {
       setGeneratedMeme(res.data);
@@ -274,6 +277,12 @@ export default function MemeGeneratorPage() {
                     className="input-retro w-full h-20 resize-none"
                     maxLength={300}
                   />
+                </div>
+
+                {/* Mascot Selector */}
+                <div>
+                  <label className="block font-heading text-sm uppercase mb-2">Feature Your Mascot</label>
+                  <MascotSelector onSelect={setMascotId} selectedMascotId={mascotId} />
                 </div>
 
                 <button

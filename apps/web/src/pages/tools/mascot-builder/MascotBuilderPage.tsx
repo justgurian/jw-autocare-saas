@@ -55,6 +55,34 @@ const DEFAULT_ACCESSORIES = [
   { id: 'cap', name: 'Baseball Cap' },
 ];
 
+const DEFAULT_OUTFIT_TYPES = [
+  { id: 'jumpsuit', name: 'Jumpsuit' },
+  { id: 'polo', name: 'Polo Shirt' },
+  { id: 'hoodie', name: 'Hoodie' },
+  { id: 'hawaiian', name: 'Hawaiian Shirt' },
+  { id: 'lab-coat', name: 'Lab Coat' },
+  { id: 'vest', name: 'Work Vest' },
+  { id: 'apron', name: 'Shop Apron' },
+];
+
+const DEFAULT_SEASONAL = [
+  { id: 'none', name: 'None' },
+  { id: 'santa-hat', name: 'Santa Hat' },
+  { id: 'sunglasses', name: 'Sunglasses' },
+  { id: 'rain-gear', name: 'Rain Gear' },
+  { id: 'bunny-ears', name: 'Bunny Ears' },
+  { id: 'flag-cape', name: 'July 4th Cape' },
+  { id: 'fall-scarf', name: 'Fall Scarf' },
+];
+
+const PERSONALITY_PRESETS = [
+  { id: 'hype-man', name: 'The Hype Man', description: 'Over-the-top excited about every service', icon: '🔥', energyLevel: 'maximum', speakingStyle: 'Fast-talking, uses superlatives', defaultCatchphrase: "LET'S GOOOOO! Your car is gonna LOVE this!" },
+  { id: 'trusted-expert', name: 'The Trusted Expert', description: 'Calm, knowledgeable, explains clearly', icon: '🔧', energyLevel: 'medium', speakingStyle: 'Measured and confident', defaultCatchphrase: "Here's the deal — we'll take great care of your ride." },
+  { id: 'funny-friend', name: 'The Funny Friend', description: 'Makes everything a joke', icon: '😂', energyLevel: 'high', speakingStyle: 'Jokes, puns, playful sarcasm', defaultCatchphrase: "Your car called... it says it misses us!" },
+  { id: 'neighborhood-buddy', name: 'The Neighborhood Buddy', description: 'Warm and personal', icon: '🏘️', energyLevel: 'low', speakingStyle: 'Conversational and warm', defaultCatchphrase: "We treat every car like it belongs to family." },
+  { id: 'drill-sergeant', name: 'The Drill Sergeant', description: 'Military precision meets mechanics', icon: '🫡', energyLevel: 'high', speakingStyle: 'Short commands, intense', defaultCatchphrase: "DROP AND GIVE ME AN OIL CHANGE, SOLDIER!" },
+];
+
 interface Mascot {
   id: string;
   imageUrl: string;
@@ -70,6 +98,12 @@ export default function MascotBuilderPage() {
   const [hairstyle, setHairstyle] = useState('short-black');
   const [outfitColor, setOutfitColor] = useState('navy');
   const [accessory, setAccessory] = useState('none');
+  const [outfitType, setOutfitType] = useState('jumpsuit');
+  const [seasonalAccessory, setSeasonalAccessory] = useState('none');
+  const [personalityPreset, setPersonalityPreset] = useState('');
+  const [catchphrase, setCatchphrase] = useState('');
+  const [energyLevel, setEnergyLevel] = useState('high');
+  const [speakingStyle, setSpeakingStyle] = useState('');
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
 
   // Fetch options from API (with fallback to defaults)
@@ -102,7 +136,15 @@ export default function MascotBuilderPage() {
         eyeStyle,
         hairstyle,
         outfitColor,
+        outfitType,
         accessory: accessory !== 'none' ? accessory : undefined,
+        seasonalAccessory: seasonalAccessory !== 'none' ? seasonalAccessory : undefined,
+        personality: personalityPreset ? {
+          presetId: personalityPreset,
+          catchphrase,
+          energyLevel,
+          speakingStyle,
+        } : undefined,
       }),
     onSuccess: (response) => {
       const data = response.data.data || response.data;
@@ -242,6 +284,26 @@ export default function MascotBuilderPage() {
             </div>
           </div>
 
+          {/* Outfit Type */}
+          <div>
+            <label className="block font-heading text-sm uppercase mb-2 text-retro-navy">Outfit Type</label>
+            <div className="grid grid-cols-2 gap-2">
+              {(options?.outfitTypes || DEFAULT_OUTFIT_TYPES).map((type: any) => (
+                <button
+                  key={type.id}
+                  onClick={() => setOutfitType(type.id)}
+                  className={`py-2 px-3 border-2 font-heading text-xs uppercase transition-all ${
+                    outfitType === type.id
+                      ? 'border-retro-red bg-red-50 text-retro-red'
+                      : 'border-gray-300 hover:border-gray-500'
+                  }`}
+                >
+                  {type.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Accessory */}
           <div>
             <label className="block font-heading text-sm uppercase mb-2">Accessory</label>
@@ -261,6 +323,93 @@ export default function MascotBuilderPage() {
               ))}
             </div>
           </div>
+
+          {/* Seasonal Accessory */}
+          <div>
+            <label className="block font-heading text-sm uppercase mb-2 text-retro-navy">Seasonal Accessory</label>
+            <div className="grid grid-cols-2 gap-2">
+              {(options?.seasonalAccessories || DEFAULT_SEASONAL).map((item: any) => (
+                <button
+                  key={item.id}
+                  onClick={() => setSeasonalAccessory(item.id)}
+                  className={`py-2 px-3 border-2 font-heading text-xs uppercase transition-all ${
+                    seasonalAccessory === item.id
+                      ? 'border-retro-red bg-red-50 text-retro-red'
+                      : 'border-gray-300 hover:border-gray-500'
+                  }`}
+                >
+                  {item.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Personality */}
+          <div className="border-t-2 border-gray-200 pt-4">
+            <label className="block font-heading text-sm uppercase mb-2 text-retro-navy">Personality</label>
+            <p className="text-xs text-gray-500 mb-3">How your mascot acts in videos</p>
+            <div className="space-y-2">
+              {PERSONALITY_PRESETS.map((preset: any) => (
+                <button
+                  key={preset.id}
+                  onClick={() => {
+                    setPersonalityPreset(preset.id);
+                    setCatchphrase(preset.defaultCatchphrase);
+                    setEnergyLevel(preset.energyLevel);
+                    setSpeakingStyle(preset.speakingStyle);
+                  }}
+                  className={`w-full py-3 px-4 border-2 text-left transition-all ${
+                    personalityPreset === preset.id
+                      ? 'border-retro-red bg-red-50'
+                      : 'border-gray-200 hover:border-gray-400'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">{preset.icon}</span>
+                    <span className="font-heading text-sm uppercase">{preset.name}</span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1 ml-7">{preset.description}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Catchphrase */}
+          {personalityPreset && (
+            <div>
+              <label className="block font-heading text-sm uppercase mb-1 text-retro-navy">Catchphrase</label>
+              <input
+                type="text"
+                value={catchphrase}
+                onChange={(e) => setCatchphrase(e.target.value)}
+                className="input-retro w-full"
+                placeholder="Enter your mascot's catchphrase..."
+                maxLength={100}
+              />
+            </div>
+          )}
+
+          {/* Energy Level */}
+          {personalityPreset && (
+            <div>
+              <label className="block font-heading text-sm uppercase mb-2 text-retro-navy">Energy Level</label>
+              <div className="grid grid-cols-4 gap-1">
+                {(['low', 'medium', 'high', 'maximum'] as const).map((level) => (
+                  <button
+                    key={level}
+                    onClick={() => setEnergyLevel(level)}
+                    className={`py-2 px-1 border-2 font-heading text-xs uppercase transition-all ${
+                      energyLevel === level
+                        ? 'border-retro-red bg-red-50 text-retro-red'
+                        : 'border-gray-300 hover:border-gray-500'
+                    }`}
+                  >
+                    {level === 'maximum' ? 'MAX!' : level}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Generate Button */}
           <button

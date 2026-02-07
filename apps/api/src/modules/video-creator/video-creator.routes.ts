@@ -102,6 +102,7 @@ router.post('/generate', async (req: Request, res: Response, next: NextFunction)
       voiceoverText,
       referenceImages,
       resolution,
+      mascotId,
     } = req.body;
 
     // Validate required fields
@@ -159,6 +160,7 @@ router.post('/generate', async (req: Request, res: Response, next: NextFunction)
       resolution: resolution || '720p',
       voiceoverText,
       referenceImages,
+      mascotId,
     });
 
     res.json({

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { videoCreatorApi, servicesApi, specialsApi } from '../../../services/api';
+import MascotSelector from '../../../components/features/MascotSelector';
 import {
   Video,
   Film,
@@ -69,6 +70,7 @@ export default function VideoCreatorPage() {
     resolution: '1080p' as VideoResolution,
     voiceoverText: '',
   });
+  const [mascotId, setMascotId] = useState<string | null>(null);
   const [generatedVideo, setGeneratedVideo] = useState<GeneratedVideo | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [customTopic, setCustomTopic] = useState(false);
@@ -136,7 +138,7 @@ export default function VideoCreatorPage() {
 
   // Generate mutation
   const generateMutation = useMutation({
-    mutationFn: (data: typeof formData & { templateId?: string }) =>
+    mutationFn: (data: typeof formData & { templateId?: string; mascotId?: string }) =>
       videoCreatorApi.generate(data),
     onSuccess: (response) => {
       const job = response.data.data.job;
@@ -175,6 +177,7 @@ export default function VideoCreatorPage() {
     generateMutation.mutate({
       ...formData,
       templateId: selectedTemplate?.id,
+      mascotId: mascotId || undefined,
     });
   };
 
@@ -550,6 +553,12 @@ export default function VideoCreatorPage() {
                 rows={3}
                 className="w-full p-3 border-2 border-black rounded focus:ring-2 focus:ring-retro-red focus:border-retro-red"
               />
+            </div>
+
+            {/* Mascot Selector */}
+            <div>
+              <label className="block font-heading text-sm uppercase mb-2">Feature Your Mascot</label>
+              <MascotSelector onSelect={setMascotId} selectedMascotId={mascotId} />
             </div>
           </div>
 

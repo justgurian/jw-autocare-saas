@@ -32,6 +32,12 @@ export interface CarOfDayInput {
     base64: string;
     mimeType: string;
   }>;
+  // Optional mascot data
+  mascotImage?: {
+    base64: string;
+    mimeType: string;
+  };
+  mascotCharacterPrompt?: string;
 }
 
 export interface GeneratedAsset {

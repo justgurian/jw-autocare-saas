@@ -79,6 +79,8 @@ export const carOfDayService = {
           carImage: input.carImage,
           personImage: input.personImage,
           logos: input.logos,
+          mascotImage: input.mascotImage,
+          mascotCharacterPrompt: input.mascotCharacterPrompt,
         });
 
         assets.push(asset);
@@ -130,6 +132,8 @@ export const carOfDayService = {
     carImage: { base64: string; mimeType: string };
     personImage?: { base64: string; mimeType: string };
     logos?: Array<{ base64: string; mimeType: string }>;
+    mascotImage?: { base64: string; mimeType: string };
+    mascotCharacterPrompt?: string;
   }): Promise<GeneratedAsset> {
     const {
       tenantId,
@@ -146,7 +150,7 @@ export const carOfDayService = {
     } = options;
 
     // Build the prompt based on asset type
-    const prompt = this.buildPromptForAssetType({
+    let prompt = this.buildPromptForAssetType({
       assetType,
       carName,
       carNickname,
@@ -157,6 +161,11 @@ export const carOfDayService = {
       location,
       hasOwnerPhoto,
     });
+
+    // Append mascot character prompt if present
+    if (options.mascotCharacterPrompt) {
+      prompt += '\n\nFeaturing the shop mascot character: ' + options.mascotCharacterPrompt;
+    }
 
     // Determine aspect ratio based on asset type
     const aspectRatio = assetType === 'movie-poster' ? '4:5' : '4:5';
@@ -171,11 +180,12 @@ export const carOfDayService = {
           base64: options.personImage.base64,
           mimeType: options.personImage.mimeType,
         },
-        { aspectRatio }
+        { aspectRatio, mascotImage: options.mascotImage }
       );
     } else {
       imageResult = await geminiService.generateImage(prompt, {
         aspectRatio,
+        mascotImage: options.mascotImage,
       });
     }
 

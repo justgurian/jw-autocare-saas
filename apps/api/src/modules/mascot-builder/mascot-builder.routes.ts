@@ -7,7 +7,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate } from '../../middleware/auth.middleware';
 import { tenantContext } from '../../middleware/tenant.middleware';
 import { mascotBuilderService } from './mascot-builder.service';
-import { MASCOT_OPTIONS } from './mascot-options';
+import { MASCOT_OPTIONS, PERSONALITY_PRESETS } from './mascot-options';
 import { logger } from '../../utils/logger';
 
 const router = Router();
@@ -22,7 +22,7 @@ router.use(tenantContext);
 router.get('/options', async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const options = mascotBuilderService.getOptions();
-    res.json({ success: true, data: options });
+    res.json({ success: true, data: { ...options, personalityPresets: PERSONALITY_PRESETS } });
   } catch (error) {
     next(error);
   }
@@ -37,7 +37,7 @@ router.post('/generate', async (req: Request, res: Response, next: NextFunction)
     const tenantId = req.tenantId!;
     const userId = req.user!.id;
 
-    const { shirtName, furColor, eyeStyle, hairstyle, outfitColor, accessory } =
+    const { shirtName, furColor, eyeStyle, hairstyle, outfitColor, accessory, outfitType, seasonalAccessory, personality } =
       req.body;
 
     // Validate required fields
@@ -80,6 +80,33 @@ router.post('/generate', async (req: Request, res: Response, next: NextFunction)
         error: `Invalid accessory. Valid options: ${MASCOT_OPTIONS.accessories.map((a) => a.id).join(', ')}`,
       });
     }
+    if (outfitType && !MASCOT_OPTIONS.outfitTypes.find((o) => o.id === outfitType)) {
+      return res.status(400).json({
+        success: false,
+        error: `Invalid outfitType. Valid options: ${MASCOT_OPTIONS.outfitTypes.map((o) => o.id).join(', ')}`,
+      });
+    }
+    if (seasonalAccessory && !MASCOT_OPTIONS.seasonalAccessories.find((s) => s.id === seasonalAccessory)) {
+      return res.status(400).json({
+        success: false,
+        error: `Invalid seasonalAccessory. Valid options: ${MASCOT_OPTIONS.seasonalAccessories.map((s) => s.id).join(', ')}`,
+      });
+    }
+    if (personality) {
+      if (personality.presetId && !PERSONALITY_PRESETS.find((p) => p.id === personality.presetId)) {
+        return res.status(400).json({
+          success: false,
+          error: `Invalid personality presetId. Valid options: ${PERSONALITY_PRESETS.map((p) => p.id).join(', ')}`,
+        });
+      }
+      const validEnergyLevels = ['low', 'medium', 'high', 'maximum'];
+      if (personality.energyLevel && !validEnergyLevels.includes(personality.energyLevel)) {
+        return res.status(400).json({
+          success: false,
+          error: `Invalid energyLevel. Valid options: ${validEnergyLevels.join(', ')}`,
+        });
+      }
+    }
 
     // Validate shirtName length
     if (shirtName.length > 20) {
@@ -103,6 +130,9 @@ router.post('/generate', async (req: Request, res: Response, next: NextFunction)
       hairstyle,
       outfitColor,
       accessory,
+      outfitType,
+      seasonalAccessory,
+      personality,
     });
 
     res.status(201).json({
@@ -139,6 +169,9 @@ router.get('/mascots', async (req: Request, res: Response, next: NextFunction) =
           hairstyle: metadata.hairstyle,
           outfitColor: metadata.outfitColor,
           accessory: metadata.accessory,
+          outfitType: metadata.outfitType,
+          seasonalAccessory: metadata.seasonalAccessory,
+          personality: metadata.personality,
           createdAt: m.createdAt,
         };
       }),

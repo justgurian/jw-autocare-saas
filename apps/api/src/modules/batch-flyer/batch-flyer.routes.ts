@@ -37,6 +37,7 @@ import { creativeLogoService } from '../../services/creative-logo.service';
 import { LogoStyle, selectRandomLogoStyle } from '../../services/logo-styles';
 
 import { buildNostalgicImagePrompt } from '../../services/prompt-builder.service';
+import { fetchMascotAsBase64 } from '../../services/mascot.util';
 
 const router = Router();
 
@@ -187,6 +188,7 @@ router.post('/generate', generationRateLimiter, async (req: Request, res: Respon
       holidayPacks, // Optional: opt-in holiday theme packs
       language,
       vehicleId,
+      mascotId,
     } = result.data;
 
     const tenantId = req.user!.tenantId;
@@ -245,6 +247,17 @@ router.post('/generate', generationRateLimiter, async (req: Request, res: Respon
     // Select themes for each flyer (include holiday themes only if packs are selected)
     const selectedThemes = selectThemes(count, themeStrategy, singleThemeId, themeMatrix, holidayPacks);
 
+    // Fetch mascot data ONCE if mascotId provided
+    let mascotImageData: { base64: string; mimeType: string } | undefined;
+    let mascotCharacterPrompt: string | undefined;
+    if (mascotId) {
+      const mascot = await fetchMascotAsBase64(mascotId, tenantId);
+      if (mascot) {
+        mascotCharacterPrompt = mascot.characterPrompt;
+        mascotImageData = { base64: mascot.base64, mimeType: mascot.mimeType };
+      }
+    }
+
     // Generate flyers (async - don't await)
     generateFlyers(
       batchJob.id,
@@ -255,7 +268,9 @@ router.post('/generate', generationRateLimiter, async (req: Request, res: Respon
       profileContext,
       brandKit,
       language,
-      vehicleId
+      vehicleId,
+      mascotImageData,
+      mascotCharacterPrompt
     ).catch(error => {
       logger.error('Batch generation failed', { jobId: batchJob.id, error });
     });
@@ -861,7 +876,9 @@ async function generateFlyers(
   },
   brandKit: { logoUrl?: string | null; phone?: string | null; website?: string | null } | null,
   language: 'en' | 'es' | 'both',
-  vehicleId?: string
+  vehicleId?: string,
+  mascotImageData?: { base64: string; mimeType: string },
+  mascotCharacterPrompt?: string,
 ): Promise<void> {
   try {
     for (let i = 0; i < contentItems.length; i++) {
@@ -899,7 +916,7 @@ async function generateFlyers(
         }
 
         // Build image prompt WITH logo placement hint
-        const imagePrompt = buildNostalgicImagePrompt(theme, {
+        let imagePrompt = buildNostalgicImagePrompt(theme, {
           headline: content.message,
           subject: content.subject,
           details: content.details,
@@ -911,6 +928,11 @@ async function generateFlyers(
           logoPlacementHint: logoPromptHint, // Tell AI where to leave space for logo
         });
 
+        // Append mascot character prompt if present
+        if (mascotCharacterPrompt) {
+          imagePrompt += '\n\nFeaturing the shop mascot character: ' + mascotCharacterPrompt;
+        }
+
         const contentId = uuidv4();
 
         // Generate image
@@ -918,6 +940,7 @@ async function generateFlyers(
           jobId,
           index: i,
           themeId: theme.id,
+          hasMascot: !!mascotImageData,
         });
 
         const imageResult = await geminiService.generateImage(imagePrompt, {
@@ -926,6 +949,7 @@ async function generateFlyers(
             phone: brandKit?.phone || undefined,
             website: brandKit?.website || undefined,
           },
+          mascotImage: mascotImageData,
         });
 
         let imageUrl: string;

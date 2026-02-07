@@ -150,6 +150,7 @@ export const promoFlyerApi = {
     themeId: string;
     vehicleId?: string;
     language?: 'en' | 'es' | 'both';
+    mascotId?: string;
   }) => api.post('/tools/promo-flyer/generate', data),
 
   // Generate pack of flyers
@@ -204,7 +205,7 @@ export const promoFlyerApi = {
 
 export const memeApi = {
   getStyles: () => api.get('/tools/meme-generator/styles'),
-  generate: (data: { styleId: string; topic: string; customText?: string }) =>
+  generate: (data: { styleId: string; topic: string; customText?: string; mascotId?: string }) =>
     api.post('/tools/meme-generator/generate', data),
   random: () => api.post('/tools/meme-generator/random'),
 };
@@ -226,6 +227,7 @@ export const carOfDayApi = {
     ownerHandle?: string;
     assetTypes?: Array<'official' | 'comic' | 'action-figure' | 'movie-poster'>;
     logos?: Array<{ base64: string; mimeType: string }>;
+    mascotId?: string;
   }) => api.post('/tools/car-of-day/generate', data),
 
   // Generate a single asset type
@@ -274,6 +276,7 @@ export const videoCreatorApi = {
     resolution?: '720p' | '1080p';
     voiceoverText?: string;
     referenceImages?: Array<{ base64: string; mimeType: string; description?: string }>;
+    mascotId?: string;
   }) => api.post('/tools/video-creator/generate', data),
 
   // Get job status
@@ -499,6 +502,7 @@ export const batchFlyerApi = {
     themeMatrix?: Array<{ index: number; themeId: string }>;
     language: 'en' | 'es' | 'both';
     vehicleId?: string;
+    mascotId?: string;
   }) => api.post('/batch-flyer/generate', data),
 
   // Job status
@@ -568,13 +572,18 @@ export const directorsCutApi = {
 
 export const celebrationApi = {
   getTemplates: () => api.get('/tools/celebration/templates'),
+  getScenarios: () => api.get('/tools/celebration/scenarios'),
   generate: (data: {
-    celebrationType: string;
+    scenarioId?: string;
+    celebrationType?: string;
     personName: string;
+    personTags?: string[];
+    occasion?: string;
     customMessage?: string;
-    customDetails?: string;
-    photoBase64: string;
-    photoMimeType: string;
+    inputSource?: 'photo' | 'mascot' | 'generic';
+    photoBase64?: string;
+    photoMimeType?: string;
+    mascotId?: string;
     aspectRatio?: string;
     duration?: string;
   }) => api.post('/tools/celebration/generate', data),
@@ -589,7 +598,15 @@ export const mascotBuilderApi = {
     eyeStyle: string;
     hairstyle: string;
     outfitColor: string;
+    outfitType?: string;
     accessory?: string;
+    seasonalAccessory?: string;
+    personality?: {
+      presetId: string;
+      catchphrase: string;
+      energyLevel: string;
+      speakingStyle: string;
+    };
   }) => api.post('/tools/mascot-builder/generate', data),
   getMascots: () => api.get('/tools/mascot-builder/mascots'),
   deleteMascot: (id: string) => api.delete(`/tools/mascot-builder/mascots/${id}`),
