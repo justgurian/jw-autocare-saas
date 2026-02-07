@@ -19,7 +19,7 @@ import MarketingScoreCard from './components/MarketingScoreCard';
 import ThemeShowcase from './components/ThemeShowcase';
 import WeeklyThemeDrop from '../../components/features/WeeklyThemeDrop';
 import { useTourStore } from '../../stores/tour.store';
-import { allNavItems } from '../../components/layout/MainLayout';
+import { allNavItems } from '../../data/nav-items';
 
 // Lazy-load GuidedTour (includes heavy react-joyride dependency)
 const GuidedTour = lazy(() => import('../../components/features/GuidedTour'));

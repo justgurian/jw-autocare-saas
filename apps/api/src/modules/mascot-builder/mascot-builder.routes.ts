@@ -7,7 +7,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate } from '../../middleware/auth.middleware';
 import { tenantContext } from '../../middleware/tenant.middleware';
 import { mascotBuilderService } from './mascot-builder.service';
-import { MASCOT_OPTIONS, PERSONALITY_PRESETS } from './mascot-options';
+import { MASCOT_OPTIONS, MASCOT_STYLES, PERSONALITY_PRESETS } from './mascot-options';
 import { logger } from '../../utils/logger';
 
 const router = Router();
@@ -22,7 +22,7 @@ router.use(tenantContext);
 router.get('/options', async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const options = mascotBuilderService.getOptions();
-    res.json({ success: true, data: { ...options, personalityPresets: PERSONALITY_PRESETS } });
+    res.json({ success: true, data: { ...options, mascotStyles: MASCOT_STYLES, personalityPresets: PERSONALITY_PRESETS } });
   } catch (error) {
     next(error);
   }
@@ -37,7 +37,7 @@ router.post('/generate', async (req: Request, res: Response, next: NextFunction)
     const tenantId = req.tenantId!;
     const userId = req.user!.id;
 
-    const { shirtName, furColor, eyeStyle, hairstyle, outfitColor, accessory, outfitType, seasonalAccessory, personality } =
+    const { shirtName, mascotName, mascotStyle, furColor, eyeStyle, hairstyle, outfitColor, accessory, outfitType, seasonalAccessory, personality } =
       req.body;
 
     // Validate required fields
@@ -108,6 +108,22 @@ router.post('/generate', async (req: Request, res: Response, next: NextFunction)
       }
     }
 
+    // Validate mascot style
+    if (mascotStyle && !MASCOT_STYLES.find((s) => s.id === mascotStyle)) {
+      return res.status(400).json({
+        success: false,
+        error: `Invalid mascotStyle. Valid options: ${MASCOT_STYLES.map((s) => s.id).join(', ')}`,
+      });
+    }
+
+    // Validate mascotName length
+    if (mascotName && mascotName.length > 30) {
+      return res.status(400).json({
+        success: false,
+        error: 'mascotName must be 30 characters or less',
+      });
+    }
+
     // Validate shirtName length
     if (shirtName.length > 20) {
       return res.status(400).json({
@@ -125,6 +141,8 @@ router.post('/generate', async (req: Request, res: Response, next: NextFunction)
 
     const result = await mascotBuilderService.generateMascot(tenantId, userId, {
       shirtName,
+      mascotName,
+      mascotStyle,
       furColor,
       eyeStyle,
       hairstyle,
@@ -164,6 +182,8 @@ router.get('/mascots', async (req: Request, res: Response, next: NextFunction) =
           imageUrl: m.imageUrl,
           characterPrompt: metadata.characterPrompt,
           shirtName: metadata.shirtName,
+          mascotName: metadata.mascotName || null,
+          mascotStyle: metadata.mascotStyle || 'muppet',
           furColor: metadata.furColor,
           eyeStyle: metadata.eyeStyle,
           hairstyle: metadata.hairstyle,

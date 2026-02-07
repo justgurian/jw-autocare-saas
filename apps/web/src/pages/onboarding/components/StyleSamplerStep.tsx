@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
-import { Loader2, Flame, ThumbsUp, Meh, SkipForward } from 'lucide-react';
+import { Flame, ThumbsUp, Meh, SkipForward, Wrench } from 'lucide-react';
 import { batchFlyerApi, promoFlyerApi } from '../../../services/api';
 import { usePollJob } from '../../../hooks/usePollJob';
 
@@ -14,6 +14,15 @@ interface SamplerFlyer {
   themeName: string;
 }
 
+const FUN_FACTS = [
+  "Each style is inspired by a different decade of design",
+  "Your shop info is woven into every flyer automatically",
+  "Rate your favorites — future flyers will match your taste",
+  "Over 48 retro themes across 10 style families",
+  "Every image is unique — no templates, no stock photos",
+  "Your competitors are still using Canva templates...",
+];
+
 interface StyleSamplerStepProps {
   businessName: string;
   firstService: string;
@@ -21,18 +30,65 @@ interface StyleSamplerStepProps {
 }
 
 export default function StyleSamplerStep({ businessName, firstService, onComplete }: StyleSamplerStepProps) {
+  const [partialFlyers, setPartialFlyers] = useState<SamplerFlyer[]>([]);
   const [flyers, setFlyers] = useState<SamplerFlyer[]>([]);
   const [feedback, setFeedback] = useState<Record<string, FeedbackType>>({});
   const [revealedCount, setRevealedCount] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isDone, setIsDone] = useState(false);
+  const [funFactIndex, setFunFactIndex] = useState(0);
   const hasStarted = useRef(false);
+  const jobIdRef = useRef<string | null>(null);
+  const partialPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Rotate fun facts
+  useEffect(() => {
+    if (!isGenerating) return;
+    const timer = setInterval(() => {
+      setFunFactIndex(prev => (prev + 1) % FUN_FACTS.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [isGenerating]);
+
+  // Poll for partial flyers during generation
+  useEffect(() => {
+    if (!isGenerating || !jobIdRef.current) return;
+
+    const pollPartialFlyers = async () => {
+      try {
+        const res = await batchFlyerApi.getJobFlyers(jobIdRef.current!);
+        const flyerData: SamplerFlyer[] = (res.data?.flyers || []).map((f: any) => ({
+          id: f.id,
+          imageUrl: f.imageUrl,
+          familyId: f.familyId,
+          familyName: f.familyName,
+          themeName: f.themeName,
+        }));
+        if (flyerData.length > 0) {
+          setPartialFlyers(flyerData);
+        }
+      } catch {
+        // Best-effort
+      }
+    };
+
+    const initialTimer = setTimeout(() => {
+      pollPartialFlyers();
+      partialPollRef.current = setInterval(pollPartialFlyers, 4000);
+    }, 8000);
+
+    return () => {
+      clearTimeout(initialTimer);
+      if (partialPollRef.current) clearInterval(partialPollRef.current);
+    };
+  }, [isGenerating]);
 
   const { job, startPolling } = usePollJob({
     intervalMs: 4000,
     maxPollTimeMs: 300000,
     getJob: batchFlyerApi.getJob,
     onComplete: async (completedJob) => {
+      if (partialPollRef.current) clearInterval(partialPollRef.current);
       try {
         const res = await batchFlyerApi.getJobFlyers(completedJob.id);
         const flyerData: SamplerFlyer[] = (res.data?.flyers || []).map((f: any) => ({
@@ -43,11 +99,16 @@ export default function StyleSamplerStep({ businessName, firstService, onComplet
           themeName: f.themeName,
         }));
         setFlyers(flyerData);
+        setPartialFlyers([]);
         setIsGenerating(false);
         setIsDone(true);
-        // Staggered reveal
+        const alreadyShown = partialFlyers.length;
         flyerData.forEach((_, i) => {
-          setTimeout(() => setRevealedCount((prev) => prev + 1), i * 300);
+          if (i < alreadyShown) {
+            setRevealedCount(prev => Math.max(prev, i + 1));
+          } else {
+            setTimeout(() => setRevealedCount(prev => prev + 1), (i - alreadyShown) * 300);
+          }
         });
       } catch {
         toast.error('Failed to load style samples');
@@ -89,6 +150,7 @@ export default function StyleSamplerStep({ businessName, firstService, onComplet
         const res = await batchFlyerApi.generate(payload);
         const jobId = res.data?.jobId;
         if (jobId) {
+          jobIdRef.current = jobId;
           startPolling(jobId);
         } else {
           throw new Error('No job ID');
@@ -112,7 +174,6 @@ export default function StyleSamplerStep({ businessName, firstService, onComplet
   };
 
   const progress = job?.progress || 0;
-  const completedCount = Math.floor((progress / 100) * 10);
   const feedbackCount = Object.keys(feedback).length;
 
   return (
@@ -129,31 +190,39 @@ export default function StyleSamplerStep({ businessName, firstService, onComplet
       {isGenerating && (
         <div className="space-y-4">
           <div className="card-retro p-6 text-center">
-            <Loader2 size={36} className="animate-spin text-retro-red mx-auto mb-3" />
-            <p className="font-heading text-lg">{completedCount} of 10 styles ready</p>
+            <div className="relative w-12 h-12 mx-auto mb-3">
+              <Wrench size={28} className="text-retro-red absolute inset-0 m-auto animate-spin" style={{ animationDuration: '3s' }} />
+            </div>
+            <p className="font-heading text-lg">{partialFlyers.length} of 10 styles ready</p>
             <div className="w-full bg-gray-200 h-2 mt-3 rounded-full overflow-hidden">
               <div
-                className="bg-retro-red h-full rounded-full transition-all duration-500"
+                className="bg-gradient-to-r from-retro-red to-retro-mustard h-full rounded-full transition-all duration-700"
                 style={{ width: `${Math.max(progress, 5)}%` }}
               />
             </div>
+            <p className="text-xs text-gray-500 italic mt-3">{FUN_FACTS[funFactIndex]}</p>
           </div>
 
-          {/* Placeholder grid */}
+          {/* Live preview grid with actual images */}
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-            {Array.from({ length: 10 }).map((_, i) => (
-              <div key={i} className="aspect-[4/5] border-2 border-gray-200 overflow-hidden">
-                {i < completedCount ? (
-                  <div className="w-full h-full bg-retro-mint/30 flex items-center justify-center">
-                    <span className="font-heading text-retro-teal text-xs">Ready!</span>
-                  </div>
-                ) : (
-                  <div className="w-full h-full bg-gray-100 flex items-center justify-center animate-pulse">
-                    <span className="text-gray-400 text-xs">{i + 1}</span>
-                  </div>
-                )}
-              </div>
-            ))}
+            {Array.from({ length: 10 }).map((_, i) => {
+              const flyer = partialFlyers[i];
+              return (
+                <div key={i} className="aspect-[4/5] border-2 border-gray-200 overflow-hidden">
+                  {flyer ? (
+                    <img
+                      src={flyer.imageUrl}
+                      alt={flyer.familyName || flyer.themeName}
+                      className="w-full h-full object-cover animate-fade-in"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gray-100 flex items-center justify-center animate-pulse">
+                      <span className="text-gray-400 text-xs">{i + 1}</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           {/* Skip button during generation */}

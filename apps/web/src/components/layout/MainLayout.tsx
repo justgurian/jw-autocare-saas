@@ -2,184 +2,22 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../stores/auth.store';
 import { useFavoritesStore } from '../../stores/favorites.store';
 import {
-  Home,
-  Image,
-  Package,
-  Rocket,
-  Calendar,
-  BarChart3,
-  Settings,
-  Share2,
   LogOut,
   Menu,
   X,
-  Laugh,
-  Trophy,
-  Star,
-  Video,
-  MessageSquare,
-  Wrench,
-  BookOpen,
-  Smartphone,
-  FileText,
-  CreditCard,
-  Camera,
   ChevronDown,
   ChevronRight,
-  TrendingUp,
-  Film,
-  Clapperboard,
-  PartyPopper,
-  Palette,
-  Wand2,
-  Music,
   Pin,
   PinOff,
-  FolderOpen,
-  Briefcase,
   Search,
 } from 'lucide-react';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import ThemeToggle from '../features/ThemeToggle';
 import { useTourStore } from '../../stores/tour.store';
+import { allNavItems, navigationGroups } from '../../data/nav-items';
 
-// All navigation items (flat list for favorites lookup + dashboard recently used)
-export const allNavItems = [
-  { name: 'Dashboard', href: '/dashboard', icon: Home, description: 'Your command center' },
-  { name: 'My Creations', href: '/content', icon: FolderOpen, description: 'Browse your generated content' },
-  { name: 'Nostalgic Flyers', href: '/tools/promo-flyer', icon: Image, description: '48 retro themes' },
-  { name: 'Batch Generator', href: '/tools/batch-flyer', icon: Image, description: 'Multiple flyers at once' },
-  { name: 'Style Sampler', href: '/tools/style-sampler', icon: Palette, description: 'Compare all 10 style families' },
-  { name: 'Now Hiring', href: '/tools/hiring-flyer', icon: Briefcase, description: 'Professional hiring flyers' },
-  { name: 'Funny Meme', href: '/tools/meme-generator', icon: Laugh, description: 'Shareable car memes' },
-  { name: 'Feature a Car', href: '/tools/car-of-day', icon: Star, description: 'Customer car showcase' },
-  { name: 'Shop Photographer', href: '/tools/shop-photographer', icon: Camera, description: 'Professional shop photos' },
-  { name: 'Staff Cards', href: '/tools/business-cards', icon: CreditCard, description: 'Team business cards' },
-  { name: 'Make a Video', href: '/tools/video-creator', icon: Video, description: 'Quick promotional videos' },
-  { name: 'UGC Creator', href: '/tools/ugc-creator', icon: Film, description: 'Character-based video skits' },
-  { name: "Director's Cut", href: '/tools/directors-cut', icon: Clapperboard, description: 'Animate your flyers' },
-  { name: 'Celebrations', href: '/tools/celebration', icon: PartyPopper, description: 'Birthday & milestone videos' },
-  { name: 'Jingle Generator', href: '/tools/jingle-generator', icon: Music, description: 'AI-generated jingles' },
-  { name: 'Reply to Reviews', href: '/tools/review-reply', icon: MessageSquare, description: 'Win customers back' },
-  { name: 'Text Customers', href: '/tools/sms-templates', icon: Smartphone, description: 'Service reminders' },
-  { name: 'Explain Repairs', href: '/tools/jargon', icon: BookOpen, description: 'Customer-friendly explanations' },
-  { name: 'Write a Blog Post', href: '/tools/blog-generator', icon: FileText, description: 'SEO content for Google' },
-  { name: 'Run a Campaign', href: '/tools/campaigns', icon: Rocket, description: 'Multi-week marketing pushes' },
-  { name: 'Week of Posts', href: '/tools/instant-pack', icon: Package, description: '7 days of content' },
-  { name: 'Marketing Calendar', href: '/calendar', icon: Calendar, description: 'Posting schedule' },
-  { name: 'See What Works', href: '/analytics', icon: BarChart3, description: 'Track performance' },
-  { name: 'Auto-Pilot', href: '/settings/auto-pilot', icon: Rocket, description: 'AI posts for you' },
-  { name: 'Fix Photos', href: '/tools/photo-tuner', icon: Camera, description: 'Professional photo enhancement' },
-  { name: 'Edit Images', href: '/tools/image-editor', icon: Wrench, description: 'Crop, filter, adjust' },
-  { name: 'Style Cloner', href: '/tools/style-cloner', icon: Wand2, description: 'Clone any art style' },
-  { name: 'Mascot Builder', href: '/tools/mascot-builder', icon: Palette, description: 'Custom characters' },
-  { name: 'Check In & Win', href: '/tools/check-in', icon: Trophy, description: 'Customer photo experience' },
-  { name: 'Shop Profile', href: '/settings/profile', icon: Settings, description: 'Logo, colors, contact info' },
-  { name: 'Services & Specials', href: '/settings/services', icon: Wrench, description: 'Manage offerings' },
-  { name: 'Social Accounts', href: '/settings/social', icon: Share2, description: 'Connect platforms' },
-  { name: 'Billing', href: '/settings/billing', icon: CreditCard, description: 'Subscription and payment' },
-];
-
-// 8 clean navigation groups
-const navigationGroups = [
-  {
-    id: 'home',
-    name: 'Home',
-    icon: Home,
-    description: 'Dashboard and content',
-    items: [
-      { name: 'Dashboard', href: '/dashboard', icon: Home, description: 'Your command center' },
-      { name: 'My Creations', href: '/content', icon: FolderOpen, description: 'Browse your generated content' },
-    ],
-  },
-  {
-    id: 'flyers',
-    name: 'Flyers & Images',
-    icon: Image,
-    description: 'Marketing graphics',
-    items: [
-      { name: 'Nostalgic Flyers', href: '/tools/promo-flyer', icon: Image, description: '48 retro themes' },
-      { name: 'Batch Generator', href: '/tools/batch-flyer', icon: Image, description: 'Multiple flyers at once' },
-      { name: 'Style Sampler', href: '/tools/style-sampler', icon: Palette, description: 'Compare all 10 style families' },
-      { name: 'Now Hiring', href: '/tools/hiring-flyer', icon: Briefcase, description: 'Professional hiring flyers' },
-      { name: 'Funny Meme', href: '/tools/meme-generator', icon: Laugh, description: 'Shareable car memes' },
-      { name: 'Feature a Car', href: '/tools/car-of-day', icon: Star, description: 'Customer car showcase' },
-      { name: 'Shop Photographer', href: '/tools/shop-photographer', icon: Camera, description: 'Professional shop photos' },
-      { name: 'Staff Cards', href: '/tools/business-cards', icon: CreditCard, description: 'Team business cards' },
-    ],
-  },
-  {
-    id: 'video',
-    name: 'Video & Audio',
-    icon: Video,
-    description: 'Video content and jingles',
-    items: [
-      { name: 'Make a Video', href: '/tools/video-creator', icon: Video, description: 'Quick promotional videos' },
-      { name: 'UGC Creator', href: '/tools/ugc-creator', icon: Film, description: 'Character-based video skits' },
-      { name: "Director's Cut", href: '/tools/directors-cut', icon: Clapperboard, description: 'Animate your flyers' },
-      { name: 'Celebrations', href: '/tools/celebration', icon: PartyPopper, description: 'Birthday & milestone videos' },
-      { name: 'Jingle Generator', href: '/tools/jingle-generator', icon: Music, description: 'AI-generated jingles' },
-    ],
-  },
-  {
-    id: 'writing',
-    name: 'Writing & Outreach',
-    icon: FileText,
-    description: 'Text, reviews, and blogs',
-    items: [
-      { name: 'Reply to Reviews', href: '/tools/review-reply', icon: MessageSquare, description: 'Win customers back' },
-      { name: 'Text Customers', href: '/tools/sms-templates', icon: Smartphone, description: 'Service reminders' },
-      { name: 'Explain Repairs', href: '/tools/jargon', icon: BookOpen, description: 'Customer-friendly explanations' },
-      { name: 'Write a Blog Post', href: '/tools/blog-generator', icon: FileText, description: 'SEO content for Google' },
-    ],
-  },
-  {
-    id: 'marketing',
-    name: 'Marketing',
-    icon: TrendingUp,
-    description: 'Campaigns and analytics',
-    items: [
-      { name: 'Run a Campaign', href: '/tools/campaigns', icon: Rocket, description: 'Multi-week marketing pushes' },
-      { name: 'Week of Posts', href: '/tools/instant-pack', icon: Package, description: '7 days of content' },
-      { name: 'Marketing Calendar', href: '/calendar', icon: Calendar, description: 'Posting schedule' },
-      { name: 'See What Works', href: '/analytics', icon: BarChart3, description: 'Track performance' },
-      { name: 'Auto-Pilot', href: '/settings/auto-pilot', icon: Rocket, description: 'AI posts for you' },
-    ],
-  },
-  {
-    id: 'utilities',
-    name: 'Edit & Utilities',
-    icon: Wrench,
-    description: 'Photo tools and style',
-    items: [
-      { name: 'Fix Photos', href: '/tools/photo-tuner', icon: Camera, description: 'Professional photo enhancement' },
-      { name: 'Edit Images', href: '/tools/image-editor', icon: Wrench, description: 'Crop, filter, adjust' },
-      { name: 'Style Cloner', href: '/tools/style-cloner', icon: Wand2, description: 'Clone any art style' },
-      { name: 'Mascot Builder', href: '/tools/mascot-builder', icon: Palette, description: 'Custom characters' },
-    ],
-  },
-  {
-    id: 'instore',
-    name: 'In-Store',
-    icon: Trophy,
-    description: 'On-site customer experiences',
-    items: [
-      { name: 'Check In & Win', href: '/tools/check-in', icon: Trophy, description: 'Customer photo experience' },
-    ],
-  },
-  {
-    id: 'settings',
-    name: 'My Shop',
-    icon: Settings,
-    description: 'Profile and billing',
-    items: [
-      { name: 'Shop Profile', href: '/settings/profile', icon: Settings, description: 'Logo, colors, contact info' },
-      { name: 'Services & Specials', href: '/settings/services', icon: Wrench, description: 'Manage offerings' },
-      { name: 'Social Accounts', href: '/settings/social', icon: Share2, description: 'Connect platforms' },
-      { name: 'Billing', href: '/settings/billing', icon: CreditCard, description: 'Subscription and payment' },
-    ],
-  },
-];
+// Navigation data imported from standalone module (avoids circular deps)
+// allNavItems and navigationGroups are imported at the top from ../../data/nav-items
 
 const SIDEBAR_GROUPS_KEY = 'bayfiller-sidebar-groups';
 const DEFAULT_EXPANDED = ['home', 'flyers'];

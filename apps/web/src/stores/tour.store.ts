@@ -26,7 +26,7 @@ export const useTourStore = create<TourStore>()(
       },
       hasVisitedTool: (href) => get().visitedTools.includes(href),
       addRecentTool: (href) => {
-        const current = get().recentTools.filter((h) => h !== href);
+        const current = (get().recentTools || []).filter((h) => h !== href);
         set({ recentTools: [href, ...current].slice(0, 5) });
       },
     }),

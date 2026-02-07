@@ -10,7 +10,7 @@ import { config } from '../../config';
 import { prisma } from '../../db/client';
 import { logger } from '../../utils/logger';
 import { storageService } from '../../services/storage.service';
-import { MASCOT_OPTIONS, MascotCustomization, MascotResult } from './mascot-options';
+import { MASCOT_OPTIONS, MASCOT_STYLES, MascotCustomization, MascotResult } from './mascot-options';
 
 const IMAGE_MODEL = 'gemini-3-pro-image-preview';
 const ai = new GoogleGenAI({ apiKey: config.gemini.apiKey });
@@ -37,7 +37,7 @@ export const mascotBuilderService = {
     const seasonalAcc = input.seasonalAccessory ? MASCOT_OPTIONS.seasonalAccessories.find(s => s.id === input.seasonalAccessory) : null;
     const seasonalDesc = seasonalAcc && seasonalAcc.id !== 'none' && seasonalAcc.description ? ` ${seasonalAcc.description}.` : '';
 
-    const furName = furColor?.name || 'Orange';
+    const colorName = furColor?.name || 'Orange';
     const eyeDesc = eyeStyle?.description || 'Large round googly eyes';
     const hairDesc = hairstyle?.description || 'Short cropped black hair';
     const outfitName = outfitColor?.name || 'Navy Blue';
@@ -46,7 +46,19 @@ export const mascotBuilderService = {
         ? ` ${accessory.description}.`
         : '';
 
-    return `A handmade Muppet-style puppet mechanic character. ${furName} shaggy faux-fur covering entire body. ${eyeDesc}. ${hairDesc}. Wide hinged felt mouth with a friendly grin. A small round felt nose. Wearing ${outfitDesc} in ${outfitName} color with a white nametag patch that says '${input.shirtName}'.${accessoryDesc}${seasonalDesc} Three fuzzy fingers on each hand. Practical puppet photography, studio lighting, Jim Henson workshop aesthetic. Full body shot, white/neutral background.`;
+    const displayName = input.mascotName || input.shirtName;
+
+    // Look up style template (default to muppet for backwards compat)
+    const styleId = input.mascotStyle || 'muppet';
+    const style = MASCOT_STYLES.find(s => s.id === styleId) || MASCOT_STYLES[0];
+
+    // Build from style template with placeholder replacement
+    const basePrompt = style.promptBase
+      .replace('{bodyColor}', colorName)
+      .replace('{eyes}', eyeDesc)
+      .replace('{hair}', hairDesc);
+
+    return `${basePrompt} Wearing ${outfitDesc} in ${outfitName} color with a white nametag patch that says '${input.shirtName}'.${accessoryDesc}${seasonalDesc} Full body shot, white/neutral background.`;
   },
 
   async generateMascot(
@@ -102,6 +114,8 @@ export const mascotBuilderService = {
       mimeType
     );
 
+    const displayName = input.mascotName || input.shirtName;
+
     // Create Content record
     const content = await prisma.content.create({
       data: {
@@ -109,13 +123,15 @@ export const mascotBuilderService = {
         userId,
         tool: 'mascot_builder',
         contentType: 'image',
-        title: `Mascot - ${input.shirtName}`,
+        title: `Mascot - ${displayName}`,
         imageUrl,
-        caption: `Meet ${input.shirtName}, our shop mascot!`,
+        caption: `Meet ${displayName}, our shop mascot!`,
         status: 'approved',
         moderationStatus: 'passed',
         metadata: {
           shirtName: input.shirtName,
+          mascotName: input.mascotName || null,
+          mascotStyle: input.mascotStyle || 'muppet',
           furColor: input.furColor,
           eyeStyle: input.eyeStyle,
           hairstyle: input.hairstyle,

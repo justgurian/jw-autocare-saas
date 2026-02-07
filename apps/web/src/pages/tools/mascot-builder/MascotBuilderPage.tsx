@@ -75,6 +75,16 @@ const DEFAULT_SEASONAL = [
   { id: 'fall-scarf', name: 'Fall Scarf' },
 ];
 
+const DEFAULT_MASCOT_STYLES = [
+  { id: 'muppet', name: 'Muppet Puppet', description: 'Jim Henson-style felt & fur puppet', icon: '🧸', bodyColorLabel: 'Fur Color' },
+  { id: 'sports', name: 'Sports Mascot', description: 'Athletic team mascot in mechanic gear', icon: '🏈', bodyColorLabel: 'Mascot Color' },
+  { id: 'cartoon', name: 'Cartoon Character', description: '2D-style animated character, bold outlines', icon: '🎨', bodyColorLabel: 'Character Color' },
+  { id: 'retro', name: 'Retro Mascot', description: '1950s gas station attendant character', icon: '⛽', bodyColorLabel: 'Uniform Color' },
+  { id: 'anime', name: 'Anime / Chibi', description: 'Cute Japanese chibi style, big eyes', icon: '✨', bodyColorLabel: 'Accent Color' },
+  { id: 'realistic', name: 'Realistic CGI', description: 'Photorealistic 3D-rendered character', icon: '🤖', bodyColorLabel: 'Accent Color' },
+  { id: 'robot', name: 'Mascot Bot', description: 'Friendly robot mechanic, chrome & color', icon: '🦾', bodyColorLabel: 'Metal Color' },
+];
+
 const PERSONALITY_PRESETS = [
   { id: 'hype-man', name: 'The Hype Man', description: 'Over-the-top excited about every service', icon: '🔥', energyLevel: 'maximum', speakingStyle: 'Fast-talking, uses superlatives', defaultCatchphrase: "LET'S GOOOOO! Your car is gonna LOVE this!" },
   { id: 'trusted-expert', name: 'The Trusted Expert', description: 'Calm, knowledgeable, explains clearly', icon: '🔧', energyLevel: 'medium', speakingStyle: 'Measured and confident', defaultCatchphrase: "Here's the deal — we'll take great care of your ride." },
@@ -83,15 +93,28 @@ const PERSONALITY_PRESETS = [
   { id: 'drill-sergeant', name: 'The Drill Sergeant', description: 'Military precision meets mechanics', icon: '🫡', energyLevel: 'high', speakingStyle: 'Short commands, intense', defaultCatchphrase: "DROP AND GIVE ME AN OIL CHANGE, SOLDIER!" },
 ];
 
+interface MascotStyleOption {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  bodyColorLabel: string;
+}
+
 interface Mascot {
   id: string;
   imageUrl: string;
   title: string;
-  metadata?: { shirtName?: string };
+  metadata?: { shirtName?: string; mascotName?: string; mascotStyle?: string };
+  mascotName?: string;
+  mascotStyle?: string;
+  shirtName?: string;
 }
 
 export default function MascotBuilderPage() {
   const queryClient = useQueryClient();
+  const [mascotStyle, setMascotStyle] = useState('muppet');
+  const [mascotName, setMascotName] = useState('');
   const [shirtName, setShirtName] = useState('');
   const [furColor, setFurColor] = useState('tan');
   const [eyeStyle, setEyeStyle] = useState('round');
@@ -118,6 +141,11 @@ export default function MascotBuilderPage() {
   const eyeStyles = options?.eyeStyles || DEFAULT_EYE_STYLES;
   const hairstyles = options?.hairstyles || DEFAULT_HAIRSTYLES;
   const accessories = options?.accessories || DEFAULT_ACCESSORIES;
+  const mascotStyles: MascotStyleOption[] = options?.mascotStyles || DEFAULT_MASCOT_STYLES;
+
+  // Get current style's body color label
+  const currentStyleDef = mascotStyles.find((s: MascotStyleOption) => s.id === mascotStyle) || mascotStyles[0];
+  const bodyColorLabel = currentStyleDef?.bodyColorLabel || 'Fur Color';
 
   // Fetch saved mascots
   const { data: mascotsData } = useQuery({
@@ -127,11 +155,13 @@ export default function MascotBuilderPage() {
 
   const mascots: Mascot[] = mascotsData?.data || [];
 
-  // Generate mutation (image gen, not video -- no polling needed)
+  // Generate mutation
   const generateMutation = useMutation({
     mutationFn: () =>
       mascotBuilderApi.generate({
         shirtName,
+        mascotName: mascotName || undefined,
+        mascotStyle,
         furColor,
         eyeStyle,
         hairstyle,
@@ -185,13 +215,52 @@ export default function MascotBuilderPage() {
           <Palette className="text-retro-mustard" />
           Mascot Builder
         </h1>
-        <p className="text-gray-600 mt-2">Create custom muppet-style puppet characters</p>
+        <p className="text-gray-600 mt-2">Create a custom character mascot for your shop</p>
+      </div>
+
+      {/* Step 1: Mascot Style Selector */}
+      <div className="card-retro">
+        <h2 className="font-heading text-lg uppercase mb-1">Step 1: Choose Your Style</h2>
+        <p className="text-sm text-gray-500 mb-4">Pick the art style for your mascot</p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {mascotStyles.map((style: MascotStyleOption) => (
+            <button
+              key={style.id}
+              onClick={() => setMascotStyle(style.id)}
+              className={`p-4 border-2 text-center transition-all ${
+                mascotStyle === style.id
+                  ? 'border-retro-red bg-retro-red/10 shadow-retro-sm'
+                  : 'border-gray-200 hover:border-gray-400'
+              }`}
+            >
+              <span className="text-3xl block mb-2">{style.icon}</span>
+              <span className="font-heading text-xs uppercase block">{style.name}</span>
+              <p className="text-[10px] text-gray-500 mt-1 leading-tight">{style.description}</p>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Two-panel layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left Panel: Customization */}
         <div className="card-retro space-y-5">
+          <h2 className="font-heading text-lg uppercase">Step 2: Customize</h2>
+
+          {/* Mascot Name */}
+          <div>
+            <label className="block font-heading text-sm uppercase mb-1">Mascot Name</label>
+            <input
+              type="text"
+              value={mascotName}
+              onChange={(e) => setMascotName(e.target.value)}
+              placeholder='e.g. "Torque Tony", "Bay Bob"'
+              className="input-retro w-full"
+              maxLength={30}
+            />
+            <p className="text-xs text-gray-400 mt-1">Your mascot's identity in flyers and videos</p>
+          </div>
+
           {/* Shirt Name */}
           <div>
             <label className="block font-heading text-sm uppercase mb-1">Shirt Name *</label>
@@ -199,14 +268,15 @@ export default function MascotBuilderPage() {
               type="text"
               value={shirtName}
               onChange={(e) => setShirtName(e.target.value)}
-              placeholder="Enter name for shirt..."
+              placeholder="Name on the shirt patch..."
               className="input-retro w-full"
+              maxLength={20}
             />
           </div>
 
-          {/* Fur Color */}
+          {/* Body/Fur Color */}
           <div>
-            <label className="block font-heading text-sm uppercase mb-2">Fur Color</label>
+            <label className="block font-heading text-sm uppercase mb-2">{bodyColorLabel}</label>
             <div className="flex gap-2 flex-wrap">
               {furColors.map((color: any) => (
                 <button
@@ -438,24 +508,34 @@ export default function MascotBuilderPage() {
               <Loader className="w-16 h-16 animate-spin text-retro-red mx-auto" />
               <p className="font-heading text-lg uppercase">Creating Your Mascot...</p>
               <p className="text-sm text-gray-500">This usually takes about 15-30 seconds</p>
+              <div className="text-xs text-gray-400 bg-gray-50 p-3 border border-gray-200 max-w-xs mx-auto">
+                <p>Style: {currentStyleDef?.name}</p>
+                {mascotName && <p>Name: {mascotName}</p>}
+              </div>
             </div>
           ) : generatedImage ? (
             <div className="text-center space-y-4 w-full">
               <img
                 src={generatedImage}
-                alt={`Mascot: ${shirtName}`}
+                alt={`Mascot: ${mascotName || shirtName}`}
                 className="w-full max-w-md mx-auto border-2 border-black shadow-retro"
               />
-              <p className="font-heading text-lg uppercase">{shirtName}</p>
+              {mascotName && (
+                <p className="font-display text-2xl text-retro-navy">{mascotName}</p>
+              )}
+              <p className="font-heading text-sm uppercase text-gray-500">
+                {currentStyleDef?.name} — "{shirtName}"
+              </p>
             </div>
           ) : (
             <div className="text-center text-gray-400 space-y-3">
-              <Palette size={64} className="mx-auto" />
+              <span className="text-6xl block">{currentStyleDef?.icon || '🧸'}</span>
               <p className="font-heading uppercase">Mascot Preview</p>
-              <p className="text-sm">Customize your mascot on the left, then hit generate!</p>
+              <p className="text-sm">Choose a style, customize, then hit generate!</p>
               <div className="text-xs text-gray-400 bg-gray-50 p-3 border border-gray-200 max-w-xs mx-auto">
                 <p className="font-heading uppercase text-gray-500 mb-1">Current Selection:</p>
-                <p>Fur: {furColors.find((c: any) => c.id === furColor)?.name || furColor}</p>
+                <p>Style: {currentStyleDef?.name}</p>
+                <p>{bodyColorLabel}: {furColors.find((c: any) => c.id === furColor)?.name || furColor}</p>
                 <p>Eyes: {eyeStyles.find((s: any) => s.id === eyeStyle)?.name || eyeStyle}</p>
                 <p>Hair: {hairstyles.find((s: any) => s.id === hairstyle)?.name || hairstyle}</p>
                 <p>Outfit: {outfitColors.find((c: any) => c.id === outfitColor)?.name || outfitColor}</p>
@@ -471,25 +551,35 @@ export default function MascotBuilderPage() {
       {/* Saved Mascots Gallery */}
       {mascots.length > 0 && (
         <div className="card-retro">
-          <h2 className="font-heading text-lg uppercase mb-4">Saved Mascots</h2>
+          <h2 className="font-heading text-lg uppercase mb-4">Your Mascots</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {mascots.map((mascot) => (
-              <div key={mascot.id} className="card-retro p-3">
-                <img
-                  src={mascot.imageUrl}
-                  alt={mascot.title}
-                  className="w-full aspect-square object-cover border"
-                />
-                <h4 className="font-heading text-sm mt-2">{mascot.metadata?.shirtName || mascot.title}</h4>
-                <button
-                  onClick={() => deleteMutation.mutate(mascot.id)}
-                  disabled={deleteMutation.isPending}
-                  className="text-xs text-red-500 mt-1 flex items-center gap-1 hover:text-red-700"
-                >
-                  <Trash2 size={12} /> Delete
-                </button>
-              </div>
-            ))}
+            {mascots.map((mascot) => {
+              const name = mascot.mascotName || mascot.metadata?.mascotName;
+              const style = mascot.mascotStyle || mascot.metadata?.mascotStyle || 'muppet';
+              const styleDef = mascotStyles.find((s: MascotStyleOption) => s.id === style);
+              return (
+                <div key={mascot.id} className="card-retro p-3">
+                  <img
+                    src={mascot.imageUrl}
+                    alt={mascot.title}
+                    className="w-full aspect-square object-cover border"
+                  />
+                  <div className="mt-2">
+                    {name && <h4 className="font-heading text-sm">{name}</h4>}
+                    <p className="text-xs text-gray-500">
+                      {styleDef?.icon} {styleDef?.name || style} — {mascot.shirtName || mascot.metadata?.shirtName || mascot.title}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => deleteMutation.mutate(mascot.id)}
+                    disabled={deleteMutation.isPending}
+                    className="text-xs text-red-500 mt-1 flex items-center gap-1 hover:text-red-700"
+                  >
+                    <Trash2 size={12} /> Delete
+                  </button>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

@@ -12,6 +12,9 @@ interface Mascot {
   id: string;
   name: string;
   imageUrl: string;
+  mascotName?: string;
+  shirtName?: string;
+  mascotStyle?: string;
   personality?: {
     presetId: string;
     catchphrase: string;
@@ -25,6 +28,16 @@ const PERSONALITY_ICONS: Record<string, string> = {
   'funny-friend': '😂',
   'neighborhood-buddy': '🏘️',
   'drill-sergeant': '🫡',
+};
+
+const STYLE_ICONS: Record<string, string> = {
+  'muppet': '🧸',
+  'sports': '🏈',
+  'cartoon': '🎨',
+  'retro': '⛽',
+  'anime': '✨',
+  'realistic': '🤖',
+  'robot': '🦾',
 };
 
 export default function MascotSelector({ onSelect, selectedMascotId }: MascotSelectorProps) {
@@ -74,29 +87,36 @@ export default function MascotSelector({ onSelect, selectedMascotId }: MascotSel
       </button>
 
       {/* Mascot thumbnails */}
-      {mascots.map((mascot) => (
-        <button
-          key={mascot.id}
-          onClick={() => onSelect(mascot.id)}
-          className={`flex-shrink-0 w-20 h-24 flex flex-col items-center justify-center rounded border-2 transition-all ${
-            selectedMascotId === mascot.id
-              ? 'border-retro-red bg-red-50 border-4'
-              : 'border-gray-300 hover:border-gray-500'
-          }`}
-        >
-          <img
-            src={mascot.imageUrl}
-            alt={mascot.name}
-            className="w-12 h-12 object-cover rounded"
-          />
-          <span className="font-heading text-xs uppercase mt-1 truncate w-full text-center px-1">
-            {mascot.name}
-          </span>
-          {mascot.personality?.presetId && PERSONALITY_ICONS[mascot.personality.presetId] && (
-            <span className="text-xs">{PERSONALITY_ICONS[mascot.personality.presetId]}</span>
-          )}
-        </button>
-      ))}
+      {mascots.map((mascot) => {
+        const displayName = mascot.mascotName || mascot.shirtName || mascot.name;
+        const styleIcon = STYLE_ICONS[mascot.mascotStyle || 'muppet'] || '🧸';
+        return (
+          <button
+            key={mascot.id}
+            onClick={() => onSelect(mascot.id)}
+            className={`flex-shrink-0 w-20 h-24 flex flex-col items-center justify-center rounded border-2 transition-all ${
+              selectedMascotId === mascot.id
+                ? 'border-retro-red bg-red-50 border-4'
+                : 'border-gray-300 hover:border-gray-500'
+            }`}
+          >
+            <img
+              src={mascot.imageUrl}
+              alt={displayName}
+              className="w-12 h-12 object-cover rounded"
+            />
+            <span className="font-heading text-xs uppercase mt-1 truncate w-full text-center px-1">
+              {displayName}
+            </span>
+            <span className="text-xs">
+              {styleIcon}
+              {mascot.personality?.presetId && PERSONALITY_ICONS[mascot.personality.presetId]
+                ? ` ${PERSONALITY_ICONS[mascot.personality.presetId]}`
+                : ''}
+            </span>
+          </button>
+        );
+      })}
 
       {/* Create New + */}
       <Link

@@ -602,6 +602,8 @@ export const mascotBuilderApi = {
   getOptions: () => api.get('/tools/mascot-builder/options'),
   generate: (data: {
     shirtName: string;
+    mascotName?: string;
+    mascotStyle?: string;
     furColor: string;
     eyeStyle: string;
     hairstyle: string;

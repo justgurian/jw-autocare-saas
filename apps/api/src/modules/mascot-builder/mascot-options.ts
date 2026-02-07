@@ -96,8 +96,78 @@ export const MASCOT_OPTIONS = {
   ],
 };
 
+export interface MascotStyle {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  promptBase: string;
+  bodyColorLabel: string;
+}
+
+export const MASCOT_STYLES: MascotStyle[] = [
+  {
+    id: 'muppet',
+    name: 'Muppet Puppet',
+    description: 'Jim Henson-style felt & fur puppet',
+    icon: '🧸',
+    promptBase: 'A handmade Muppet-style puppet mechanic character. {bodyColor} shaggy faux-fur covering entire body. {eyes}. {hair}. Wide hinged felt mouth with a friendly grin. A small round felt nose. Three fuzzy fingers on each hand. Practical puppet photography, studio lighting, Jim Henson workshop aesthetic.',
+    bodyColorLabel: 'Fur Color',
+  },
+  {
+    id: 'sports',
+    name: 'Sports Mascot',
+    description: 'Athletic team mascot in mechanic gear',
+    icon: '🏈',
+    promptBase: 'A professional sports team mascot character dressed as an auto mechanic. Oversized plush head, foam body suit. {bodyColor} colored fur/fabric. {eyes}. {hair}. Big friendly smile with exaggerated features. Thick padded gloves. Athletic build, energetic pose. Professional sports photography, arena lighting.',
+    bodyColorLabel: 'Mascot Color',
+  },
+  {
+    id: 'cartoon',
+    name: 'Cartoon Character',
+    description: '2D-style animated character, bold outlines',
+    icon: '🎨',
+    promptBase: 'A 2D cartoon-style auto mechanic character illustration. Bold black outlines, flat vibrant colors. {bodyColor} colored skin/body. {eyes}. {hair}. Exaggerated proportions, big head, small body. Cheerful expression, dynamic pose. Clean vector art style, white background. Saturday morning cartoon aesthetic.',
+    bodyColorLabel: 'Character Color',
+  },
+  {
+    id: 'retro',
+    name: 'Retro Mascot',
+    description: '1950s gas station attendant character',
+    icon: '⛽',
+    promptBase: 'A 1950s/1960s vintage gas station attendant mascot character. Retro illustration style with halftone dots and warm colors. {bodyColor} colored uniform. {eyes}. {hair}. Friendly wink, thumbs up pose. Vintage advertising art style, aged paper texture. Mid-century modern design aesthetic.',
+    bodyColorLabel: 'Uniform Color',
+  },
+  {
+    id: 'anime',
+    name: 'Anime / Chibi',
+    description: 'Cute Japanese chibi style, big eyes',
+    icon: '✨',
+    promptBase: 'A cute chibi/anime-style auto mechanic character. {bodyColor} colored hair highlights. {eyes} with large sparkly anime eyes. {hair}. Small round body, oversized head. Kawaii expression, blushing cheeks. Clean anime illustration style, soft pastel accents. Japanese character design aesthetic.',
+    bodyColorLabel: 'Accent Color',
+  },
+  {
+    id: 'realistic',
+    name: 'Realistic CGI',
+    description: 'Photorealistic 3D-rendered character',
+    icon: '🤖',
+    promptBase: 'A photorealistic 3D-rendered auto mechanic character. Pixar/Disney quality CGI rendering. {bodyColor} colored clothing accents. {eyes}. {hair}. Warm friendly expression, natural pose. Subsurface skin scattering, detailed textures. Studio portrait lighting, shallow depth of field.',
+    bodyColorLabel: 'Accent Color',
+  },
+  {
+    id: 'robot',
+    name: 'Mascot Bot',
+    description: 'Friendly robot mechanic, chrome & color',
+    icon: '🦾',
+    promptBase: 'A friendly robot auto mechanic character. Smooth chrome and {bodyColor} colored metal plating. {eyes} with glowing LED screen eyes. Antenna or sensor array on head. Articulated joints, tool-arm attachments. Cheerful digital smile on face screen. Clean product photography, studio lighting, white background.',
+    bodyColorLabel: 'Metal Color',
+  },
+];
+
 export interface MascotCustomization {
   shirtName: string;
+  mascotName?: string;
+  mascotStyle?: string;
   furColor: string;
   eyeStyle: string;
   hairstyle: string;
