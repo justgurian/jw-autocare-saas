@@ -29,14 +29,14 @@ const voiceOptions = [
 export default function BrandVoiceStep({ selectedVoice, onChange }: BrandVoiceStepProps) {
   return (
     <div className="space-y-4">
-      <p className="text-gray-600 mb-4">
+      <p className="text-gray-600 dark:text-gray-400 mb-4">
         How should your marketing content sound?
       </p>
       {voiceOptions.map((voice) => (
         <label
           key={voice.value}
-          className={`flex items-start gap-3 p-4 border-2 border-black cursor-pointer ${
-            selectedVoice === voice.value ? 'bg-retro-teal text-white' : 'hover:bg-gray-50'
+          className={`flex items-start gap-3 p-4 border-2 border-black dark:border-gray-600 cursor-pointer ${
+            selectedVoice === voice.value ? 'bg-retro-teal text-white' : 'hover:bg-gray-50 dark:hover:bg-gray-700'
           }`}
         >
           <input

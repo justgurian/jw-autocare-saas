@@ -56,7 +56,7 @@ export default function StyleTasteTestStep({ selectedFamilies, onChange }: Style
   return (
     <div className="space-y-4">
       <div className="text-center mb-6">
-        <p className="text-gray-600">
+        <p className="text-gray-600 dark:text-gray-400">
           Pick <strong>1-3 styles</strong> you love. We'll use these to generate flyers that match your vibe.
         </p>
         <p className="text-sm text-gray-400 mt-1">
@@ -72,7 +72,7 @@ export default function StyleTasteTestStep({ selectedFamilies, onChange }: Style
             className={`w-3 h-3 rounded-full border-2 transition-all duration-300 ${
               i < selectedFamilies.length
                 ? 'bg-retro-teal border-retro-teal scale-110'
-                : 'bg-white border-gray-300'
+                : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600'
             }`}
           />
         ))}

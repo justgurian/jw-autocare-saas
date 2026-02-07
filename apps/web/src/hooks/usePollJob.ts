@@ -74,16 +74,18 @@ export function usePollJob(options: UsePollJobOptions = {}) {
       try {
         const response = await getJobFn(jobId);
         const data = response.data?.data || response.data;
+        // Batch flyer API nests status under data.job; video API uses flat data.status
+        const flat = data.job || data;
         const jobData: VideoJob = {
           id: jobId,
-          status: data.status,
-          progress: data.progress || 0,
-          videoUrl: data.videoUrl || data.metadata?.videoUrl,
-          thumbnailUrl: data.thumbnailUrl || data.metadata?.thumbnailUrl,
-          caption: data.caption || data.metadata?.caption,
-          contentId: data.contentId || data.metadata?.contentId,
-          error: data.error || data.metadata?.error,
-          metadata: data.metadata,
+          status: flat.status,
+          progress: data.progress || flat.progress || 0,
+          videoUrl: flat.videoUrl || flat.metadata?.videoUrl,
+          thumbnailUrl: flat.thumbnailUrl || flat.metadata?.thumbnailUrl,
+          caption: flat.caption || flat.metadata?.caption,
+          contentId: flat.contentId || flat.metadata?.contentId,
+          error: flat.error || flat.metadata?.error,
+          metadata: flat.metadata,
         };
         if (!controller.signal.aborted) {
           setJob(jobData);

@@ -216,7 +216,7 @@ export default function StyleSamplerStep({ businessName, firstService, onComplet
     <div className="space-y-6">
       <div className="text-center">
         <h2 className="font-heading text-xl mb-2">Preview Your Shop in Every Style</h2>
-        <p className="text-gray-600 text-sm">
+        <p className="text-gray-600 dark:text-gray-400 text-sm">
           We're generating 10 flyers — one in each style family — using your shop info.
           Rate them to personalize your experience!
         </p>
@@ -296,8 +296,8 @@ export default function StyleSamplerStep({ businessName, firstService, onComplet
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <div className="p-2 bg-white">
-                  <p className="font-heading text-[10px] uppercase text-retro-navy truncate mb-1">
+                <div className="p-2 bg-white dark:bg-gray-800">
+                  <p className="font-heading text-[10px] uppercase text-retro-navy dark:text-gray-200 truncate mb-1">
                     {flyer.familyName || flyer.themeName}
                   </p>
                   <div className="flex gap-1">

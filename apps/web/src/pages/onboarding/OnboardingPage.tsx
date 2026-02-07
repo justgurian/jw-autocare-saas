@@ -177,21 +177,21 @@ export default function OnboardingPage() {
 
   if (isRestoring) {
     return (
-      <div className="min-h-screen bg-retro-cream flex items-center justify-center">
+      <div className="min-h-screen bg-retro-cream dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin-slow w-12 h-12 border-4 border-retro-red border-t-transparent rounded-full mx-auto mb-3" />
-          <p className="font-heading text-retro-navy">Restoring your progress...</p>
+          <p className="font-heading text-retro-navy dark:text-gray-100">Restoring your progress...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-retro-cream py-12 px-4">
+    <div className="min-h-screen bg-retro-cream dark:bg-gray-900 py-12 px-4">
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="font-display text-5xl text-retro-navy tracking-wider">
+          <h1 className="font-display text-5xl text-retro-navy dark:text-gray-100 tracking-wider">
             SHOP SETUP
           </h1>
           <p className="font-heading text-2xl text-retro-mustard mt-2 italic">
@@ -210,7 +210,7 @@ export default function OnboardingPage() {
                       ? 'bg-retro-teal text-white'
                       : step.id === currentStep
                       ? 'bg-retro-red text-white'
-                      : 'bg-white text-gray-400'
+                      : 'bg-white dark:bg-gray-700 text-gray-400'
                   }`}
                 >
                   {step.id < currentStep ? <Check size={20} /> : step.id}
@@ -229,7 +229,7 @@ export default function OnboardingPage() {
             <p className="font-heading text-lg uppercase">
               Step {currentStep}: {steps[currentStep - 1].name}
             </p>
-            <p className="text-gray-600 text-sm">
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
               {steps[currentStep - 1].description}
             </p>
           </div>

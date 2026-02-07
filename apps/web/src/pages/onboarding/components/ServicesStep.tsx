@@ -54,8 +54,11 @@ export default function ServicesStep({
       const res = await brandKitApi.importWebsite({ url: websiteUrl });
       const extracted = res.data?.data || res.data;
 
-      // Extract services
-      const extractedServices: string[] = extracted.services || [];
+      // Extract services — API may return strings or {name, description} objects
+      const rawServices: any[] = extracted.services || [];
+      const extractedServices: string[] = rawServices.map((svc: any) =>
+        typeof svc === 'string' ? svc : (svc.name || String(svc))
+      );
       if (extractedServices.length > 0) {
         // Match against known services + add custom ones
         const matched: string[] = [];
@@ -159,7 +162,7 @@ export default function ServicesStep({
       </div>
 
       {/* Search Bar for Services */}
-      <div className="sticky top-0 bg-white z-10 pb-4">
+      <div className="sticky top-0 bg-white dark:bg-gray-800 z-10 pb-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
           <input
@@ -179,7 +182,7 @@ export default function ServicesStep({
           )}
         </div>
         <div className="flex justify-between items-center mt-2 text-sm">
-          <span className="text-gray-600">
+          <span className="text-gray-600 dark:text-gray-400">
             {serviceSearch
               ? `Showing ${filteredServices.length} of ${ALL_SERVICES.length} services`
               : `${ALL_SERVICES.length} services available`}
@@ -191,8 +194,7 @@ export default function ServicesStep({
       </div>
 
       {/* Quick Select Buttons */}
-      {!serviceSearch && (
-        <div className="flex flex-wrap gap-2 pb-2">
+      <div className="flex flex-wrap gap-2 pb-2">
           <button
             type="button"
             className="text-xs px-3 py-1 border border-retro-navy text-retro-navy hover:bg-retro-navy hover:text-white transition-colors"
@@ -228,7 +230,6 @@ export default function ServicesStep({
             </button>
           )}
         </div>
-      )}
 
       {/* Services Grid */}
       <div className="grid grid-cols-2 gap-2 max-h-[350px] overflow-y-auto">
@@ -244,7 +245,7 @@ export default function ServicesStep({
               className={`flex items-center gap-2 p-2 border cursor-pointer text-sm transition-all ${
                 selectedServices.includes(service)
                   ? 'border-retro-teal bg-retro-teal/10 border-2'
-                  : 'border-black hover:bg-gray-50'
+                  : 'border-black dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
               }`}
             >
               <input

@@ -80,7 +80,7 @@ export default function BusinessInfoStep({ formData, setFormData }: BusinessInfo
           value={formData.phone}
           onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
         />
-        <p className="text-gray-400 text-xs mt-1">Shown on your flyers for customers to call</p>
+        <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">Shown on your flyers for customers to call</p>
       </div>
       <div>
         <label className="block font-heading uppercase text-sm mb-2">

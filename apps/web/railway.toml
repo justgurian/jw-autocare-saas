@@ -3,7 +3,7 @@ builder = "DOCKERFILE"
 dockerfilePath = "apps/web/Dockerfile"
 
 [build.args]
-VITE_API_URL = "https://api-production-b51d.up.railway.app/api/v1"
+VITE_API_URL = "https://api-v2-production-1048.up.railway.app/api/v1"
 
 [deploy]
 healthcheckPath = "/health"

@@ -96,7 +96,7 @@ export default function CarPreferencesStep({ lovedMakes, neverMakes, onChange }:
   return (
     <div className="space-y-4">
       <div className="text-center mb-4">
-        <p className="text-gray-600">
+        <p className="text-gray-600 dark:text-gray-400">
           Pick car brands your customers drive. We'll feature them in your flyers.
         </p>
         <p className="text-sm text-gray-400 mt-1">
@@ -125,7 +125,7 @@ export default function CarPreferencesStep({ lovedMakes, neverMakes, onChange }:
             flex items-center gap-1.5 px-3 py-1.5 text-xs font-heading uppercase border-2 transition-all
             ${blockMode
               ? 'bg-retro-red/10 border-retro-red text-retro-red'
-              : 'bg-white border-gray-300 text-gray-500 hover:border-gray-400'
+              : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-500 hover:border-gray-400'
             }
           `}
         >
@@ -193,7 +193,7 @@ export default function CarPreferencesStep({ lovedMakes, neverMakes, onChange }:
               <div key={loved.makeId} className="border border-gray-200">
                 <button
                   onClick={() => setExpandedMake(isExpanded ? null : loved.makeId)}
-                  className="w-full flex items-center justify-between p-3 hover:bg-gray-50 transition-colors"
+                  className="w-full flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
                   <div className="flex items-center gap-2">
                     <span className="font-heading text-sm uppercase">{make.name}</span>
@@ -221,7 +221,7 @@ export default function CarPreferencesStep({ lovedMakes, neverMakes, onChange }:
                             px-3 py-1.5 text-xs font-heading uppercase border transition-all
                             ${isSelected
                               ? 'bg-retro-teal text-white border-retro-teal'
-                              : 'bg-white text-gray-600 border-gray-300 hover:border-retro-teal'
+                              : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-retro-teal'
                             }
                           `}
                         >

@@ -81,7 +81,7 @@ export default function LogoStep({
         className="hidden"
       />
       <div
-        className="w-32 h-32 mx-auto mb-4 bg-gray-200 border-2 border-black flex items-center justify-center overflow-hidden cursor-pointer hover:bg-gray-300 transition-colors"
+        className="w-32 h-32 mx-auto mb-4 bg-gray-200 dark:bg-gray-700 border-2 border-black dark:border-gray-600 flex items-center justify-center overflow-hidden cursor-pointer hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
         onClick={() => fileInputRef.current?.click()}
       >
         {logoPreview ? (

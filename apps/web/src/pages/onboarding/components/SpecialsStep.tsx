@@ -18,7 +18,7 @@ export default function SpecialsStep({ specials, onSpecialsChange }: SpecialsSte
 
   return (
     <div className="py-4">
-      <p className="text-gray-600 mb-4 text-center">
+      <p className="text-gray-600 dark:text-gray-400 mb-4 text-center">
         Add recurring promotions to your Specials Vault (optional)
       </p>
 
@@ -29,7 +29,7 @@ export default function SpecialsStep({ specials, onSpecialsChange }: SpecialsSte
             <div key={index} className="flex items-center justify-between p-3 bg-retro-teal/10 border border-retro-teal">
               <div>
                 <p className="font-heading uppercase">{special.title}</p>
-                <p className="text-sm text-gray-600">{special.discount} - {special.description}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{special.discount} - {special.description}</p>
               </div>
               <button
                 onClick={() => onSpecialsChange(specials.filter((_, i) => i !== index))}
@@ -44,7 +44,7 @@ export default function SpecialsStep({ specials, onSpecialsChange }: SpecialsSte
 
       {/* Add Special Form */}
       {showSpecialModal ? (
-        <div className="border-2 border-black p-4 space-y-3">
+        <div className="border-2 border-black dark:border-gray-600 p-4 space-y-3">
           <input
             type="text"
             className="input-retro"
