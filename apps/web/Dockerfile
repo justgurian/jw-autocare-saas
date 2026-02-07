@@ -32,6 +32,9 @@ FROM nginx:alpine AS runner
 # Copy custom nginx config
 COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
 
+# Limit nginx workers to 2 (default 'auto' spawns one per vCPU which is excessive on Railway)
+RUN sed -i 's/worker_processes  auto;/worker_processes  2;/' /etc/nginx/nginx.conf
+
 # Copy built files
 COPY --from=builder /app/apps/web/dist /usr/share/nginx/html
 
