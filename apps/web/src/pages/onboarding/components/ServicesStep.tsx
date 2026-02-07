@@ -49,9 +49,15 @@ export default function ServicesStep({
       toast.error('Please enter a website URL first');
       return;
     }
+    // Auto-add https:// if user omitted protocol
+    let normalizedUrl = websiteUrl.trim();
+    if (!/^https?:\/\//i.test(normalizedUrl)) {
+      normalizedUrl = `https://${normalizedUrl}`;
+      onWebsiteUrlChange(normalizedUrl);
+    }
     setIsImporting(true);
     try {
-      const res = await brandKitApi.importWebsite({ url: websiteUrl });
+      const res = await brandKitApi.importWebsite({ url: normalizedUrl });
       const extracted = res.data?.data || res.data;
 
       // Extract services — API may return strings or {name, description} objects
@@ -124,7 +130,7 @@ export default function ServicesStep({
   return (
     <div className="space-y-4">
       {/* URL Import Option */}
-      <div className="bg-retro-navy/5 p-4 border-2 border-retro-navy/20 mb-6">
+      <div className="bg-retro-navy/5 dark:bg-gray-700/30 p-4 border-2 border-retro-navy/20 dark:border-gray-600 mb-6">
         <p className="font-heading text-sm uppercase mb-2">
           <Globe size={16} className="inline mr-1" />
           Import from Website (Optional)
@@ -197,7 +203,7 @@ export default function ServicesStep({
       <div className="flex flex-wrap gap-2 pb-2">
           <button
             type="button"
-            className="text-xs px-3 py-1 border border-retro-navy text-retro-navy hover:bg-retro-navy hover:text-white transition-colors"
+            className="text-xs px-3 py-1 border border-retro-navy dark:border-retro-teal text-retro-navy dark:text-retro-teal hover:bg-retro-navy dark:hover:bg-retro-teal hover:text-white transition-colors"
             onClick={() => {
               const common = ['Oil Change', 'Brake Service', 'Tire Service', 'AC Service', 'Engine Diagnostics', 'Battery Service'];
               const newServices = [...new Set([...selectedServices, ...common])];
@@ -209,7 +215,7 @@ export default function ServicesStep({
           </button>
           <button
             type="button"
-            className="text-xs px-3 py-1 border border-retro-navy text-retro-navy hover:bg-retro-navy hover:text-white transition-colors"
+            className="text-xs px-3 py-1 border border-retro-navy dark:border-retro-teal text-retro-navy dark:text-retro-teal hover:bg-retro-navy dark:hover:bg-retro-teal hover:text-white transition-colors"
             onClick={() => {
               onServicesChange([...ALL_SERVICES]);
               toast.success('All services selected!');
