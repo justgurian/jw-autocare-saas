@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import toast from 'react-hot-toast';
-import { Flame, ThumbsUp, Meh, SkipForward, Wrench } from 'lucide-react';
+import { Flame, ThumbsUp, Meh, SkipForward, Wrench, RefreshCw } from 'lucide-react';
 import { batchFlyerApi, promoFlyerApi } from '../../../services/api';
 import { usePollJob } from '../../../hooks/usePollJob';
 
@@ -173,6 +173,42 @@ export default function StyleSamplerStep({ businessName, firstService, onComplet
     }
   };
 
+  const handleGenerateMore = useCallback(async () => {
+    const content = firstService || businessName || 'Auto Repair';
+    setIsGenerating(true);
+    setIsDone(false);
+    setRevealedCount(0);
+    setFlyers([]);
+    setPartialFlyers([]);
+    setFunFactIndex(0);
+    hasStarted.current = true;
+    try {
+      const payload: any = {
+        mode: 'month',
+        count: 10,
+        themeStrategy: 'family-sampler',
+        language: 'en',
+        contentType: 'custom',
+        customContent: [{
+          message: `Professional marketing for ${businessName || 'our auto shop'}`,
+          subject: content,
+        }],
+      };
+      const res = await batchFlyerApi.generate(payload);
+      const jobId = res.data?.jobId;
+      if (jobId) {
+        jobIdRef.current = jobId;
+        startPolling(jobId);
+      } else {
+        throw new Error('No job ID');
+      }
+    } catch {
+      toast.error('Failed to start generation');
+      setIsGenerating(false);
+      setIsDone(true);
+    }
+  }, [businessName, firstService, startPolling]);
+
   const progress = job?.progress || 0;
   const feedbackCount = Object.keys(feedback).length;
 
@@ -302,6 +338,26 @@ export default function StyleSamplerStep({ businessName, firstService, onComplet
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* Actions: Generate More + Complete */}
+          <div className="flex flex-col items-center gap-3 pt-2">
+            <div className="flex gap-3">
+              <button
+                onClick={handleGenerateMore}
+                className="btn-retro btn-retro-outline px-4 py-2 text-sm flex items-center gap-2"
+              >
+                <RefreshCw size={14} />
+                Generate 10 More
+              </button>
+              <button
+                onClick={onComplete}
+                className="btn-retro btn-retro-primary px-6 py-2 text-sm"
+              >
+                Complete Setup
+              </button>
+            </div>
+            <p className="text-xs text-gray-500">The more you rate, the better your flyers!</p>
           </div>
         </div>
       )}

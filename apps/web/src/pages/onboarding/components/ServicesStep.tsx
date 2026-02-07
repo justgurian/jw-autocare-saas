@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
-import { Search, X } from 'lucide-react';
+import { Search, X, Loader2, Globe } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { brandKitApi } from '../../../services/api';
 
 // All available services - extracted for search functionality
 const ALL_SERVICES = [
@@ -30,6 +31,7 @@ interface ServicesStepProps {
   onServicesChange: (services: string[]) => void;
   websiteUrl: string;
   onWebsiteUrlChange: (url: string) => void;
+  onSpecialsExtracted?: (specials: { title: string; discount: string; description: string }[]) => void;
 }
 
 export default function ServicesStep({
@@ -37,8 +39,59 @@ export default function ServicesStep({
   onServicesChange,
   websiteUrl,
   onWebsiteUrlChange,
+  onSpecialsExtracted,
 }: ServicesStepProps) {
   const [serviceSearch, setServiceSearch] = useState('');
+  const [isImporting, setIsImporting] = useState(false);
+
+  const handleImportWebsite = async () => {
+    if (!websiteUrl) {
+      toast.error('Please enter a website URL first');
+      return;
+    }
+    setIsImporting(true);
+    try {
+      const res = await brandKitApi.importWebsite({ url: websiteUrl });
+      const extracted = res.data?.data || res.data;
+
+      // Extract services
+      const extractedServices: string[] = extracted.services || [];
+      if (extractedServices.length > 0) {
+        // Match against known services + add custom ones
+        const matched: string[] = [];
+        const custom: string[] = [];
+        for (const svc of extractedServices) {
+          const found = ALL_SERVICES.find(s => s.toLowerCase() === svc.toLowerCase());
+          if (found) {
+            matched.push(found);
+          } else {
+            custom.push(svc);
+          }
+        }
+        const merged = [...new Set([...selectedServices, ...matched, ...custom])];
+        onServicesChange(merged);
+        toast.success(`Found ${extractedServices.length} services from your website!`);
+      } else {
+        toast('No services found on that page. Try adding them manually below.', { icon: '🔍' });
+      }
+
+      // Extract specials if available
+      const extractedSpecials = extracted.specials || [];
+      if (extractedSpecials.length > 0 && onSpecialsExtracted) {
+        const mapped = extractedSpecials.map((s: any) => ({
+          title: s.title || s.name || '',
+          discount: String(s.discountValue || s.discount || '10'),
+          description: s.description || '',
+        }));
+        onSpecialsExtracted(mapped);
+        toast.success(`Also found ${mapped.length} specials!`);
+      }
+    } catch {
+      toast.error("Couldn't read that URL. You can add services manually below.");
+    } finally {
+      setIsImporting(false);
+    }
+  };
 
   // Filter services based on search - memoized for performance
   const filteredServices = useMemo(() => {
@@ -69,7 +122,10 @@ export default function ServicesStep({
     <div className="space-y-4">
       {/* URL Import Option */}
       <div className="bg-retro-navy/5 p-4 border-2 border-retro-navy/20 mb-6">
-        <p className="font-heading text-sm uppercase mb-2">Import from Website (Optional)</p>
+        <p className="font-heading text-sm uppercase mb-2">
+          <Globe size={16} className="inline mr-1" />
+          Import from Website (Optional)
+        </p>
         <div className="flex gap-2">
           <input
             type="url"
@@ -77,20 +133,29 @@ export default function ServicesStep({
             placeholder="https://yourshop.com/services"
             value={websiteUrl || ''}
             onChange={(e) => onWebsiteUrlChange(e.target.value)}
+            disabled={isImporting}
           />
           <button
             type="button"
-            className="btn-retro-secondary text-sm"
-            onClick={() => {
-              if (websiteUrl) {
-                toast('Website import coming soon! For now, select your services below.', { icon: '🚧' });
-              }
-            }}
+            className="btn-retro-secondary text-sm disabled:opacity-50 flex items-center gap-1"
+            onClick={handleImportWebsite}
+            disabled={isImporting || !websiteUrl}
           >
-            Import
+            {isImporting ? (
+              <>
+                <Loader2 size={16} className="animate-spin" />
+                Scanning...
+              </>
+            ) : (
+              'Import'
+            )}
           </button>
         </div>
-        <p className="text-xs text-gray-500 mt-1">AI will extract services from your website</p>
+        <p className="text-xs text-gray-500 mt-1">
+          {isImporting
+            ? 'AI is reading your website and extracting services & specials...'
+            : 'AI will extract services, specials, and more from your website'}
+        </p>
       </div>
 
       {/* Search Bar for Services */}

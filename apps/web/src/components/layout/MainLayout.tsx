@@ -89,6 +89,15 @@ export default function MainLayout() {
     );
   };
 
+  // Mark tool as visited when navigating to it (covers direct URL, not just sidebar clicks)
+  useEffect(() => {
+    const currentPath = location.pathname;
+    if (currentPath.startsWith('/tools/') || currentPath === '/calendar' || currentPath === '/analytics' || currentPath === '/content') {
+      markToolVisited(currentPath);
+      addRecentTool(currentPath);
+    }
+  }, [location.pathname, markToolVisited, addRecentTool]);
+
   const isItemActive = (href: string) => location.pathname === href;
   const isGroupActive = (items: typeof navigationGroups[0]['items']) =>
     items.some((item) => location.pathname === item.href);

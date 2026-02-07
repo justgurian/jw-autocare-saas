@@ -84,6 +84,7 @@ interface BrandKitUpdate {
   zipCode?: string;
   website?: string;
   defaultVehicle?: 'corvette' | 'jeep';
+  timezone?: string;
 }
 
 interface ServiceInput {
@@ -189,13 +190,14 @@ export const onboardingService = {
       },
     });
 
-    // Also update tenant name
+    // Also update tenant name and timezone
     if (data.businessName) {
       await prisma.tenant.update({
         where: { id: tenantId },
         data: {
           name: data.businessName,
           onboardingStep: { increment: 1 },
+          ...(data.timezone ? { timezone: data.timezone } : {}),
         },
       });
     }

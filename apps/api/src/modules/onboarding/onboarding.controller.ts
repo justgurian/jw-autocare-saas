@@ -13,6 +13,7 @@ const businessInfoSchema = z.object({
   zipCode: z.string().optional(),
   website: z.string().url().optional().or(z.literal('')),
   tagline: z.string().optional(),
+  timezone: z.string().optional(),
 });
 
 const colorsSchema = z.object({

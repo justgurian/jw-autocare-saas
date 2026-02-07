@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Zap,
@@ -15,6 +15,8 @@ import {
   Sparkles,
   Target,
   Bell,
+  Construction,
+  Globe,
 } from 'lucide-react';
 import api from '../../services/api';
 
@@ -52,11 +54,33 @@ const defaultSettings: AutoPilotSettings = {
   autoApprove: false,
 };
 
+const POPULAR_TIMEZONES = [
+  'America/New_York',
+  'America/Chicago',
+  'America/Denver',
+  'America/Los_Angeles',
+  'America/Phoenix',
+  'America/Anchorage',
+  'Pacific/Honolulu',
+];
+
 export default function AutoPilotPage() {
   const [settings, setSettings] = useState<AutoPilotSettings>(defaultSettings);
+  const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/New_York');
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [connectedAccounts, setConnectedAccounts] = useState<string[]>([]);
+
+  const timezoneOptions = useMemo(() => {
+    try {
+      const all = Intl.supportedValuesOf('timeZone');
+      const popular = POPULAR_TIMEZONES.filter(tz => all.includes(tz));
+      const rest = all.filter(tz => !POPULAR_TIMEZONES.includes(tz));
+      return { popular, rest };
+    } catch {
+      return { popular: POPULAR_TIMEZONES, rest: [] };
+    }
+  }, []);
 
   useEffect(() => {
     // Fetch current auto-pilot settings
@@ -65,6 +89,10 @@ export default function AutoPilotPage() {
       .then((res) => {
         if (res.data) {
           setSettings({ ...defaultSettings, ...res.data });
+          // Timezone may be stored alongside auto-pilot settings
+          if (res.data.timezone) {
+            setTimezone(res.data.timezone);
+          }
         }
       })
       .catch((err) => console.error('Failed to fetch auto-pilot settings:', err));
@@ -133,6 +161,17 @@ export default function AutoPilotPage() {
         </div>
       </div>
 
+      {/* Coming Soon Banner */}
+      <div className="bg-retro-mustard/20 border-2 border-retro-mustard p-4 flex items-start gap-3">
+        <Construction size={20} className="text-retro-mustard mt-0.5 shrink-0" />
+        <div>
+          <p className="font-heading text-sm uppercase text-retro-navy">Auto-Pilot is coming soon!</p>
+          <p className="text-sm text-gray-700 mt-1">
+            You can configure your preferences now — we'll activate them when the engine launches.
+          </p>
+        </div>
+      </div>
+
       {/* Main Toggle */}
       <div
         className={`card-retro border-4 ${settings.enabled ? 'border-green-500 bg-green-50' : 'border-black'}`}
@@ -154,7 +193,7 @@ export default function AutoPilotPage() {
               </h2>
               <p className="text-gray-600 text-sm mt-1">
                 {settings.enabled
-                  ? 'AI is creating and posting content for you!'
+                  ? 'Your preferences are saved! We\'ll start posting when the engine launches.'
                   : 'Turn on to let AI handle your social media'}
               </p>
             </div>
@@ -166,13 +205,6 @@ export default function AutoPilotPage() {
             {settings.enabled ? <ToggleRight size={48} /> : <ToggleLeft size={48} />}
           </button>
         </div>
-
-        {settings.enabled && (
-          <div className="mt-6 pt-6 border-t border-green-200 flex items-center gap-3 text-green-700">
-            <CheckCircle size={20} />
-            <span className="font-medium">Next post scheduled for tomorrow at 9:00 AM</span>
-          </div>
-        )}
       </div>
 
       {/* Configuration Sections */}
@@ -253,6 +285,33 @@ export default function AutoPilotPage() {
                 </button>
               );
             })}
+          </div>
+
+          {/* Timezone picker */}
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <label className="font-heading text-sm uppercase flex items-center gap-2 mb-2">
+              <Globe size={16} className="text-retro-navy" />
+              Your Timezone
+            </label>
+            <select
+              className="input-retro w-full max-w-xs"
+              value={timezone}
+              onChange={(e) => setTimezone(e.target.value)}
+            >
+              <optgroup label="Common (US)">
+                {timezoneOptions.popular.map(tz => (
+                  <option key={tz} value={tz}>{tz.replace(/_/g, ' ')}</option>
+                ))}
+              </optgroup>
+              {timezoneOptions.rest.length > 0 && (
+                <optgroup label="All Timezones">
+                  {timezoneOptions.rest.map(tz => (
+                    <option key={tz} value={tz}>{tz.replace(/_/g, ' ')}</option>
+                  ))}
+                </optgroup>
+              )}
+            </select>
+            <p className="text-xs text-gray-500 mt-1">Post times are based on this timezone</p>
           </div>
         </div>
 

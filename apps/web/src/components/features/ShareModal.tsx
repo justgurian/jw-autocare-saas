@@ -15,6 +15,8 @@ import {
   Link2,
   Copy,
   Check,
+  Smartphone,
+  Construction,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
@@ -178,140 +180,134 @@ export default function ShareModal({ isOpen, onClose, content }: ShareModalProps
         <div className="p-4">
           {activeTab === 'share' ? (
             <div className="space-y-4">
-              {/* Account Selection */}
-              {accountsLoading ? (
-                <div className="text-center py-4">
-                  <Loader2 size={24} className="animate-spin mx-auto text-gray-400" />
+              {/* Coming Soon message for direct social posting */}
+              <div className="bg-retro-mustard/20 border-2 border-retro-mustard p-4 flex items-start gap-3">
+                <Construction size={18} className="text-retro-mustard mt-0.5 shrink-0" />
+                <div>
+                  <p className="font-heading text-xs uppercase text-retro-navy">Direct posting coming soon</p>
+                  <p className="text-sm text-gray-700 mt-1">
+                    For now, download your content and share it directly to any platform.
+                  </p>
                 </div>
-              ) : !hasAccounts ? (
-                <div className="text-center py-6 bg-gray-50 border-2 border-dashed border-gray-300">
-                  <Link2 size={32} className="mx-auto mb-2 text-gray-400" />
-                  <p className="text-gray-600 mb-3">No social accounts connected</p>
-                  <Link
-                    to="/settings/social"
-                    onClick={onClose}
-                    className="btn-retro-secondary text-sm inline-flex items-center gap-2"
-                  >
-                    <Facebook size={16} />
-                    Connect Accounts
-                  </Link>
-                </div>
-              ) : (
-                <>
-                  <div>
-                    <label className="block font-heading text-sm uppercase mb-2">
-                      Select Accounts
-                    </label>
-                    <div className="space-y-2">
-                      {accounts.map((account) => {
-                        const Icon = account.platform === 'facebook' ? Facebook : Instagram;
-                        const isSelected = selectedAccounts.includes(account.id);
+              </div>
 
-                        return (
-                          <button
-                            key={account.id}
-                            onClick={() => toggleAccount(account.id)}
-                            className={`w-full flex items-center gap-3 p-3 border-2 transition-all ${
-                              isSelected
-                                ? 'border-retro-teal bg-retro-teal/10'
-                                : 'border-gray-200 hover:border-gray-400'
-                            }`}
-                          >
-                            <div
-                              className={`w-8 h-8 rounded-full flex items-center justify-center text-white ${
-                                account.platform === 'facebook' ? 'bg-blue-600' : 'bg-gradient-to-r from-purple-500 to-pink-500'
-                              }`}
-                            >
-                              <Icon size={16} />
-                            </div>
-                            <div className="flex-1 text-left">
-                              <p className="font-medium text-sm">{account.accountName}</p>
-                              {account.accountUsername && (
-                                <p className="text-xs text-gray-500">@{account.accountUsername}</p>
-                              )}
-                            </div>
-                            {isSelected && <CheckCircle size={20} className="text-retro-teal" />}
-                          </button>
-                        );
-                      })}
-                    </div>
+              {/* Native Share (Web Share API) */}
+              {typeof navigator !== 'undefined' && 'share' in navigator && content.imageUrl && (
+                <button
+                  onClick={async () => {
+                    try {
+                      const response = await fetch(content.imageUrl!);
+                      const blob = await response.blob();
+                      const file = new File([blob], `${content.title || 'bayfiller-content'}.png`, { type: blob.type });
+                      await navigator.share({
+                        title: content.title || 'Check this out!',
+                        text: caption || content.caption || '',
+                        files: [file],
+                      });
+                    } catch (err: any) {
+                      if (err?.name !== 'AbortError') {
+                        // Fallback: share without file
+                        try {
+                          await navigator.share({
+                            title: content.title || 'Check this out!',
+                            text: caption || content.caption || '',
+                          });
+                        } catch {
+                          // User cancelled
+                        }
+                      }
+                    }
+                  }}
+                  className="w-full p-4 border-2 border-retro-teal bg-retro-teal/5 hover:bg-retro-teal/10 transition-all flex items-center gap-3"
+                >
+                  <div className="w-10 h-10 bg-retro-teal text-white flex items-center justify-center rounded-full">
+                    <Smartphone size={20} />
                   </div>
-
-                  {/* Caption */}
-                  <div>
-                    <label className="block font-heading text-sm uppercase mb-2">
-                      Caption
-                    </label>
-                    <textarea
-                      value={caption}
-                      onChange={(e) => setCaption(e.target.value)}
-                      className="input-retro w-full h-24 resize-none"
-                      maxLength={2200}
-                      placeholder="Write your caption..."
-                    />
-                    <div className="flex justify-between text-xs text-gray-500 mt-1">
-                      <span>{caption.length}/2200</span>
-                      <button
-                        onClick={() => handleCopyCaption(caption)}
-                        className="flex items-center gap-1 hover:text-gray-700"
-                      >
-                        {copied ? <Check size={12} /> : <Copy size={12} />}
-                        Copy
-                      </button>
-                    </div>
+                  <div className="text-left">
+                    <p className="font-medium">Share via Phone</p>
+                    <p className="text-sm text-gray-500">iMessage, WhatsApp, Facebook, Instagram & more</p>
                   </div>
-
-                  {/* Schedule Toggle */}
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => setScheduleMode(false)}
-                      className={`flex-1 py-2 px-3 text-sm border-2 flex items-center justify-center gap-2 ${
-                        !scheduleMode ? 'border-black bg-gray-100' : 'border-gray-200'
-                      }`}
-                    >
-                      <Send size={16} />
-                      Post Now
-                    </button>
-                    <button
-                      onClick={() => setScheduleMode(true)}
-                      className={`flex-1 py-2 px-3 text-sm border-2 flex items-center justify-center gap-2 ${
-                        scheduleMode ? 'border-black bg-gray-100' : 'border-gray-200'
-                      }`}
-                    >
-                      <Clock size={16} />
-                      Schedule
-                    </button>
-                  </div>
-
-                  {/* Schedule Options */}
-                  {scheduleMode && (
-                    <div className="flex gap-3">
-                      <div className="flex-1">
-                        <label className="block text-xs text-gray-600 mb-1">Date</label>
-                        <input
-                          type="date"
-                          value={scheduledDate}
-                          onChange={(e) => setScheduledDate(e.target.value)}
-                          min={new Date().toISOString().split('T')[0]}
-                          className="input-retro w-full text-sm"
-                        />
-                      </div>
-                      <div className="w-32">
-                        <label className="block text-xs text-gray-600 mb-1">Time</label>
-                        <input
-                          type="time"
-                          value={scheduledTime}
-                          onChange={(e) => setScheduledTime(e.target.value)}
-                          className="input-retro w-full text-sm"
-                        />
-                      </div>
-                    </div>
-                  )}
-                </>
+                </button>
               )}
+
+              {/* Download as fallback for social sharing */}
+              <button
+                onClick={handleDownload}
+                className="w-full p-4 border-2 border-gray-200 hover:border-black transition-all flex items-center gap-3"
+              >
+                <div className="w-10 h-10 bg-retro-navy text-white flex items-center justify-center">
+                  <Download size={20} />
+                </div>
+                <div className="text-left">
+                  <p className="font-medium">Download & Share Manually</p>
+                  <p className="text-sm text-gray-500">Save image, then post to any platform</p>
+                </div>
+              </button>
+
+              {/* Caption for easy copy */}
+              <div>
+                <label className="block font-heading text-sm uppercase mb-2">
+                  Caption
+                </label>
+                <textarea
+                  value={caption}
+                  onChange={(e) => setCaption(e.target.value)}
+                  className="input-retro w-full h-24 resize-none"
+                  maxLength={2200}
+                  placeholder="Write your caption..."
+                />
+                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                  <span>{caption.length}/2200</span>
+                  <button
+                    onClick={() => handleCopyCaption(caption)}
+                    className="flex items-center gap-1 hover:text-gray-700"
+                  >
+                    {copied ? <Check size={12} /> : <Copy size={12} />}
+                    Copy
+                  </button>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="space-y-4">
+              {/* Native Share (Web Share API) - also in download tab */}
+              {typeof navigator !== 'undefined' && 'share' in navigator && content.imageUrl && (
+                <button
+                  onClick={async () => {
+                    try {
+                      const response = await fetch(content.imageUrl!);
+                      const blob = await response.blob();
+                      const file = new File([blob], `${content.title || 'bayfiller-content'}.png`, { type: blob.type });
+                      await navigator.share({
+                        title: content.title || 'Check this out!',
+                        text: caption || content.caption || '',
+                        files: [file],
+                      });
+                    } catch (err: any) {
+                      if (err?.name !== 'AbortError') {
+                        try {
+                          await navigator.share({
+                            title: content.title || 'Check this out!',
+                            text: caption || content.caption || '',
+                          });
+                        } catch {
+                          // User cancelled
+                        }
+                      }
+                    }
+                  }}
+                  className="w-full p-4 border-2 border-retro-teal bg-retro-teal/5 hover:bg-retro-teal/10 transition-all flex items-center gap-3"
+                >
+                  <div className="w-10 h-10 bg-retro-teal text-white flex items-center justify-center rounded-full">
+                    <Smartphone size={20} />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-medium">Share via Phone</p>
+                    <p className="text-sm text-gray-500">iMessage, WhatsApp, Facebook & more</p>
+                  </div>
+                </button>
+              )}
+
               <button
                 onClick={handleDownload}
                 className="w-full p-4 border-2 border-gray-200 hover:border-black transition-all flex items-center gap-3"
@@ -357,34 +353,6 @@ export default function ShareModal({ isOpen, onClose, content }: ShareModalProps
             </div>
           )}
         </div>
-
-        {/* Footer Actions */}
-        {activeTab === 'share' && hasAccounts && (
-          <div className="p-4 border-t-2 border-black bg-gray-50">
-            <button
-              onClick={() => (scheduleMode ? scheduleMutation.mutate() : postMutation.mutate())}
-              disabled={
-                selectedAccounts.length === 0 ||
-                postMutation.isPending ||
-                scheduleMutation.isPending ||
-                (scheduleMode && !scheduledDate)
-              }
-              className="btn-retro-primary w-full flex items-center justify-center gap-2"
-            >
-              {postMutation.isPending || scheduleMutation.isPending ? (
-                <>
-                  <Loader2 size={18} className="animate-spin" />
-                  {scheduleMode ? 'Scheduling...' : 'Posting...'}
-                </>
-              ) : (
-                <>
-                  {scheduleMode ? <Calendar size={18} /> : <Send size={18} />}
-                  {scheduleMode ? 'Schedule Posts' : `Post to ${selectedAccounts.length} Account(s)`}
-                </>
-              )}
-            </button>
-          </div>
-        )}
       </div>
       </FocusTrap>
     </div>

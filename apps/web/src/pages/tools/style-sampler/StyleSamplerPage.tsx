@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { Palette, ThumbsUp, Flame, Meh, ArrowRight, Wrench } from 'lucide-react';
+import { Palette, ThumbsUp, Flame, Meh, ArrowRight, Wrench, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { batchFlyerApi, promoFlyerApi } from '../../../services/api';
 import { usePollJob } from '../../../hooks/usePollJob';
@@ -15,6 +15,7 @@ interface SamplerFlyer {
   familyId: string | null;
   familyName: string | null;
   themeName: string;
+  round?: number;
 }
 
 const FUN_FACTS = [
@@ -38,6 +39,8 @@ export default function StyleSamplerPage() {
   const [feedback, setFeedback] = useState<Record<string, FeedbackType>>({});
   const [revealedCount, setRevealedCount] = useState(0);
   const [funFactIndex, setFunFactIndex] = useState(0);
+  const [round, setRound] = useState(1);
+  const [allRoundFlyers, setAllRoundFlyers] = useState<SamplerFlyer[]>([]);
   const jobIdRef = useRef<string | null>(null);
   const partialPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -109,8 +112,10 @@ export default function StyleSamplerPage() {
           familyId: f.familyId,
           familyName: f.familyName,
           themeName: f.themeName,
+          round,
         }));
         setFlyers(flyerData);
+        setAllRoundFlyers(prev => [...prev, ...flyerData]);
         setPartialFlyers([]);
         setStep('results');
         // Staggered reveal for any not yet shown
@@ -130,17 +135,24 @@ export default function StyleSamplerPage() {
     onTimeout: () => toast.error('Generation timed out. Please try again.'),
   });
 
-  const handleGenerate = async () => {
-    if (!selectedServiceId && !customMessage) {
+  const startGeneration = useCallback(async (isMore = false) => {
+    if (!isMore && !selectedServiceId && !customMessage) {
       toast.error('Pick a service or enter a custom message');
       return;
+    }
+
+    if (isMore) {
+      setRound(prev => prev + 1);
+    } else {
+      setRound(1);
+      setAllRoundFlyers([]);
+      setFeedback({});
     }
 
     setStep('generating');
     setRevealedCount(0);
     setFlyers([]);
     setPartialFlyers([]);
-    setFeedback({});
     setFunFactIndex(0);
 
     try {
@@ -172,9 +184,12 @@ export default function StyleSamplerPage() {
       }
     } catch {
       toast.error('Failed to start generation');
-      setStep('form');
+      setStep(isMore ? 'results' : 'form');
     }
-  };
+  }, [selectedServiceId, customMessage, startPolling]);
+
+  const handleGenerate = () => startGeneration(false);
+  const handleGenerateMore = () => startGeneration(true);
 
   const handleFeedback = async (flyerId: string, type: FeedbackType) => {
     setFeedback(prev => ({ ...prev, [flyerId]: type }));
@@ -421,17 +436,52 @@ export default function StyleSamplerPage() {
           </div>
 
           {/* Actions */}
-          <div className="flex justify-center gap-4 pt-4">
-            <button onClick={() => setStep('form')} className="btn-retro btn-retro-outline px-6 py-3">
-              Try Different Content
-            </button>
-            <button
-              onClick={() => navigate('/tools/promo-flyer')}
-              className="btn-retro btn-retro-primary px-6 py-3"
-            >
-              Start Making Flyers
-            </button>
+          <div className="flex flex-col items-center gap-4 pt-4">
+            <div className="flex justify-center gap-4">
+              <button onClick={handleGenerateMore} className="btn-retro btn-retro-outline px-6 py-3 flex items-center gap-2">
+                <RefreshCw size={16} />
+                Generate 10 More
+              </button>
+              <button
+                onClick={() => navigate('/tools/promo-flyer')}
+                className="btn-retro btn-retro-primary px-6 py-3"
+              >
+                Start Making Flyers
+              </button>
+            </div>
+            {round > 1 && (
+              <p className="text-sm text-gray-500">
+                Round {round} — The more you rate, the better your future flyers!
+              </p>
+            )}
           </div>
+
+          {/* Previous rounds (collapsed) */}
+          {allRoundFlyers.length > flyers.length && (
+            <details className="mt-6">
+              <summary className="font-heading text-sm uppercase text-gray-500 cursor-pointer hover:text-retro-navy">
+                Previous rounds ({allRoundFlyers.length - flyers.length} flyers)
+              </summary>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-3">
+                {allRoundFlyers
+                  .filter(f => !flyers.some(cf => cf.id === f.id))
+                  .map(flyer => (
+                    <div key={flyer.id} className="card-retro overflow-hidden opacity-80">
+                      <div className="aspect-[4/5] overflow-hidden">
+                        <img src={flyer.imageUrl} alt={flyer.familyName || flyer.themeName} className="w-full h-full object-cover" />
+                      </div>
+                      <div className="p-2">
+                        <p className="font-heading text-[10px] uppercase text-gray-500 truncate">
+                          {flyer.familyName || flyer.themeName}
+                          {feedback[flyer.id] === 'fire' && ' — Loved'}
+                          {feedback[flyer.id] === 'meh' && ' — Skipped'}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </details>
+          )}
         </div>
       )}
     </div>

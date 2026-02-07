@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { socialApi } from '../../services/api';
 import {
   Link2,
@@ -11,6 +11,8 @@ import {
   CheckCircle,
   AlertCircle,
   Loader2,
+  Construction,
+  Download,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -99,7 +101,25 @@ export default function SocialPage() {
         </p>
       </div>
 
-      {/* Connect Button */}
+      {/* Coming Soon Banner */}
+      <div className="bg-retro-mustard/20 border-2 border-retro-mustard p-4 flex items-start gap-3">
+        <Construction size={20} className="text-retro-mustard mt-0.5 shrink-0" />
+        <div>
+          <p className="font-heading text-sm uppercase text-retro-navy">Social media connections are coming soon!</p>
+          <p className="text-sm text-gray-700 mt-1">
+            For now, download your content and share it directly.
+          </p>
+          <Link
+            to="/content"
+            className="inline-flex items-center gap-2 text-retro-red font-medium text-sm mt-2 hover:underline"
+          >
+            <Download size={14} />
+            Go to Content Gallery
+          </Link>
+        </div>
+      </div>
+
+      {/* Connect Button (disabled) */}
       <div className="card-retro">
         <h2 className="font-heading text-lg uppercase mb-4">Connect New Account</h2>
         <p className="text-gray-600 text-sm mb-4">
@@ -107,11 +127,12 @@ export default function SocialPage() {
           You'll be redirected to Facebook to authorize the connection.
         </p>
         <button
-          onClick={handleConnect}
-          className="btn-retro-primary flex items-center gap-2"
+          disabled
+          className="btn-retro-primary flex items-center gap-2 opacity-50 cursor-not-allowed"
         >
           <Facebook size={20} />
           Connect Facebook & Instagram
+          <span className="text-xs bg-white/30 px-2 py-0.5 rounded-full">Coming Soon</span>
         </button>
         <p className="text-xs text-gray-500 mt-3">
           Note: Instagram posting requires an Instagram Business account connected to a Facebook Page.

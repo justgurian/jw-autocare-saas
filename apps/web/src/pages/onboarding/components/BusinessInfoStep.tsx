@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { Globe } from 'lucide-react';
 
 interface FormData {
   businessName: string;
@@ -14,6 +15,7 @@ interface FormData {
   vehiclePreferences: { lovedMakes: Array<{makeId: string; models?: string[]}>; neverMakes: string[] };
   websiteUrl: string;
   styleFamilyIds: string[];
+  timezone: string;
 }
 
 interface BusinessInfoStepProps {
@@ -21,10 +23,33 @@ interface BusinessInfoStepProps {
   setFormData: React.Dispatch<React.SetStateAction<FormData>>;
 }
 
+// Common US timezones at the top for convenience
+const POPULAR_TIMEZONES = [
+  'America/New_York',
+  'America/Chicago',
+  'America/Denver',
+  'America/Los_Angeles',
+  'America/Phoenix',
+  'America/Anchorage',
+  'Pacific/Honolulu',
+];
+
 export default function BusinessInfoStep({ formData, setFormData }: BusinessInfoStepProps) {
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   const showError = (field: string) => touched[field] && !formData[field as keyof FormData];
+
+  // Build timezone list: popular US timezones first, then all others
+  const timezoneOptions = useMemo(() => {
+    try {
+      const all = Intl.supportedValuesOf('timeZone');
+      const popular = POPULAR_TIMEZONES.filter(tz => all.includes(tz));
+      const rest = all.filter(tz => !POPULAR_TIMEZONES.includes(tz));
+      return { popular, rest };
+    } catch {
+      return { popular: POPULAR_TIMEZONES, rest: [] };
+    }
+  }, []);
 
   return (
     <div className="space-y-4">
@@ -95,6 +120,31 @@ export default function BusinessInfoStep({ formData, setFormData }: BusinessInfo
             onChange={(e) => setFormData({ ...formData, state: e.target.value.toUpperCase() })}
           />
         </div>
+      </div>
+      <div>
+        <label className="block font-heading uppercase text-sm mb-2 flex items-center gap-2">
+          <Globe size={14} />
+          Timezone
+        </label>
+        <select
+          className="input-retro"
+          value={formData.timezone}
+          onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
+        >
+          <optgroup label="Common (US)">
+            {timezoneOptions.popular.map(tz => (
+              <option key={tz} value={tz}>{tz.replace(/_/g, ' ')}</option>
+            ))}
+          </optgroup>
+          {timezoneOptions.rest.length > 0 && (
+            <optgroup label="All Timezones">
+              {timezoneOptions.rest.map(tz => (
+                <option key={tz} value={tz}>{tz.replace(/_/g, ' ')}</option>
+              ))}
+            </optgroup>
+          )}
+        </select>
+        <p className="text-gray-400 text-xs mt-1">Auto-detected from your browser. Used for scheduling posts.</p>
       </div>
     </div>
   );

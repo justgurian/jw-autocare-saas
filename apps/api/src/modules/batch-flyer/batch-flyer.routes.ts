@@ -847,12 +847,11 @@ function selectThemes(
     }
   } else if (strategy === 'family-sampler') {
     // Pick exactly 1 random theme from each of the 10 style families
+    // Uses getThemesByFamily which resolves ALL themes (not just nostalgic) for each family
     for (const family of STYLE_FAMILIES) {
-      const familyThemeDefs = family.themeIds
-        .map((id: string) => themeRegistry.getNostalgicTheme(id))
-        .filter((t): t is NostalgicThemeDefinition => t != null);
-      if (familyThemeDefs.length > 0) {
-        themes.push(familyThemeDefs[Math.floor(Math.random() * familyThemeDefs.length)]);
+      const familyThemes = themeRegistry.getThemesByFamily(family.id);
+      if (familyThemes.length > 0) {
+        themes.push(familyThemes[Math.floor(Math.random() * familyThemes.length)] as NostalgicThemeDefinition);
       }
     }
     // If count > families, cycle through again

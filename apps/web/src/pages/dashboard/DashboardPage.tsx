@@ -61,7 +61,8 @@ const dashboardTourSteps = [
 export default function DashboardPage() {
   const { user } = useAuthStore();
   const navigate = useNavigate();
-  const { dashboardTourCompleted, completeDashboardTour, recentTools } = useTourStore();
+  const { dashboardTourCompleted, completeDashboardTour, recentTools, hasVisitedTool } = useTourStore();
+  const [showToolkit, setShowToolkit] = useState(() => !localStorage.getItem('bayfiller-toolkit-dismissed'));
 
   // Check if we should start the guided tour
   const [runTour, setRunTour] = useState(false);
@@ -105,6 +106,50 @@ export default function DashboardPage() {
         </h1>
         <p className="text-gray-600 mt-2 text-lg">What do you want to do today?</p>
       </div>
+
+      {/* Your Toolkit — shows after onboarding, dismissible */}
+      {showToolkit && recentToolItems.length === 0 && (
+        <div className="card-retro p-5 border-retro-teal border-2">
+          <div className="flex justify-between items-start mb-3">
+            <h2 className="font-heading text-sm uppercase text-retro-teal flex items-center gap-2">
+              <Gift size={16} /> Your Toolkit — Start Here
+            </h2>
+            <button
+              onClick={() => {
+                setShowToolkit(false);
+                localStorage.setItem('bayfiller-toolkit-dismissed', 'true');
+              }}
+              className="text-gray-400 hover:text-gray-600 text-xs"
+            >
+              Dismiss
+            </button>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {[
+              { href: '/tools/promo-flyer', name: 'Make a Flyer', desc: 'One-tap professional marketing' },
+              { href: '/tools/video-creator', name: 'Make a Video', desc: 'AI-powered promo videos' },
+              { href: '/tools/style-sampler', name: 'Style Sampler', desc: 'Find your perfect look' },
+              { href: '/tools/review-reply', name: 'Reply to Reviews', desc: 'AI-crafted responses' },
+              { href: '/tools/mascot-builder', name: 'Mascot Builder', desc: 'Create your shop mascot' },
+              { href: '/tools/batch-flyer', name: 'Batch Generator', desc: 'Generate a week of content' },
+            ].map((tool) => (
+              <Link
+                key={tool.href}
+                to={tool.href}
+                className="flex items-start gap-2 p-3 bg-white border border-gray-200 hover:border-retro-teal hover:bg-retro-teal/5 transition-all rounded"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="font-heading text-xs uppercase text-retro-navy truncate">{tool.name}</p>
+                  <p className="text-[10px] text-gray-500">{tool.desc}</p>
+                </div>
+                {!hasVisitedTool(tool.href) && (
+                  <span className="shrink-0 px-1.5 py-0.5 text-[9px] font-bold bg-retro-red text-white rounded-full">NEW</span>
+                )}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Pick Up Where You Left Off */}
       {recentToolItems.length > 0 && (

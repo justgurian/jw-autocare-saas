@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Check, ChevronRight, ChevronLeft, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { onboardingApi } from '../../services/api';
+import { onboardingApi, promoFlyerApi } from '../../services/api';
 import BusinessInfoStep from './components/BusinessInfoStep';
 import LogoStep from './components/LogoStep';
 import ServicesStep from './components/ServicesStep';
@@ -11,7 +11,6 @@ import SpecialsStep from './components/SpecialsStep';
 import CarPreferencesStep from './components/CarPreferencesStep';
 import StyleTasteTestStep from './components/StyleTasteTestStep';
 import StyleSamplerStep from './components/StyleSamplerStep';
-import { promoFlyerApi } from '../../services/api';
 
 const steps = [
   { id: 1, name: 'Business Info', description: 'Tell us about your shop' },
@@ -29,6 +28,8 @@ export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isUploading, setIsUploading] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [isRestoring, setIsRestoring] = useState(true);
+  const [serverSpecialIds, setServerSpecialIds] = useState<Set<string>>(new Set());
   const [formData, setFormData] = useState({
     businessName: '',
     phone: '',
@@ -43,8 +44,55 @@ export default function OnboardingPage() {
     vehiclePreferences: { lovedMakes: [] as Array<{makeId: string; models?: string[]}>, neverMakes: [] as string[] },
     websiteUrl: '',
     styleFamilyIds: [] as string[],
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/New_York',
   });
   const [isSaving, setIsSaving] = useState(false);
+
+  // Restore progress from server on mount
+  useEffect(() => {
+    async function restoreProgress() {
+      try {
+        const [statusRes, brandKitRes] = await Promise.allSettled([
+          onboardingApi.getStatus(),
+          onboardingApi.getBrandKit(),
+        ]);
+
+        let restoredStep = 1;
+        if (statusRes.status === 'fulfilled') {
+          const status = statusRes.value.data;
+          // Find the first incomplete step, or resume at currentStep
+          const firstIncomplete = status.steps?.find((s: { completed: boolean }) => !s.completed);
+          restoredStep = firstIncomplete ? firstIncomplete.step : (status.currentStep || 1);
+        }
+
+        if (brandKitRes.status === 'fulfilled') {
+          const bk = brandKitRes.value.data;
+          setFormData(prev => ({
+            ...prev,
+            businessName: bk.businessName || prev.businessName,
+            phone: bk.phone || prev.phone,
+            address: bk.address || prev.address,
+            city: bk.city || prev.city,
+            state: bk.state || prev.state,
+            logoUrl: bk.logoUrl || prev.logoUrl,
+            primaryColor: bk.primaryColor || prev.primaryColor,
+            brandVoice: bk.brandVoice || prev.brandVoice,
+            websiteUrl: bk.website || prev.websiteUrl,
+          }));
+          if (bk.logoUrl) {
+            setLogoPreview(bk.logoUrl);
+          }
+        }
+
+        setCurrentStep(Math.max(1, Math.min(restoredStep, 8)));
+      } catch {
+        // If restore fails, start fresh — that's fine
+      } finally {
+        setIsRestoring(false);
+      }
+    }
+    restoreProgress();
+  }, []);
 
   const handleNext = async () => {
     setIsSaving(true);
@@ -59,11 +107,12 @@ export default function OnboardingPage() {
           city: formData.city,
           state: formData.state,
           website: formData.websiteUrl,
+          timezone: formData.timezone,
         });
       } else if (currentStep === 2) {
         // Step 2: Logo & Colors - already saved on upload, just update colors
         await onboardingApi.updateColors({
-          primaryColor: formData.primaryColor,
+          primary: formData.primaryColor,
         });
       } else if (currentStep === 3) {
         // Step 3: Services - THIS WAS MISSING!
@@ -80,9 +129,10 @@ export default function OnboardingPage() {
         // Step 4: Brand Voice
         await onboardingApi.updateBrandVoice(formData.brandVoice);
       } else if (currentStep === 5) {
-        // Step 5: Specials
-        if (formData.specials.length > 0) {
-          const specialsData = formData.specials.map(s => ({
+        // Step 5: Specials — only send new ones to avoid duplicates
+        const newSpecials = formData.specials.filter(s => !serverSpecialIds.has(s.title));
+        if (newSpecials.length > 0) {
+          const specialsData = newSpecials.map(s => ({
             title: s.title,
             description: s.description,
             discountType: 'percentage',
@@ -124,6 +174,17 @@ export default function OnboardingPage() {
       setCurrentStep(currentStep - 1);
     }
   };
+
+  if (isRestoring) {
+    return (
+      <div className="min-h-screen bg-retro-cream flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin-slow w-12 h-12 border-4 border-retro-red border-t-transparent rounded-full mx-auto mb-3" />
+          <p className="font-heading text-retro-navy">Restoring your progress...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-retro-cream py-12 px-4">
@@ -197,6 +258,10 @@ export default function OnboardingPage() {
               onServicesChange={(services) => setFormData({ ...formData, services })}
               websiteUrl={formData.websiteUrl}
               onWebsiteUrlChange={(url) => setFormData({ ...formData, websiteUrl: url })}
+              onSpecialsExtracted={(specials) => setFormData(prev => ({
+                ...prev,
+                specials: [...prev.specials, ...specials],
+              }))}
             />
           )}
 

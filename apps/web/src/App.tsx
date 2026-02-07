@@ -1,5 +1,5 @@
 import { Suspense, lazy } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from './stores/auth.store';
 import ErrorBoundary from './components/ErrorBoundary';
 
@@ -63,7 +63,8 @@ function PageLoader() {
 
 // Protected route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuthStore();
+  const { isAuthenticated, isLoading, user } = useAuthStore();
+  const location = useLocation();
 
   if (isLoading) {
     return (
@@ -78,6 +79,11 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (!isAuthenticated) {
     return <Navigate to="/auth/login" replace />;
+  }
+
+  // Enforce onboarding for new users (skip if already on /onboarding)
+  if (user && !user.tenant.onboardingCompleted && !location.pathname.startsWith('/onboarding')) {
+    return <Navigate to="/onboarding" replace />;
   }
 
   return <>{children}</>;
