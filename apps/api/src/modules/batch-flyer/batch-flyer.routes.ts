@@ -15,6 +15,8 @@ import {
   NostalgicThemeDefinition,
   EraVehicle,
   getThemesFromHolidayPacks,
+  STYLE_FAMILIES,
+  getFamilyForTheme,
 } from '../../prompts/themes';
 import { ValidationError } from '../../middleware/error.middleware';
 import { logger } from '../../utils/logger';
@@ -361,6 +363,8 @@ router.get('/jobs/:jobId/flyers', async (req: Request, res: Response, next: Next
             name: (item.metadata as { vehicleName?: string }).vehicleName || '',
           }
         : undefined,
+      familyId: (item.metadata as any)?.familyId || null,
+      familyName: (item.metadata as any)?.familyName || null,
       approvalStatus: (item.approvalStatus || 'pending') as 'pending' | 'approved' | 'rejected',
       scheduledFor: item.scheduledFor?.toISOString() || null,
       status: item.status,
@@ -841,6 +845,21 @@ function selectThemes(
         themes.push(combinedThemes[Math.floor(Math.random() * combinedThemes.length)]);
       }
     }
+  } else if (strategy === 'family-sampler') {
+    // Pick exactly 1 random theme from each of the 10 style families
+    for (const family of STYLE_FAMILIES) {
+      const familyThemeDefs = family.themeIds
+        .map((id: string) => themeRegistry.getNostalgicTheme(id))
+        .filter((t): t is NostalgicThemeDefinition => t != null);
+      if (familyThemeDefs.length > 0) {
+        themes.push(familyThemeDefs[Math.floor(Math.random() * familyThemeDefs.length)]);
+      }
+    }
+    // If count > families, cycle through again
+    const base = [...themes];
+    while (themes.length < count && base.length > 0) {
+      themes.push(base[themes.length % base.length]);
+    }
   } else {
     // Auto: AI picks varied themes from combined pool
     // Include holiday themes only if explicitly requested via holidayPacks
@@ -1039,6 +1058,8 @@ async function generateFlyers(
               vehicleId: selectedVehicle?.id,
               vehicleName: selectedVehicle?.name,
               themeName: theme.name,
+              familyId: getFamilyForTheme(theme.id)?.id || null,
+              familyName: getFamilyForTheme(theme.id)?.name || null,
               isNostalgic: true,
               era: theme.era,
               style: theme.style,

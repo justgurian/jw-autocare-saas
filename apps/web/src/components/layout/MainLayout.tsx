@@ -26,10 +26,7 @@ import {
   Camera,
   ChevronDown,
   ChevronRight,
-  Zap,
-  Users,
   TrendingUp,
-  HelpCircle,
   Film,
   Clapperboard,
   PartyPopper,
@@ -38,105 +35,176 @@ import {
   Music,
   Pin,
   PinOff,
+  FolderOpen,
+  Briefcase,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ThemeToggle from '../features/ThemeToggle';
+import { useTourStore } from '../../stores/tour.store';
 
 // All navigation items (flat list for favorites lookup)
 const allNavItems = [
-  { name: 'Nostalgic Flyers', href: '/tools/promo-flyer', icon: Image, description: '48 retro themes: Comics, Movies, Magazines (1950s-1980s)' },
-  { name: 'Batch Generator', href: '/tools/batch-flyer', icon: Image, description: 'Generate multiple flyers at once' },
-  { name: 'Funny Meme', href: '/tools/meme-generator', icon: Laugh, description: 'Relatable car memes your customers will share' },
-  { name: 'Feature a Car', href: '/tools/car-of-day', icon: Star, description: 'Show off customer cars and build community' },
-  { name: 'Week of Posts', href: '/tools/instant-pack', icon: Package, description: 'Generate a whole week of content at once' },
-  { name: 'Shop Photographer', href: '/tools/shop-photographer', icon: Camera, description: 'Professional photos without a photographer' },
+  { name: 'Dashboard', href: '/dashboard', icon: Home, description: 'Your command center' },
+  { name: 'My Creations', href: '/content', icon: FolderOpen, description: 'Browse your generated content' },
+  { name: 'Nostalgic Flyers', href: '/tools/promo-flyer', icon: Image, description: '48 retro themes' },
+  { name: 'Batch Generator', href: '/tools/batch-flyer', icon: Image, description: 'Multiple flyers at once' },
+  { name: 'Style Sampler', href: '/tools/style-sampler', icon: Palette, description: 'Compare all 10 style families' },
+  { name: 'Now Hiring', href: '/tools/hiring-flyer', icon: Briefcase, description: 'Professional hiring flyers' },
+  { name: 'Funny Meme', href: '/tools/meme-generator', icon: Laugh, description: 'Shareable car memes' },
+  { name: 'Feature a Car', href: '/tools/car-of-day', icon: Star, description: 'Customer car showcase' },
+  { name: 'Shop Photographer', href: '/tools/shop-photographer', icon: Camera, description: 'Professional shop photos' },
+  { name: 'Staff Cards', href: '/tools/business-cards', icon: CreditCard, description: 'Team business cards' },
   { name: 'Make a Video', href: '/tools/video-creator', icon: Video, description: 'Quick promotional videos' },
   { name: 'UGC Creator', href: '/tools/ugc-creator', icon: Film, description: 'Character-based video skits' },
   { name: "Director's Cut", href: '/tools/directors-cut', icon: Clapperboard, description: 'Animate your flyers' },
   { name: 'Celebrations', href: '/tools/celebration', icon: PartyPopper, description: 'Birthday & milestone videos' },
-  { name: 'Mascot Builder', href: '/tools/mascot-builder', icon: Palette, description: 'Create custom characters' },
-  { name: 'Jingle Generator', href: '/tools/jingle-generator', icon: Music, description: 'AI-generated song jingles' },
-  { name: 'Reply to Reviews', href: '/tools/review-reply', icon: MessageSquare, description: 'Professional responses that win customers back' },
-  { name: 'Text Customers', href: '/tools/sms-templates', icon: Smartphone, description: 'Reminders and promos that bring people in' },
-  { name: 'Explain Repairs', href: '/tools/jargon', icon: BookOpen, description: 'Turn mechanic-speak into words customers understand' },
-  { name: 'Write a Blog Post', href: '/tools/blog-generator', icon: FileText, description: 'Help Google find your shop (takes 2 min)' },
-  { name: 'Run a Campaign', href: '/tools/campaigns', icon: Rocket, description: 'Multi-week marketing pushes for big results' },
-  { name: 'Marketing Calendar', href: '/calendar', icon: Calendar, description: 'See your posting schedule at a glance' },
-  { name: 'See What Works', href: '/analytics', icon: BarChart3, description: 'Track which posts bring in customers' },
-  { name: 'Shop Profile', href: '/settings/profile', icon: Settings, description: 'Your logo, colors, and contact info' },
-  { name: 'Services & Specials', href: '/settings/services', icon: Wrench, description: 'Manage your services, repairs, and specials' },
-  { name: 'Social Accounts', href: '/settings/social', icon: Share2, description: 'Connect Facebook, Instagram, etc.' },
-  { name: 'Auto-Pilot', href: '/settings/auto-pilot', icon: Rocket, description: 'Set it and forget it - AI posts for you' },
+  { name: 'Jingle Generator', href: '/tools/jingle-generator', icon: Music, description: 'AI-generated jingles' },
+  { name: 'Reply to Reviews', href: '/tools/review-reply', icon: MessageSquare, description: 'Win customers back' },
+  { name: 'Text Customers', href: '/tools/sms-templates', icon: Smartphone, description: 'Service reminders' },
+  { name: 'Explain Repairs', href: '/tools/jargon', icon: BookOpen, description: 'Customer-friendly explanations' },
+  { name: 'Write a Blog Post', href: '/tools/blog-generator', icon: FileText, description: 'SEO content for Google' },
+  { name: 'Run a Campaign', href: '/tools/campaigns', icon: Rocket, description: 'Multi-week marketing pushes' },
+  { name: 'Week of Posts', href: '/tools/instant-pack', icon: Package, description: '7 days of content' },
+  { name: 'Marketing Calendar', href: '/calendar', icon: Calendar, description: 'Posting schedule' },
+  { name: 'See What Works', href: '/analytics', icon: BarChart3, description: 'Track performance' },
+  { name: 'Auto-Pilot', href: '/settings/auto-pilot', icon: Rocket, description: 'AI posts for you' },
+  { name: 'Fix Photos', href: '/tools/photo-tuner', icon: Camera, description: 'Professional photo enhancement' },
+  { name: 'Edit Images', href: '/tools/image-editor', icon: Wrench, description: 'Crop, filter, adjust' },
+  { name: 'Style Cloner', href: '/tools/style-cloner', icon: Wand2, description: 'Clone any art style' },
+  { name: 'Mascot Builder', href: '/tools/mascot-builder', icon: Palette, description: 'Custom characters' },
+  { name: 'Check In & Win', href: '/tools/check-in', icon: Trophy, description: 'Customer photo experience' },
+  { name: 'Shop Profile', href: '/settings/profile', icon: Settings, description: 'Logo, colors, contact info' },
+  { name: 'Services & Specials', href: '/settings/services', icon: Wrench, description: 'Manage offerings' },
+  { name: 'Social Accounts', href: '/settings/social', icon: Share2, description: 'Connect platforms' },
   { name: 'Billing', href: '/settings/billing', icon: CreditCard, description: 'Subscription and payment' },
-  { name: 'Staff Cards', href: '/tools/business-cards', icon: CreditCard, description: 'Professional cards for your team' },
-  { name: 'Fix Photos', href: '/tools/photo-tuner', icon: Camera, description: 'Make your shop photos look professional' },
-  { name: 'Edit Images', href: '/tools/image-editor', icon: Wrench, description: 'Crop, filter, and adjust any image' },
-  { name: 'Style Cloner', href: '/tools/style-cloner', icon: Wand2, description: 'Clone any art style into a theme' },
 ];
 
-// Grouped navigation — consolidated from 5 groups to 3
+// 8 clean navigation groups
 const navigationGroups = [
   {
-    id: 'create',
-    name: 'Create',
-    icon: Zap,
-    description: 'Images, videos, and content',
+    id: 'home',
+    name: 'Home',
+    icon: Home,
+    description: 'Dashboard and content',
     items: [
-      { name: 'Nostalgic Flyers', href: '/tools/promo-flyer', icon: Image, description: '48 retro themes: Comics, Movies, Magazines (1950s-1980s)' },
-      { name: 'Batch Generator', href: '/tools/batch-flyer', icon: Image, description: 'Generate multiple flyers at once' },
-      { name: 'Funny Meme', href: '/tools/meme-generator', icon: Laugh, description: 'Relatable car memes your customers will share' },
-      { name: 'Feature a Car', href: '/tools/car-of-day', icon: Star, description: 'Show off customer cars and build community' },
-      { name: 'Week of Posts', href: '/tools/instant-pack', icon: Package, description: 'Generate a whole week of content at once' },
-      { name: 'Shop Photographer', href: '/tools/shop-photographer', icon: Camera, description: 'Professional photos without a photographer' },
+      { name: 'Dashboard', href: '/dashboard', icon: Home, description: 'Your command center' },
+      { name: 'My Creations', href: '/content', icon: FolderOpen, description: 'Browse your generated content' },
+    ],
+  },
+  {
+    id: 'flyers',
+    name: 'Flyers & Images',
+    icon: Image,
+    description: 'Marketing graphics',
+    items: [
+      { name: 'Nostalgic Flyers', href: '/tools/promo-flyer', icon: Image, description: '48 retro themes' },
+      { name: 'Batch Generator', href: '/tools/batch-flyer', icon: Image, description: 'Multiple flyers at once' },
+      { name: 'Style Sampler', href: '/tools/style-sampler', icon: Palette, description: 'Compare all 10 style families' },
+      { name: 'Now Hiring', href: '/tools/hiring-flyer', icon: Briefcase, description: 'Professional hiring flyers' },
+      { name: 'Funny Meme', href: '/tools/meme-generator', icon: Laugh, description: 'Shareable car memes' },
+      { name: 'Feature a Car', href: '/tools/car-of-day', icon: Star, description: 'Customer car showcase' },
+      { name: 'Shop Photographer', href: '/tools/shop-photographer', icon: Camera, description: 'Professional shop photos' },
+      { name: 'Staff Cards', href: '/tools/business-cards', icon: CreditCard, description: 'Team business cards' },
+    ],
+  },
+  {
+    id: 'video',
+    name: 'Video & Audio',
+    icon: Video,
+    description: 'Video content and jingles',
+    items: [
       { name: 'Make a Video', href: '/tools/video-creator', icon: Video, description: 'Quick promotional videos' },
       { name: 'UGC Creator', href: '/tools/ugc-creator', icon: Film, description: 'Character-based video skits' },
       { name: "Director's Cut", href: '/tools/directors-cut', icon: Clapperboard, description: 'Animate your flyers' },
       { name: 'Celebrations', href: '/tools/celebration', icon: PartyPopper, description: 'Birthday & milestone videos' },
-      { name: 'Mascot Builder', href: '/tools/mascot-builder', icon: Palette, description: 'Create custom characters' },
-      { name: 'Jingle Generator', href: '/tools/jingle-generator', icon: Music, description: 'AI-generated song jingles' },
+      { name: 'Jingle Generator', href: '/tools/jingle-generator', icon: Music, description: 'AI-generated jingles' },
     ],
   },
   {
-    id: 'engage',
-    name: 'Engage',
-    icon: Users,
-    description: 'Customers, marketing, and growth',
+    id: 'writing',
+    name: 'Writing & Outreach',
+    icon: FileText,
+    description: 'Text, reviews, and blogs',
     items: [
-      { name: 'Reply to Reviews', href: '/tools/review-reply', icon: MessageSquare, description: 'Professional responses that win customers back' },
-      { name: 'Text Customers', href: '/tools/sms-templates', icon: Smartphone, description: 'Reminders and promos that bring people in' },
-      { name: 'Explain Repairs', href: '/tools/jargon', icon: BookOpen, description: 'Turn mechanic-speak into words customers understand' },
-      { name: 'Write a Blog Post', href: '/tools/blog-generator', icon: FileText, description: 'Help Google find your shop (takes 2 min)' },
-      { name: 'Run a Campaign', href: '/tools/campaigns', icon: Rocket, description: 'Multi-week marketing pushes for big results' },
-      { name: 'Marketing Calendar', href: '/calendar', icon: Calendar, description: 'See your posting schedule at a glance' },
-      { name: 'See What Works', href: '/analytics', icon: BarChart3, description: 'Track which posts bring in customers' },
+      { name: 'Reply to Reviews', href: '/tools/review-reply', icon: MessageSquare, description: 'Win customers back' },
+      { name: 'Text Customers', href: '/tools/sms-templates', icon: Smartphone, description: 'Service reminders' },
+      { name: 'Explain Repairs', href: '/tools/jargon', icon: BookOpen, description: 'Customer-friendly explanations' },
+      { name: 'Write a Blog Post', href: '/tools/blog-generator', icon: FileText, description: 'SEO content for Google' },
+    ],
+  },
+  {
+    id: 'marketing',
+    name: 'Marketing',
+    icon: TrendingUp,
+    description: 'Campaigns and analytics',
+    items: [
+      { name: 'Run a Campaign', href: '/tools/campaigns', icon: Rocket, description: 'Multi-week marketing pushes' },
+      { name: 'Week of Posts', href: '/tools/instant-pack', icon: Package, description: '7 days of content' },
+      { name: 'Marketing Calendar', href: '/calendar', icon: Calendar, description: 'Posting schedule' },
+      { name: 'See What Works', href: '/analytics', icon: BarChart3, description: 'Track performance' },
+      { name: 'Auto-Pilot', href: '/settings/auto-pilot', icon: Rocket, description: 'AI posts for you' },
+    ],
+  },
+  {
+    id: 'utilities',
+    name: 'Edit & Utilities',
+    icon: Wrench,
+    description: 'Photo tools and style',
+    items: [
+      { name: 'Fix Photos', href: '/tools/photo-tuner', icon: Camera, description: 'Professional photo enhancement' },
+      { name: 'Edit Images', href: '/tools/image-editor', icon: Wrench, description: 'Crop, filter, adjust' },
+      { name: 'Style Cloner', href: '/tools/style-cloner', icon: Wand2, description: 'Clone any art style' },
+      { name: 'Mascot Builder', href: '/tools/mascot-builder', icon: Palette, description: 'Custom characters' },
+    ],
+  },
+  {
+    id: 'instore',
+    name: 'In-Store',
+    icon: Trophy,
+    description: 'On-site customer experiences',
+    items: [
+      { name: 'Check In & Win', href: '/tools/check-in', icon: Trophy, description: 'Customer photo experience' },
     ],
   },
   {
     id: 'settings',
-    name: 'Settings',
+    name: 'My Shop',
     icon: Settings,
-    description: 'Shop info and account',
+    description: 'Profile and billing',
     items: [
-      { name: 'Shop Profile', href: '/settings/profile', icon: Settings, description: 'Your logo, colors, and contact info' },
-      { name: 'Services & Specials', href: '/settings/services', icon: Wrench, description: 'Manage your services, repairs, and specials' },
-      { name: 'Social Accounts', href: '/settings/social', icon: Share2, description: 'Connect Facebook, Instagram, etc.' },
-      { name: 'Auto-Pilot', href: '/settings/auto-pilot', icon: Rocket, description: 'Set it and forget it - AI posts for you' },
+      { name: 'Shop Profile', href: '/settings/profile', icon: Settings, description: 'Logo, colors, contact info' },
+      { name: 'Services & Specials', href: '/settings/services', icon: Wrench, description: 'Manage offerings' },
+      { name: 'Social Accounts', href: '/settings/social', icon: Share2, description: 'Connect platforms' },
       { name: 'Billing', href: '/settings/billing', icon: CreditCard, description: 'Subscription and payment' },
-      { name: 'Staff Cards', href: '/tools/business-cards', icon: CreditCard, description: 'Professional cards for your team' },
-      { name: 'Fix Photos', href: '/tools/photo-tuner', icon: Camera, description: 'Make your shop photos look professional' },
-      { name: 'Edit Images', href: '/tools/image-editor', icon: Wrench, description: 'Crop, filter, and adjust any image' },
-      { name: 'Style Cloner', href: '/tools/style-cloner', icon: Wand2, description: 'Clone any art style into a theme' },
     ],
   },
 ];
+
+const SIDEBAR_GROUPS_KEY = 'bayfiller-sidebar-groups';
+const DEFAULT_EXPANDED = ['home', 'flyers'];
 
 export default function MainLayout() {
   const { user, logout } = useAuthStore();
   const location = useLocation();
   const { favorites, addFavorite, removeFavorite, isFavorite } = useFavoritesStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [expandedGroups, setExpandedGroups] = useState<string[]>(['create']);
-  const [showTooltip, setShowTooltip] = useState<string | null>(null);
+  const [expandedGroups, setExpandedGroups] = useState<string[]>(() => {
+    try {
+      const stored = localStorage.getItem(SIDEBAR_GROUPS_KEY);
+      return stored ? JSON.parse(stored) : DEFAULT_EXPANDED;
+    } catch {
+      return DEFAULT_EXPANDED;
+    }
+  });
+
+  // Persist expanded groups
+  useEffect(() => {
+    localStorage.setItem(SIDEBAR_GROUPS_KEY, JSON.stringify(expandedGroups));
+  }, [expandedGroups]);
+
+  // "New" badge: shows on tools user hasn't visited yet
+  const { hasVisitedTool, markToolVisited } = useTourStore();
+  const isNewTool = (href: string) => !hasVisitedTool(href);
 
   const handleLogout = async () => {
     await logout();
@@ -187,43 +255,8 @@ export default function MainLayout() {
             </Link>
           </div>
 
-          {/* Dashboard Link */}
-          <Link
-            to="/dashboard"
-            onClick={() => setSidebarOpen(false)}
-            className={`flex items-center gap-3 px-5 py-4 font-heading text-lg transition-all border-b border-white/10 ${
-              location.pathname === '/dashboard'
-                ? 'bg-retro-red text-white'
-                : 'hover:bg-white/10'
-            }`}
-          >
-            <Home size={24} />
-            <span>Home</span>
-          </Link>
-
-          {/* CHECK IN AND WIN - Special Featured Button */}
-          <div className="p-4 border-b border-white/10">
-            <Link
-              to="/tools/check-in"
-              onClick={() => setSidebarOpen(false)}
-              className={`block w-full p-4 text-center transition-all rounded-lg border-2 ${
-                location.pathname === '/tools/check-in'
-                  ? 'bg-retro-mustard border-yellow-300 text-retro-navy'
-                  : 'bg-gradient-to-r from-retro-mustard to-yellow-400 border-yellow-500 text-retro-navy hover:scale-[1.02]'
-              }`}
-            >
-              <div className="flex items-center justify-center gap-3">
-                <Trophy size={28} className="animate-bounce" />
-                <div className="text-left">
-                  <span className="font-display text-lg block leading-tight">CHECK IN & WIN</span>
-                  <span className="text-xs opacity-80">Customer photo experience</span>
-                </div>
-              </div>
-            </Link>
-          </div>
-
           {/* Navigation */}
-          <nav className="flex-1 overflow-y-auto py-2">
+          <nav data-tour="sidebar-nav" className="flex-1 overflow-y-auto py-2">
             {/* Favorites Section */}
             {favoriteItems.length > 0 && (
               <div className="mb-1">
@@ -239,7 +272,7 @@ export default function MainLayout() {
                       <Link
                         to={item.href}
                         onClick={() => setSidebarOpen(false)}
-                        className={`flex-1 flex items-center gap-3 px-5 py-2.5 pl-10 transition-all ${
+                        className={`flex-1 flex items-center gap-3 px-5 py-2 pl-10 transition-all ${
                           isItemActive(item.href)
                             ? 'bg-retro-red text-white border-l-4 border-retro-mustard'
                             : 'hover:bg-white/10 border-l-4 border-transparent'
@@ -264,50 +297,56 @@ export default function MainLayout() {
 
             {/* Navigation Groups */}
             {navigationGroups.map((group) => (
-              <div key={group.id} className="mb-1">
+              <div key={group.id} className="mb-0.5">
                 {/* Group Header */}
                 <button
                   onClick={() => toggleGroup(group.id)}
-                  className={`w-full flex items-center justify-between px-5 py-3 text-left transition-all ${
+                  className={`w-full flex items-center justify-between px-5 py-2.5 text-left transition-all ${
                     isGroupActive(group.items) ? 'bg-white/10' : 'hover:bg-white/5'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <group.icon size={20} className="text-retro-mustard" />
+                    <group.icon size={18} className="text-retro-mustard" />
                     <div>
-                      <span className="font-heading text-sm uppercase tracking-wide">
+                      <span className="font-heading text-xs uppercase tracking-wide">
                         {group.name}
                       </span>
-                      <p className="text-xs text-gray-400 font-normal normal-case">
+                      <p className="text-[10px] text-gray-500 font-normal normal-case leading-tight">
                         {group.description}
                       </p>
                     </div>
                   </div>
                   {expandedGroups.includes(group.id) ? (
-                    <ChevronDown size={18} className="text-gray-400" />
+                    <ChevronDown size={16} className="text-gray-400" />
                   ) : (
-                    <ChevronRight size={18} className="text-gray-400" />
+                    <ChevronRight size={16} className="text-gray-400" />
                   )}
                 </button>
 
                 {/* Group Items */}
                 {expandedGroups.includes(group.id) && (
-                  <div className="bg-black/20 py-1">
+                  <div className="bg-black/20 py-0.5">
                     {group.items.map((item) => (
                       <div key={item.href} className="group relative flex items-center">
                         <Link
                           to={item.href}
-                          onClick={() => setSidebarOpen(false)}
-                          onMouseEnter={() => setShowTooltip(item.href)}
-                          onMouseLeave={() => setShowTooltip(null)}
-                          className={`flex-1 flex items-center gap-3 px-5 py-2.5 pl-12 transition-all ${
+                          onClick={() => { setSidebarOpen(false); markToolVisited(item.href); }}
+                          className={`flex-1 flex items-center gap-3 px-5 py-2 pl-11 transition-all ${
                             isItemActive(item.href)
                               ? 'bg-retro-red text-white border-l-4 border-retro-mustard'
                               : 'hover:bg-white/10 border-l-4 border-transparent'
                           }`}
                         >
-                          <item.icon size={18} />
-                          <span className="text-sm">{item.name}</span>
+                          <item.icon size={16} className="shrink-0 mt-0.5" />
+                          <div className="min-w-0 flex-1">
+                            <span className="text-sm block leading-tight">{item.name}</span>
+                            <p className="text-[10px] text-gray-500 leading-tight truncate">{item.description}</p>
+                          </div>
+                          {isNewTool(item.href) && (
+                            <span className="ml-auto shrink-0 px-1.5 py-0.5 text-[9px] font-bold bg-retro-red text-white rounded-full uppercase">
+                              New
+                            </span>
+                          )}
                         </Link>
 
                         {/* Pin/unpin button */}
@@ -317,7 +356,7 @@ export default function MainLayout() {
                               ? removeFavorite(item.href)
                               : addFavorite(item.href)
                           }
-                          className={`px-2 py-1 mr-2 transition-opacity ${
+                          className={`px-2 py-1 mr-2 transition-opacity shrink-0 ${
                             isFavorite(item.href)
                               ? 'text-retro-mustard opacity-100'
                               : 'text-gray-500 opacity-0 group-hover:opacity-100 hover:text-white'
@@ -326,14 +365,6 @@ export default function MainLayout() {
                         >
                           {isFavorite(item.href) ? <PinOff size={14} /> : <Pin size={14} />}
                         </button>
-
-                        {/* Tooltip */}
-                        {showTooltip === item.href && (
-                          <div className="absolute left-full top-0 ml-2 z-50 w-48 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl border border-gray-700">
-                            <p className="font-medium mb-1">{item.name}</p>
-                            <p className="text-gray-300">{item.description}</p>
-                          </div>
-                        )}
                       </div>
                     ))}
                   </div>

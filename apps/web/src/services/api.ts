@@ -494,7 +494,7 @@ export const batchFlyerApi = {
     serviceIds?: string[];
     specialIds?: string[];
     customContent?: Array<{ message: string; subject: string; details?: string }>;
-    themeStrategy: 'auto' | 'single' | 'matrix';
+    themeStrategy: 'auto' | 'single' | 'matrix' | 'family-sampler';
     singleThemeId?: string;
     themeMatrix?: Array<{ index: number; themeId: string }>;
     language: 'en' | 'es' | 'both';
@@ -697,6 +697,28 @@ export const jingleGeneratorApi = {
   getHistory: (params?: { limit?: number; offset?: number }) =>
     api.get('/tools/jingle-generator/history', { params }),
   delete: (id: string) => api.delete(`/tools/jingle-generator/${id}`),
+};
+
+export const hiringFlyerApi = {
+  getPositions: () => api.get('/tools/hiring-flyer/positions'),
+  generate: (data: {
+    mode: 'simple' | 'detailed';
+    jobTitle: string;
+    jobType: 'full-time' | 'part-time' | 'seasonal';
+    payRange?: string;
+    howToApply: 'call' | 'email' | 'visit' | 'online';
+    requiredCerts?: string[];
+    skills?: string[];
+    benefits?: string[];
+    experienceLevel?: 'none' | 'entry' | 'mid' | 'senior';
+    urgency?: 'normal' | 'urgent' | 'immediate';
+    themeId?: string;
+    language?: 'en' | 'es' | 'both';
+  }) => api.post('/tools/hiring-flyer/generate', data),
+  instant: () => api.post('/tools/hiring-flyer/instant', {}),
+  getHistory: (params?: { limit?: number }) =>
+    api.get('/tools/hiring-flyer/history', { params }),
+  delete: (id: string) => api.delete(`/tools/hiring-flyer/${id}`),
 };
 
 export const servicesApi = {

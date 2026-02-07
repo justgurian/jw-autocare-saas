@@ -106,6 +106,7 @@ export default function OnboardingPage() {
         // Complete onboarding
         await onboardingApi.complete();
         toast.success('Setup complete! Welcome to Bayfiller.');
+        localStorage.setItem('startDashboardTour', 'true');
         navigate('/dashboard');
       }
     } catch (error) {

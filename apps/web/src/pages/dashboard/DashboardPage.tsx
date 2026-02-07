@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { useAuthStore } from '../../stores/auth.store';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -10,16 +11,66 @@ import {
   ArrowRight,
   Gift,
 } from 'lucide-react';
+import type { Step } from 'react-joyride';
 import PushToStartButton from '../../components/features/PushToStartButton';
 import EasyVideoButton from '../../components/features/EasyVideoButton';
+import GuidedTour from '../../components/features/GuidedTour';
 import SmartSuggestions from './components/SmartSuggestions';
 import MarketingScoreCard from './components/MarketingScoreCard';
 import ThemeShowcase from './components/ThemeShowcase';
 import WeeklyThemeDrop from '../../components/features/WeeklyThemeDrop';
+import { useTourStore } from '../../stores/tour.store';
+
+const dashboardTourSteps: Step[] = [
+  {
+    target: '[data-tour="push-to-start"]',
+    title: 'Push to Start',
+    content: 'Tap this big red button to instantly create a professional marketing flyer. One tap, done!',
+    disableBeacon: true,
+    placement: 'bottom',
+  },
+  {
+    target: '[data-tour="easy-video"]',
+    title: 'Easy Video',
+    content: 'Create a short promotional video in seconds. Perfect for Instagram Reels and TikTok.',
+    placement: 'bottom',
+  },
+  {
+    target: '[data-tour="weekly-theme"]',
+    title: 'Weekly Style Drop',
+    content: 'Every Monday, a fresh retro style drops here. Try it out to keep your content looking fresh!',
+    placement: 'bottom',
+  },
+  {
+    target: '[data-tour="smart-suggestions"]',
+    title: 'Smart Suggestions',
+    content: 'AI-powered recommendations based on your calendar and what\'s working. We\'ll tell you what to post next.',
+    placement: 'top',
+  },
+  {
+    target: '[data-tour="sidebar-nav"]',
+    title: 'Your Toolkit',
+    content: 'All your tools are organized here. Look for the "New" badges to discover features you haven\'t tried yet!',
+    placement: 'right',
+  },
+];
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
   const navigate = useNavigate();
+  const { dashboardTourCompleted, completeDashboardTour } = useTourStore();
+
+  // Check if we should start the guided tour
+  const [runTour, setRunTour] = useState(false);
+  useEffect(() => {
+    const shouldStart = localStorage.getItem('startDashboardTour');
+    if (shouldStart && !dashboardTourCompleted) {
+      localStorage.removeItem('startDashboardTour');
+      // Small delay so the dashboard renders first
+      const timer = setTimeout(() => setRunTour(true), 800);
+      return () => clearTimeout(timer);
+    }
+  }, [dashboardTourCompleted]);
 
   const { data: overview } = useQuery({
     queryKey: ['analytics-overview'],
@@ -48,15 +99,17 @@ export default function DashboardPage() {
       </div>
 
       {/* Weekly Style Drop Banner */}
-      <WeeklyThemeDrop onTryStyle={() => navigate('/tools/promo-flyer')} />
+      <div data-tour="weekly-theme">
+        <WeeklyThemeDrop onTryStyle={() => navigate('/tools/promo-flyer')} />
+      </div>
 
       {/* MAGIC BUTTONS - Big, Bold, One-Tap Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* The Easy Button + Easy Video - Side by Side */}
-        <div className="col-span-1 md:col-span-2 card-retro bg-gradient-to-br from-gray-50 to-gray-100">
+        <div data-tour="push-to-start" className="col-span-1 md:col-span-2 card-retro bg-gradient-to-br from-gray-50 to-gray-100">
           <PushToStartButton size="hero" />
         </div>
-        <div className="col-span-1 card-retro bg-gradient-to-br from-gray-50 to-gray-100">
+        <div data-tour="easy-video" className="col-span-1 card-retro bg-gradient-to-br from-gray-50 to-gray-100">
           <EasyVideoButton size="default" />
         </div>
 
@@ -116,7 +169,9 @@ export default function DashboardPage() {
       <MarketingScoreCard stats={stats} />
 
       {/* Smart AI Suggestions */}
-      <SmartSuggestions />
+      <div data-tour="smart-suggestions">
+        <SmartSuggestions />
+      </div>
 
       {/* Quick Stats - Simplified */}
       <div className="grid grid-cols-3 gap-4">
@@ -178,6 +233,16 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Guided Tour */}
+      <GuidedTour
+        steps={dashboardTourSteps}
+        run={runTour}
+        onComplete={() => {
+          setRunTour(false);
+          completeDashboardTour();
+        }}
+      />
     </div>
   );
 }

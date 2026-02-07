@@ -16,6 +16,7 @@ const DashboardPage = lazy(() => import('./pages/dashboard/DashboardPage'));
 const OnboardingPage = lazy(() => import('./pages/onboarding/OnboardingPage'));
 const PromoFlyerPage = lazy(() => import('./pages/tools/promo-flyer/PromoFlyerPage'));
 const BatchFlyerPage = lazy(() => import('./pages/tools/batch-flyer/BatchFlyerPage'));
+const StyleSamplerPage = lazy(() => import('./pages/tools/style-sampler/StyleSamplerPage'));
 const InstantPackPage = lazy(() => import('./pages/tools/instant-pack/InstantPackPage'));
 const CampaignPage = lazy(() => import('./pages/tools/CampaignPage'));
 const MemeGeneratorPage = lazy(() => import('./pages/tools/meme-generator/MemeGeneratorPage'));
@@ -46,6 +47,7 @@ const ShopPhotographerPage = lazy(() => import('./pages/tools/shop-photographer/
 const JingleGeneratorPage = lazy(() => import('./pages/tools/jingle-generator/JingleGeneratorPage'));
 const ServicesSpecialsPage = lazy(() => import('./pages/settings/ServicesSpecialsPage'));
 const BillingPage = lazy(() => import('./pages/settings/BillingPage'));
+const HiringFlyerPage = lazy(() => import('./pages/tools/hiring-flyer/HiringFlyerPage'));
 
 // Page loading spinner
 function PageLoader() {
@@ -118,6 +120,7 @@ function App() {
             <Route path="/dashboard" element={<ErrorBoundary><DashboardPage /></ErrorBoundary>} />
             <Route path="/tools/promo-flyer" element={<ErrorBoundary><PromoFlyerPage /></ErrorBoundary>} />
             <Route path="/tools/batch-flyer" element={<ErrorBoundary><BatchFlyerPage /></ErrorBoundary>} />
+            <Route path="/tools/style-sampler" element={<ErrorBoundary><StyleSamplerPage /></ErrorBoundary>} />
             <Route path="/tools/instant-pack" element={<ErrorBoundary><InstantPackPage /></ErrorBoundary>} />
             <Route path="/tools/meme-generator" element={<ErrorBoundary><MemeGeneratorPage /></ErrorBoundary>} />
             <Route path="/tools/check-in" element={<ErrorBoundary><CheckInPage /></ErrorBoundary>} />
@@ -130,6 +133,7 @@ function App() {
             <Route path="/tools/style-cloner" element={<ErrorBoundary><StyleClonerPage /></ErrorBoundary>} />
             <Route path="/tools/shop-photographer" element={<ErrorBoundary><ShopPhotographerPage /></ErrorBoundary>} />
             <Route path="/tools/jingle-generator" element={<ErrorBoundary><JingleGeneratorPage /></ErrorBoundary>} />
+            <Route path="/tools/hiring-flyer" element={<ErrorBoundary><HiringFlyerPage /></ErrorBoundary>} />
             <Route path="/tools/review-reply" element={<ErrorBoundary><ReviewReplyPage /></ErrorBoundary>} />
             <Route path="/tools/theme-browser" element={<ErrorBoundary><ThemeBrowserPage /></ErrorBoundary>} />
             <Route path="/tools/image-editor" element={<ErrorBoundary><ImageEditorPage /></ErrorBoundary>} />

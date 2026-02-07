@@ -35,7 +35,7 @@ export const batchGenerateSchema = z.object({
   customContent: z.array(customContentSchema).optional(),
 
   // Theme Selection
-  themeStrategy: z.enum(['auto', 'single', 'matrix']).default('auto'),
+  themeStrategy: z.enum(['auto', 'single', 'matrix', 'family-sampler']).default('auto'),
   singleThemeId: z.string().optional(),
   themeMatrix: z.array(themeMatrixEntrySchema).optional(),
 
