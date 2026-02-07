@@ -16,6 +16,7 @@ interface VideoJob {
 interface UsePollJobOptions {
   intervalMs?: number;
   maxPollTimeMs?: number;
+  getJob?: (jobId: string) => Promise<any>;
   onComplete?: (job: VideoJob) => void;
   onFailed?: (job: VideoJob) => void;
   onTimeout?: () => void;
@@ -25,10 +26,13 @@ export function usePollJob(options: UsePollJobOptions = {}) {
   const {
     intervalMs = 5000,
     maxPollTimeMs = 360000,
+    getJob: customGetJob,
     onComplete,
     onFailed,
     onTimeout,
   } = options;
+
+  const getJobFn = customGetJob || videoCreatorApi.getJob;
 
   const [job, setJob] = useState<VideoJob | null>(null);
   const [isPolling, setIsPolling] = useState(false);
@@ -68,7 +72,7 @@ export function usePollJob(options: UsePollJobOptions = {}) {
     const poll = async () => {
       if (controller.signal.aborted) return;
       try {
-        const response = await videoCreatorApi.getJob(jobId);
+        const response = await getJobFn(jobId);
         const data = response.data?.data || response.data;
         const jobData: VideoJob = {
           id: jobId,

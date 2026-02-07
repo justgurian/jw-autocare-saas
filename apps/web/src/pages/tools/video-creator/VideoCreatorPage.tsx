@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { videoCreatorApi } from '../../../services/api';
 import {
@@ -199,6 +200,16 @@ export default function VideoCreatorPage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">
+      {/* New Video Studio Banner */}
+      <div className="card-retro bg-retro-cream border-retro-red mb-6">
+        <h3 className="font-heading text-lg">New Video Studio Tools Available!</h3>
+        <div className="flex gap-3 mt-3 flex-wrap">
+          <Link to="/tools/ugc-creator" className="btn-retro-primary text-sm">UGC Creator</Link>
+          <Link to="/tools/directors-cut" className="btn-retro-secondary text-sm">Director's Cut</Link>
+          <Link to="/tools/celebration" className="btn-retro-outline text-sm">Celebrations</Link>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="text-center">
         <h1 className="heading-retro flex items-center justify-center gap-3">

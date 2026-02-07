@@ -538,6 +538,59 @@ export const downloadApi = {
     api.get('/download/all', { responseType: 'blob' }),
 };
 
+export const ugcCreatorApi = {
+  getCharacters: () => api.get('/tools/ugc-creator/characters'),
+  getScenes: (category?: string) => api.get('/tools/ugc-creator/scenes', { params: { category } }),
+  generate: (data: {
+    sceneId: string;
+    characterId: string;
+    car?: { year: string; make: string; model: string; color: string };
+    aspectRatio: '16:9' | '9:16';
+    duration: '4s' | '6s' | '8s';
+    commercialScript?: string;
+  }) => api.post('/tools/ugc-creator/generate', data),
+  getJob: (jobId: string) => api.get(`/tools/ugc-creator/jobs/${jobId}`),
+  getHistory: (params?: { limit?: number }) => api.get('/tools/ugc-creator/history', { params }),
+  delete: (id: string) => api.delete(`/tools/ugc-creator/${id}`),
+};
+
+export const directorsCutApi = {
+  getEffects: () => api.get('/tools/directors-cut/effects'),
+  animate: (flyerId: string, data: { effectId: string; aspectRatio?: string; duration?: string }) =>
+    api.post(`/tools/directors-cut/animate/${flyerId}`, data),
+  getJob: (jobId: string) => api.get(`/tools/directors-cut/jobs/${jobId}`),
+  getHistory: (params?: { limit?: number }) => api.get('/tools/directors-cut/history', { params }),
+};
+
+export const celebrationApi = {
+  getTemplates: () => api.get('/tools/celebration/templates'),
+  generate: (data: {
+    celebrationType: string;
+    personName: string;
+    customMessage?: string;
+    customDetails?: string;
+    photoBase64: string;
+    photoMimeType: string;
+    aspectRatio?: string;
+    duration?: string;
+  }) => api.post('/tools/celebration/generate', data),
+  getJob: (jobId: string) => api.get(`/tools/celebration/jobs/${jobId}`),
+};
+
+export const mascotBuilderApi = {
+  getOptions: () => api.get('/tools/mascot-builder/options'),
+  generate: (data: {
+    shirtName: string;
+    furColor: string;
+    eyeStyle: string;
+    hairstyle: string;
+    outfitColor: string;
+    accessory?: string;
+  }) => api.post('/tools/mascot-builder/generate', data),
+  getMascots: () => api.get('/tools/mascot-builder/mascots'),
+  deleteMascot: (id: string) => api.delete(`/tools/mascot-builder/mascots/${id}`),
+};
+
 // Named export for convenience
 export { api };
 

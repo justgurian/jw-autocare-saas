@@ -6,7 +6,6 @@
 
 import { prisma } from '../../db/client';
 import { logger } from '../../utils/logger';
-import { config } from '../../config';
 import {
   VideoGenerationInput,
   VideoGenerationJob,
@@ -19,33 +18,7 @@ import {
 } from './video-creator.types';
 import { ANIMATION_PRESETS, COMMERCIAL_VIBES, VideoAnimationPreset } from './video-creator.prompts';
 import { storageService } from '../../services/storage.service';
-
-import { GoogleGenAI } from '@google/genai';
-
-// Veo 3.1 Video generation via Gemini API
-const veoAI = new GoogleGenAI({ apiKey: config.gemini.apiKey });
-
-/**
- * Check if an error is retryable (transient/server-side)
- */
-function isRetryableError(error?: string): boolean {
-  if (!error) return false;
-  const retryablePatterns = [
-    'INTERNAL',
-    'UNAVAILABLE',
-    'DEADLINE_EXCEEDED',
-    'RESOURCE_EXHAUSTED',
-    'timed out',
-    'timeout',
-    '503',
-    '500',
-    '429',
-    'rate limit',
-    'overloaded',
-  ];
-  const lower = error.toLowerCase();
-  return retryablePatterns.some((p) => lower.includes(p.toLowerCase()));
-}
+import { veoService, VeoConfig } from '../../services/veo.service';
 
 export const videoCreatorService = {
   /**
@@ -138,7 +111,7 @@ export const videoCreatorService = {
   },
 
   /**
-   * Process video generation (async) using Veo 3.1
+   * Process video generation (async) using shared Veo service
    */
   async processVideoGeneration(
     jobId: string,
@@ -157,18 +130,24 @@ export const videoCreatorService = {
         },
       });
 
-      // Check if Gemini API key is configured
-      if (!config.gemini.apiKey) {
-        throw new Error('Gemini API key not configured. Set GEMINI_API_KEY to enable Veo 3.1 video generation.');
-      }
+      // Build Veo config from input
+      const veoConfig: VeoConfig = {
+        aspectRatio: input.aspectRatio === '9:16' ? '9:16' : '16:9',
+        durationSeconds: parseInt(input.duration) || 8,
+        resolution: input.resolution || '720p',
+        negativePrompt: input.negativePrompt,
+      };
 
-      // Call Veo 3.1 video generation API with single retry on retryable errors
-      let videoResult = await this.callVideoGenerationAPI(prompt, input);
-
-      if (!videoResult.success && isRetryableError(videoResult.error)) {
-        logger.info('Retrying video generation after retryable error', { jobId, error: videoResult.error });
-        await new Promise((resolve) => setTimeout(resolve, 5000));
-        videoResult = await this.callVideoGenerationAPI(prompt, input);
+      // Call shared Veo service — text-to-video or image-to-video
+      let videoResult;
+      if (input.referenceImages?.length) {
+        videoResult = await veoService.generateVideoFromImage(
+          prompt,
+          { imageBytes: input.referenceImages[0].base64, mimeType: input.referenceImages[0].mimeType },
+          veoConfig
+        );
+      } else {
+        videoResult = await veoService.generateVideo(prompt, veoConfig);
       }
 
       if (!videoResult.success) {
@@ -178,7 +157,7 @@ export const videoCreatorService = {
       // Generate a temporary content ID for file storage
       const tempContentId = `vid_${jobId}`;
 
-      // Save video to disk instead of base64 data URL
+      // Save video to disk
       const { url: videoUrl } = await storageService.saveVideo(
         videoResult.videoData!,
         tenantId,
@@ -201,13 +180,12 @@ export const videoCreatorService = {
           tool: 'video_creator',
           contentType: 'video',
           title: `Video - ${input.topic}`,
-          imageUrl: videoResult.thumbnailUrl || '',
+          imageUrl: '',
           caption,
           status: 'approved',
           moderationStatus: 'passed',
           metadata: {
             videoUrl,
-            thumbnailUrl: videoResult.thumbnailUrl || '',
             duration: input.duration,
             aspectRatio: input.aspectRatio,
             style: input.style,
@@ -226,7 +204,6 @@ export const videoCreatorService = {
           metadata: {
             contentId: content.id,
             videoUrl,
-            thumbnailUrl: videoResult.thumbnailUrl || '',
             caption,
           },
         },
@@ -250,7 +227,6 @@ export const videoCreatorService = {
             error: errorMessage,
             errorStack,
             failedAt: new Date().toISOString(),
-            prompt: undefined, // preserve from creation if possible
           } as any,
         },
       });
@@ -258,157 +234,6 @@ export const videoCreatorService = {
       logger.error('Video generation failed', { jobId, error: errorMessage });
       throw error;
     }
-  },
-
-  /**
-   * Call Veo 3.1 video generation API
-   */
-  async callVideoGenerationAPI(
-    prompt: string,
-    input: VideoGenerationInput
-  ): Promise<{
-    success: boolean;
-    videoData?: Buffer;
-    thumbnailUrl?: string;
-    error?: string;
-  }> {
-    const HARD_TIMEOUT_MS = 6 * 60 * 1000; // 6 minutes
-
-    const generate = async (): Promise<{
-      success: boolean;
-      videoData?: Buffer;
-      thumbnailUrl?: string;
-      error?: string;
-    }> => {
-      try {
-        // Map options to Veo 3.1 format
-        const aspectRatio = input.aspectRatio === '9:16' ? '9:16' : '16:9';
-        const durationSeconds = parseInt(input.duration) || 8;
-        const resolution = input.resolution || (durationSeconds === 8 ? '1080p' : '720p');
-
-        // Start Veo 3.1 video generation
-        // Note: Veo 3.1 generates audio natively (no generateAudio param)
-        // personGeneration not currently supported via Gemini API
-        const generateConfig: any = {
-          aspectRatio,
-          numberOfVideos: 1,
-          durationSeconds,
-          resolution,
-        };
-
-        // Include negative prompt if provided
-        if (input.negativePrompt) {
-          generateConfig.negativePrompt = input.negativePrompt;
-        }
-
-        // If reference images are provided (flyer-to-video), pass as image reference
-        const generateParams: any = {
-          model: 'veo-3.1-generate-preview',
-          prompt,
-          config: generateConfig,
-        };
-
-        if (input.referenceImages?.length) {
-          generateParams.image = {
-            imageBytes: input.referenceImages[0].base64,
-            mimeType: input.referenceImages[0].mimeType,
-          };
-        }
-
-        let operation = await veoAI.models.generateVideos(generateParams);
-
-        // Poll until complete (Veo 3.1 is async — takes 1-3 minutes)
-        let pollCount = 0;
-        const maxPolls = 30; // 5 minutes max
-        while (!operation.done && pollCount < maxPolls) {
-          await new Promise((resolve) => setTimeout(resolve, 10000)); // 10 seconds
-          pollCount++;
-          operation = await veoAI.operations.getVideosOperation({
-            operation: operation,
-          });
-          logger.info('Veo 3.1 poll', { pollCount, done: operation.done });
-        }
-
-        if (!operation.done) {
-          return { success: false, error: 'Video generation timed out after 5 minutes' };
-        }
-
-        // Extract video data
-        const generatedVideo = operation.response?.generatedVideos?.[0];
-        if (!generatedVideo?.video) {
-          logger.error('No video in Veo response', {
-            hasResponse: !!operation.response,
-            generatedVideosCount: operation.response?.generatedVideos?.length,
-            responseKeys: operation.response ? Object.keys(operation.response) : [],
-          });
-          return { success: false, error: 'No video in response' };
-        }
-
-        const video = generatedVideo.video;
-
-        // Try to get video data - SDK may provide bytes directly or via download
-        let videoData: Buffer;
-
-        if ((video as any).videoBytes && (video as any).videoBytes.length > 0) {
-          // Direct bytes available
-          videoData = Buffer.from((video as any).videoBytes);
-        } else if ((video as any).uri) {
-          // Download via URI — requires API key in header
-          const videoUri = (video as any).uri;
-          logger.info('Downloading video from URI', { uri: videoUri });
-          const response = await fetch(videoUri, {
-            headers: {
-              'x-goog-api-key': config.gemini.apiKey,
-            },
-          });
-          if (!response.ok) {
-            logger.error('Video download failed', { status: response.status, statusText: response.statusText });
-            return { success: false, error: `Failed to download video: ${response.status} ${response.statusText}` };
-          }
-          videoData = Buffer.from(await response.arrayBuffer());
-          logger.info('Video downloaded', { size: videoData.length });
-        } else {
-          // Try SDK download method
-          try {
-            const tmpPath = `/tmp/veo-${Date.now()}.mp4`;
-            await veoAI.files.download({
-              file: video,
-              downloadPath: tmpPath,
-            } as any);
-            const fs = await import('fs');
-            videoData = fs.readFileSync(tmpPath);
-            fs.unlinkSync(tmpPath); // cleanup
-          } catch (dlError: any) {
-            logger.error('All video extraction methods failed', {
-              videoKeys: Object.keys(video),
-              videoStringified: JSON.stringify(video).substring(0, 500),
-              downloadError: dlError.message,
-            });
-            return { success: false, error: 'Could not extract video data from Veo response' };
-          }
-        }
-
-        return {
-          success: true,
-          videoData,
-        };
-      } catch (error: any) {
-        logger.error('Veo 3.1 video generation failed', { error: error.message });
-
-        if (error.message?.includes('SAFETY')) {
-          return { success: false, error: 'Video blocked by safety filters. Try a different prompt.' };
-        }
-
-        return { success: false, error: error.message || 'Video generation failed' };
-      }
-    };
-
-    // Race against hard timeout
-    const timeoutPromise = new Promise<{ success: false; error: string }>((resolve) =>
-      setTimeout(() => resolve({ success: false, error: 'Video generation hard timeout after 6 minutes' }), HARD_TIMEOUT_MS)
-    );
-
-    return Promise.race([generate(), timeoutPromise]);
   },
 
   /**

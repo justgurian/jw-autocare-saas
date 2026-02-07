@@ -37,6 +37,10 @@ const SocialPage = lazy(() => import('./pages/settings/SocialPage'));
 const AutoPilotPage = lazy(() => import('./pages/settings/AutoPilotPage'));
 const ContentGalleryPage = lazy(() => import('./pages/content/ContentGalleryPage'));
 const ContentDetailPage = lazy(() => import('./pages/content/ContentDetailPage'));
+const UGCCreatorPage = lazy(() => import('./pages/tools/ugc-creator/UGCCreatorPage'));
+const DirectorsCutPage = lazy(() => import('./pages/tools/directors-cut/DirectorsCutPage'));
+const CelebrationPage = lazy(() => import('./pages/tools/celebration/CelebrationPage'));
+const MascotBuilderPage = lazy(() => import('./pages/tools/mascot-builder/MascotBuilderPage'));
 
 // Page loading spinner
 function PageLoader() {
@@ -114,6 +118,10 @@ function App() {
             <Route path="/tools/check-in" element={<ErrorBoundary><CheckInPage /></ErrorBoundary>} />
             <Route path="/tools/car-of-day" element={<ErrorBoundary><CarOfDayPage /></ErrorBoundary>} />
             <Route path="/tools/video-creator" element={<ErrorBoundary><VideoCreatorPage /></ErrorBoundary>} />
+            <Route path="/tools/ugc-creator" element={<ErrorBoundary><UGCCreatorPage /></ErrorBoundary>} />
+            <Route path="/tools/directors-cut" element={<ErrorBoundary><DirectorsCutPage /></ErrorBoundary>} />
+            <Route path="/tools/celebration" element={<ErrorBoundary><CelebrationPage /></ErrorBoundary>} />
+            <Route path="/tools/mascot-builder" element={<ErrorBoundary><MascotBuilderPage /></ErrorBoundary>} />
             <Route path="/tools/review-reply" element={<ErrorBoundary><ReviewReplyPage /></ErrorBoundary>} />
             <Route path="/tools/theme-browser" element={<ErrorBoundary><ThemeBrowserPage /></ErrorBoundary>} />
             <Route path="/tools/image-editor" element={<ErrorBoundary><ImageEditorPage /></ErrorBoundary>} />

@@ -29,6 +29,10 @@ import {
   Users,
   TrendingUp,
   HelpCircle,
+  Film,
+  Clapperboard,
+  PartyPopper,
+  Palette,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -75,6 +79,38 @@ const navigationGroups = [
         href: '/tools/instant-pack',
         icon: Package,
         description: 'Generate a whole week of content at once',
+      },
+    ],
+  },
+  {
+    id: 'video-studio',
+    name: 'Video Studio',
+    icon: Film,
+    description: 'Character videos, animations, and celebrations',
+    items: [
+      {
+        name: 'UGC Creator',
+        href: '/tools/ugc-creator',
+        icon: Film,
+        description: 'Character-based video skits',
+      },
+      {
+        name: "Director's Cut",
+        href: '/tools/directors-cut',
+        icon: Clapperboard,
+        description: 'Animate your flyers',
+      },
+      {
+        name: 'Celebrations',
+        href: '/tools/celebration',
+        icon: PartyPopper,
+        description: 'Birthday & milestone videos',
+      },
+      {
+        name: 'Mascot Builder',
+        href: '/tools/mascot-builder',
+        icon: Palette,
+        description: 'Create custom characters',
       },
     ],
   },

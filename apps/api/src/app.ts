@@ -42,6 +42,10 @@ import businessCardsRoutes from './modules/business-cards/business-cards.routes'
 import photoTunerRoutes from './modules/photo-tuner/photo-tuner.routes';
 import settingsRoutes from './modules/settings/settings.routes';
 import batchFlyerRoutes from './modules/batch-flyer/batch-flyer.routes';
+import ugcCreatorRoutes from './modules/ugc-creator/ugc-creator.routes';
+import directorsCutRoutes from './modules/directors-cut/directors-cut.routes';
+import celebrationRoutes from './modules/celebration/celebration.routes';
+import mascotBuilderRoutes from './modules/mascot-builder/mascot-builder.routes';
 
 // Initialize Redis (non-blocking, app works without it)
 getRedisClient();
@@ -138,6 +142,10 @@ apiV1.use('/tools/business-cards', businessCardsRoutes);
 apiV1.use('/tools/photo-tuner', photoTunerRoutes);
 apiV1.use('/settings', settingsRoutes);
 apiV1.use('/batch-flyer', batchFlyerRoutes);
+apiV1.use('/tools/ugc-creator', ugcCreatorRoutes);
+apiV1.use('/tools/directors-cut', directorsCutRoutes);
+apiV1.use('/tools/celebration', celebrationRoutes);
+apiV1.use('/tools/mascot-builder', mascotBuilderRoutes);
 
 app.use('/api/v1', apiV1);
 
