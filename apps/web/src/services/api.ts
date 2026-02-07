@@ -93,6 +93,17 @@ api.interceptors.response.use(
   }
 );
 
+// Extract user-friendly error message from any error
+export function getErrorMessage(error: unknown): string {
+  if (error && typeof error === 'object' && 'userMessage' in error) {
+    return (error as { userMessage: string }).userMessage;
+  }
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return 'Something went wrong. Please try again.';
+}
+
 // API methods
 export const authApi = {
   register: (data: { email: string; password: string; businessName: string; firstName?: string; lastName?: string }) =>

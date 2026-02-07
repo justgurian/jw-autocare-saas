@@ -10,6 +10,7 @@ import BrandVoiceStep from './components/BrandVoiceStep';
 import SpecialsStep from './components/SpecialsStep';
 import CarPreferencesStep from './components/CarPreferencesStep';
 import StyleTasteTestStep from './components/StyleTasteTestStep';
+import StyleSamplerStep from './components/StyleSamplerStep';
 import { promoFlyerApi } from '../../services/api';
 
 const steps = [
@@ -20,6 +21,7 @@ const steps = [
   { id: 5, name: 'Specials Vault', description: 'Add recurring promotions' },
   { id: 6, name: 'Car Preferences', description: 'What cars do your customers drive?' },
   { id: 7, name: 'Style Taste', description: 'Pick your favorite flyer styles' },
+  { id: 8, name: 'Preview Styles', description: 'See your shop in every style' },
 ];
 
 export default function OnboardingPage() {
@@ -100,7 +102,7 @@ export default function OnboardingPage() {
         }
       }
 
-      if (currentStep < 7) {
+      if (currentStep < 8) {
         setCurrentStep(currentStep + 1);
       } else {
         // Complete onboarding
@@ -229,6 +231,26 @@ export default function OnboardingPage() {
               onChange={(families) => setFormData({ ...formData, styleFamilyIds: families })}
             />
           )}
+
+          {currentStep === 8 && (
+            <StyleSamplerStep
+              businessName={formData.businessName}
+              firstService={formData.services[0] || ''}
+              onComplete={async () => {
+                setIsSaving(true);
+                try {
+                  await onboardingApi.complete();
+                  toast.success('Setup complete! Welcome to Bayfiller.');
+                  localStorage.setItem('startDashboardTour', 'true');
+                  navigate('/dashboard');
+                } catch {
+                  toast.error('Failed to complete setup');
+                } finally {
+                  setIsSaving(false);
+                }
+              }}
+            />
+          )}
         </div>
 
         {/* Navigation */}
@@ -253,7 +275,7 @@ export default function OnboardingPage() {
               </>
             ) : (
               <>
-                {currentStep === 7 ? 'Complete Setup' : 'Next'}
+                {currentStep === 8 ? 'Complete Setup' : 'Next'}
                 <ChevronRight size={20} />
               </>
             )}

@@ -83,12 +83,7 @@ export default function ServicesStep({
             className="btn-retro-secondary text-sm"
             onClick={() => {
               if (websiteUrl) {
-                toast.loading('AI is scanning your website...');
-                // TODO: Implement AI website scraping
-                setTimeout(() => {
-                  toast.dismiss();
-                  toast.success('Services imported! Review below.');
-                }, 2000);
+                toast('Website import coming soon! For now, select your services below.', { icon: '🚧' });
               }
             }}
           >

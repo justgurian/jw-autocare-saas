@@ -37,13 +37,14 @@ import {
   PinOff,
   FolderOpen,
   Briefcase,
+  Search,
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import ThemeToggle from '../features/ThemeToggle';
 import { useTourStore } from '../../stores/tour.store';
 
-// All navigation items (flat list for favorites lookup)
-const allNavItems = [
+// All navigation items (flat list for favorites lookup + dashboard recently used)
+export const allNavItems = [
   { name: 'Dashboard', href: '/dashboard', icon: Home, description: 'Your command center' },
   { name: 'My Creations', href: '/content', icon: FolderOpen, description: 'Browse your generated content' },
   { name: 'Nostalgic Flyers', href: '/tools/promo-flyer', icon: Image, description: '48 retro themes' },
@@ -202,9 +203,43 @@ export default function MainLayout() {
     localStorage.setItem(SIDEBAR_GROUPS_KEY, JSON.stringify(expandedGroups));
   }, [expandedGroups]);
 
+  // Sidebar search
+  const [sidebarSearch, setSidebarSearch] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Cmd+K / Ctrl+K keyboard shortcut
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Filtered search results (flat list)
+  const searchResults = useMemo(() => {
+    if (!sidebarSearch.trim()) return [];
+    const query = sidebarSearch.toLowerCase();
+    return allNavItems.filter(
+      (item) =>
+        item.name.toLowerCase().includes(query) ||
+        item.description.toLowerCase().includes(query)
+    ).slice(0, 8);
+  }, [sidebarSearch]);
+
   // "New" badge: shows on tools user hasn't visited yet
-  const { hasVisitedTool, markToolVisited } = useTourStore();
+  const { hasVisitedTool, markToolVisited, addRecentTool } = useTourStore();
   const isNewTool = (href: string) => !hasVisitedTool(href);
+
+  const handleNavClick = (href: string) => {
+    setSidebarOpen(false);
+    markToolVisited(href);
+    addRecentTool(href);
+    setSidebarSearch('');
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -255,8 +290,61 @@ export default function MainLayout() {
             </Link>
           </div>
 
+          {/* Sidebar Search */}
+          <div className="px-4 pt-3 pb-1">
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={sidebarSearch}
+                onChange={(e) => setSidebarSearch(e.target.value)}
+                placeholder="Find a tool... (⌘K)"
+                className="w-full bg-white/10 border border-white/20 text-white placeholder-white/40 text-sm pl-9 pr-3 py-2 focus:outline-none focus:border-retro-mustard transition-colors"
+              />
+              {sidebarSearch && (
+                <button
+                  onClick={() => setSidebarSearch('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+          </div>
+
           {/* Navigation */}
           <nav data-tour="sidebar-nav" className="flex-1 overflow-y-auto py-2">
+            {/* Search Results (flat list) */}
+            {sidebarSearch.trim() ? (
+              <div className="py-1">
+                {searchResults.length > 0 ? (
+                  searchResults.map((item) => (
+                    <Link
+                      key={item.href}
+                      to={item.href}
+                      onClick={() => handleNavClick(item.href)}
+                      className={`flex items-center gap-3 px-5 py-2.5 transition-all ${
+                        isItemActive(item.href)
+                          ? 'bg-retro-red text-white'
+                          : 'hover:bg-white/10'
+                      }`}
+                    >
+                      <item.icon size={16} className="shrink-0 text-retro-mustard" />
+                      <div className="min-w-0 flex-1">
+                        <span className="text-sm block leading-tight">{item.name}</span>
+                        <p className="text-[10px] text-gray-500 leading-tight truncate">{item.description}</p>
+                      </div>
+                    </Link>
+                  ))
+                ) : (
+                  <div className="px-5 py-6 text-center">
+                    <p className="text-sm text-gray-400">No tools matching "{sidebarSearch}"</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+            <>
             {/* Favorites Section */}
             {favoriteItems.length > 0 && (
               <div className="mb-1">
@@ -271,7 +359,7 @@ export default function MainLayout() {
                     <div key={item.href} className="group relative flex items-center">
                       <Link
                         to={item.href}
-                        onClick={() => setSidebarOpen(false)}
+                        onClick={() => handleNavClick(item.href)}
                         className={`flex-1 flex items-center gap-3 px-5 py-2 pl-10 transition-all ${
                           isItemActive(item.href)
                             ? 'bg-retro-red text-white border-l-4 border-retro-mustard'
@@ -330,7 +418,7 @@ export default function MainLayout() {
                       <div key={item.href} className="group relative flex items-center">
                         <Link
                           to={item.href}
-                          onClick={() => { setSidebarOpen(false); markToolVisited(item.href); }}
+                          onClick={() => handleNavClick(item.href)}
                           className={`flex-1 flex items-center gap-3 px-5 py-2 pl-11 transition-all ${
                             isItemActive(item.href)
                               ? 'bg-retro-red text-white border-l-4 border-retro-mustard'
@@ -371,6 +459,8 @@ export default function MainLayout() {
                 )}
               </div>
             ))}
+            </>
+            )}
           </nav>
 
           {/* User info, theme toggle & logout */}

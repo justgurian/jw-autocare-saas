@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 interface FormData {
   businessName: string;
   phone: string;
@@ -20,6 +22,10 @@ interface BusinessInfoStepProps {
 }
 
 export default function BusinessInfoStep({ formData, setFormData }: BusinessInfoStepProps) {
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+  const showError = (field: string) => touched[field] && !formData[field as keyof FormData];
+
   return (
     <div className="space-y-4">
       <div>
@@ -28,11 +34,15 @@ export default function BusinessInfoStep({ formData, setFormData }: BusinessInfo
         </label>
         <input
           type="text"
-          className="input-retro"
+          className={`input-retro ${showError('businessName') ? 'border-retro-red ring-2 ring-retro-red/30' : ''}`}
           placeholder="Your Auto Repair Shop"
           value={formData.businessName}
           onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
+          onBlur={() => setTouched((prev) => ({ ...prev, businessName: true }))}
         />
+        {showError('businessName') && (
+          <p className="text-retro-red text-xs mt-1 font-medium">Business name is required</p>
+        )}
       </div>
       <div>
         <label className="block font-heading uppercase text-sm mb-2">
@@ -45,6 +55,7 @@ export default function BusinessInfoStep({ formData, setFormData }: BusinessInfo
           value={formData.phone}
           onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
         />
+        <p className="text-gray-400 text-xs mt-1">Shown on your flyers for customers to call</p>
       </div>
       <div>
         <label className="block font-heading uppercase text-sm mb-2">
