@@ -73,12 +73,12 @@ export default function AutoPilotPage() {
 
   const timezoneOptions = useMemo(() => {
     try {
-      const all = Intl.supportedValuesOf('timeZone');
-      const popular = POPULAR_TIMEZONES.filter(tz => all.includes(tz));
-      const rest = all.filter(tz => !POPULAR_TIMEZONES.includes(tz));
+      const all: string[] = (Intl as any).supportedValuesOf('timeZone');
+      const popular = POPULAR_TIMEZONES.filter((tz: string) => all.includes(tz));
+      const rest = all.filter((tz: string) => !POPULAR_TIMEZONES.includes(tz));
       return { popular, rest };
     } catch {
-      return { popular: POPULAR_TIMEZONES, rest: [] };
+      return { popular: POPULAR_TIMEZONES, rest: [] as string[] };
     }
   }, []);
 
@@ -299,13 +299,13 @@ export default function AutoPilotPage() {
               onChange={(e) => setTimezone(e.target.value)}
             >
               <optgroup label="Common (US)">
-                {timezoneOptions.popular.map(tz => (
+                {timezoneOptions.popular.map((tz: string) => (
                   <option key={tz} value={tz}>{tz.replace(/_/g, ' ')}</option>
                 ))}
               </optgroup>
               {timezoneOptions.rest.length > 0 && (
                 <optgroup label="All Timezones">
-                  {timezoneOptions.rest.map(tz => (
+                  {timezoneOptions.rest.map((tz: string) => (
                     <option key={tz} value={tz}>{tz.replace(/_/g, ' ')}</option>
                   ))}
                 </optgroup>

@@ -17,6 +17,7 @@ interface FormData {
   vehiclePreferences: { lovedMakes: Array<{makeId: string; models?: string[]}>; neverMakes: string[] };
   websiteUrl: string;
   styleFamilyIds: string[];
+  timezone: string;
 }
 
 interface LogoStepProps {
