@@ -217,6 +217,12 @@ const navigationGroups = [
         description: 'Set it and forget it - AI posts for you',
       },
       {
+        name: 'Billing',
+        href: '/settings/billing',
+        icon: CreditCard,
+        description: 'Subscription and payment',
+      },
+      {
         name: 'Staff Cards',
         href: '/tools/business-cards',
         icon: CreditCard,

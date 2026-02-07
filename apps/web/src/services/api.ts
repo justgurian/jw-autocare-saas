@@ -437,10 +437,7 @@ export const analyticsApi = {
 
 export const billingApi = {
   getSubscription: () => api.get('/billing/subscription'),
-  createSubscription: (tier: string) => api.post('/billing/subscription', { tier }),
-  updateSubscription: (tier: string) => api.put('/billing/subscription', { tier }),
   getUsage: () => api.get('/billing/usage'),
-  getInvoices: () => api.get('/billing/invoices'),
 };
 
 export const brandKitApi = {

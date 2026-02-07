@@ -45,6 +45,7 @@ const StyleClonerPage = lazy(() => import('./pages/tools/style-cloner/StyleClone
 const ShopPhotographerPage = lazy(() => import('./pages/tools/shop-photographer/ShopPhotographerPage'));
 const JingleGeneratorPage = lazy(() => import('./pages/tools/jingle-generator/JingleGeneratorPage'));
 const ServicesSpecialsPage = lazy(() => import('./pages/settings/ServicesSpecialsPage'));
+const BillingPage = lazy(() => import('./pages/settings/BillingPage'));
 
 // Page loading spinner
 function PageLoader() {
@@ -146,6 +147,7 @@ function App() {
             <Route path="/settings/services" element={<ErrorBoundary><ServicesSpecialsPage /></ErrorBoundary>} />
             <Route path="/settings/social" element={<ErrorBoundary><SocialPage /></ErrorBoundary>} />
             <Route path="/settings/auto-pilot" element={<ErrorBoundary><AutoPilotPage /></ErrorBoundary>} />
+            <Route path="/settings/billing" element={<ErrorBoundary><BillingPage /></ErrorBoundary>} />
           </Route>
 
           {/* 404 */}
