@@ -11,8 +11,8 @@ COPY turbo.json ./
 COPY apps/web/package*.json ./apps/web/
 COPY packages/shared/package*.json ./packages/shared/
 
-# Install dependencies
-RUN npm ci
+# Install dependencies (--ignore-scripts avoids postinstall failures from dev tools)
+RUN npm ci --ignore-scripts
 
 # Copy source code
 COPY apps/web ./apps/web
@@ -29,22 +29,20 @@ RUN npm run build
 # Production stage - serve with nginx
 FROM nginx:alpine AS runner
 
-# Copy custom nginx config template
-COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf.template
+# Copy nginx config as a template (nginx:alpine auto-substitutes env vars via envsubst)
+COPY apps/web/nginx.conf /etc/nginx/templates/default.conf.template
+
+# Limit nginx workers to 2 (default 'auto' spawns one per vCPU which is excessive on Railway)
+RUN sed -i 's/worker_processes.*auto;/worker_processes 2;/' /etc/nginx/nginx.conf
 
 # Copy built files
 COPY --from=builder /app/apps/web/dist /usr/share/nginx/html
 
-# Use PORT from environment (Railway standard), default to 80
+# Default port (Railway overrides via PORT env var)
 ENV PORT=80
 
-# Expose port
-EXPOSE 80
+# Health check uses the dynamic PORT
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT}/health || exit 1
 
-# Create startup script that configures nginx with the correct port
-RUN echo '#!/bin/sh' > /docker-entrypoint.sh && \
-    echo 'sed "s/listen 80;/listen ${PORT};/g" /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf' >> /docker-entrypoint.sh && \
-    echo 'exec nginx -g "daemon off;"' >> /docker-entrypoint.sh && \
-    chmod +x /docker-entrypoint.sh
-
-CMD ["/docker-entrypoint.sh"]
+CMD ["nginx", "-g", "daemon off;"]
