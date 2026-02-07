@@ -31,9 +31,14 @@ export interface CompositionPlan {
 
 // ─── Request/Response Types ──────────────────────────────────────────────────
 
+export type JingleMode = 'easy' | 'custom';
+
 export interface JingleGenerationInput {
   shopName: string;
   genreId: string;
+  mode: JingleMode;
+  customGenre?: string;
+  customLyrics?: string;
 }
 
 export interface JingleJob {
@@ -51,4 +56,7 @@ export interface JingleJob {
 export const generateJingleSchema = z.object({
   shopName: z.string().min(1, 'Shop name is required').max(100, 'Shop name too long'),
   genreId: z.string().min(1, 'Genre is required'),
+  mode: z.enum(['easy', 'custom']).default('easy'),
+  customGenre: z.string().max(200).optional(),
+  customLyrics: z.string().max(500).optional(),
 });

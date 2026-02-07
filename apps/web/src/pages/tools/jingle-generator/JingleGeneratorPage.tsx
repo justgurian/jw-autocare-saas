@@ -13,6 +13,8 @@ import {
   Volume2,
   Trash2,
   Clock,
+  Zap,
+  Pencil,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -43,12 +45,17 @@ interface HistoryItem {
   createdAt: string;
 }
 
+type JingleMode = 'easy' | 'custom';
+
 export default function JingleGeneratorPage() {
   const queryClient = useQueryClient();
   const [step, setStep] = useState<'name' | 'genre' | 'generating' | 'result'>('name');
   const [shopName, setShopName] = useState('');
   const [phoneticPreview, setPhoneticPreview] = useState('');
   const [selectedGenre, setSelectedGenre] = useState<Genre | null>(null);
+  const [mode, setMode] = useState<JingleMode>('easy');
+  const [customGenre, setCustomGenre] = useState('');
+  const [customLyrics, setCustomLyrics] = useState('');
   const [result, setResult] = useState<JingleResult | null>(null);
   const [showHistory, setShowHistory] = useState(false);
 
@@ -64,7 +71,7 @@ export default function JingleGeneratorPage() {
         audioUrl: (metadata.audioUrl as string) || '',
         shopName: (metadata.shopName as string) || shopName,
         genreId: (metadata.genreId as string) || selectedGenre?.id || '',
-        genreName: (metadata.genreName as string) || selectedGenre?.name || '',
+        genreName: (metadata.genreName as string) || customGenre || selectedGenre?.name || '',
         phoneticName: (metadata.phoneticName as string) || phoneticPreview,
       });
       setStep('result');
@@ -116,8 +123,13 @@ export default function JingleGeneratorPage() {
 
   // ─── Generate ──────────────────────────────────────────────────────────────
   const generateMutation = useMutation({
-    mutationFn: (data: { shopName: string; genreId: string }) =>
-      jingleGeneratorApi.generate(data),
+    mutationFn: (data: {
+      shopName: string;
+      genreId: string;
+      mode: JingleMode;
+      customGenre?: string;
+      customLyrics?: string;
+    }) => jingleGeneratorApi.generate(data),
     onSuccess: (response) => {
       const jobId = response.data?.data?.job?.id || response.data?.data?.id || response.data?.id;
       if (jobId) {
@@ -144,7 +156,13 @@ export default function JingleGeneratorPage() {
   // ─── Handlers ──────────────────────────────────────────────────────────────
   const handleGenerate = () => {
     if (!selectedGenre) return;
-    generateMutation.mutate({ shopName, genreId: selectedGenre.id });
+    generateMutation.mutate({
+      shopName,
+      genreId: selectedGenre.id,
+      mode,
+      customGenre: mode === 'custom' ? customGenre || undefined : undefined,
+      customLyrics: mode === 'custom' ? customLyrics || undefined : undefined,
+    });
   };
 
   const handleStartOver = () => {
@@ -153,6 +171,8 @@ export default function JingleGeneratorPage() {
     setSelectedGenre(null);
     setShopName('');
     setPhoneticPreview('');
+    setCustomGenre('');
+    setCustomLyrics('');
   };
 
   const handleTryAnotherGenre = () => {
@@ -182,7 +202,7 @@ export default function JingleGeneratorPage() {
             Jingle Generator
           </h1>
           <p className="text-gray-600 mt-1 font-heading">
-            Create a catchy song jingle that sings your shop name
+            Create a catchy song jingle for your shop
           </p>
         </div>
         <button
@@ -198,7 +218,7 @@ export default function JingleGeneratorPage() {
       {step !== 'result' && (
         <div className="flex items-center gap-2 mb-6">
           {(['name', 'genre', 'generating'] as const).map((s, i) => {
-            const stepLabels = ['Shop Name', 'Genre', 'Generate'];
+            const stepLabels = ['Shop Name', 'Style & Lyrics', 'Generate'];
             const stepIndex = ['name', 'genre', 'generating'].indexOf(step);
             return (
               <div key={s} className="flex items-center gap-2">
@@ -223,14 +243,14 @@ export default function JingleGeneratorPage() {
         </div>
       )}
 
-      {/* ─── Step 1: Shop Name ─────────────────────────────────────────── */}
+      {/* ─── Step 1: Shop Name + Mode Selection ─────────────────────────── */}
       {step === 'name' && (
         <div className="border-4 border-black bg-white p-8 shadow-retro">
           <h2 className="text-xl font-heading text-retro-navy mb-2">
             What's your shop called?
           </h2>
           <p className="text-gray-500 text-sm mb-4">
-            We'll turn your shop name into singable lyrics
+            We'll turn your shop name into a catchy jingle
           </p>
           <input
             type="text"
@@ -247,28 +267,67 @@ export default function JingleGeneratorPage() {
               <p className="text-sm font-heading text-gray-500 mb-1">
                 Your jingle will sing:
               </p>
-              <p className="text-xl font-display text-retro-red">
-                ♪ {phoneticPreview} ♪
+              <p className="text-xl text-retro-red font-bold tracking-wide">
+                {phoneticPreview}
               </p>
             </div>
           )}
 
+          {/* Mode Toggle */}
+          <div className="mt-6 mb-4">
+            <p className="text-sm font-heading text-gray-500 mb-3">Choose your mode:</p>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setMode('easy')}
+                className={`p-4 border-2 text-left transition-all ${
+                  mode === 'easy'
+                    ? 'border-retro-red bg-red-50 shadow-retro'
+                    : 'border-black bg-white hover:bg-retro-cream'
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <Zap size={18} className={mode === 'easy' ? 'text-retro-red' : 'text-gray-400'} />
+                  <span className="font-heading text-sm">Easy Mode</span>
+                </div>
+                <p className="text-xs text-gray-500">
+                  Catchy jingle that repeats your shop name — pick a genre and go
+                </p>
+              </button>
+              <button
+                onClick={() => setMode('custom')}
+                className={`p-4 border-2 text-left transition-all ${
+                  mode === 'custom'
+                    ? 'border-retro-red bg-red-50 shadow-retro'
+                    : 'border-black bg-white hover:bg-retro-cream'
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <Pencil size={18} className={mode === 'custom' ? 'text-retro-red' : 'text-gray-400'} />
+                  <span className="font-heading text-sm">Custom Mode</span>
+                </div>
+                <p className="text-xs text-gray-500">
+                  Write your own lyrics and/or describe a custom genre
+                </p>
+              </button>
+            </div>
+          </div>
+
           <button
             onClick={() => setStep('genre')}
             disabled={shopName.length < 2}
-            className="mt-6 px-8 py-3 bg-retro-red text-white border-2 border-black font-heading text-lg shadow-retro hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="mt-4 px-8 py-3 bg-retro-red text-white border-2 border-black font-heading text-lg shadow-retro hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            Next: Pick a Genre <ChevronRight size={20} className="inline ml-1" />
+            Next <ChevronRight size={20} className="inline ml-1" />
           </button>
         </div>
       )}
 
-      {/* ─── Step 2: Genre Selection ───────────────────────────────────── */}
+      {/* ─── Step 2: Genre + Custom Options ────────────────────────────── */}
       {step === 'genre' && (
         <div className="border-4 border-black bg-white p-8 shadow-retro">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-xl font-heading text-retro-navy">
-              Pick a genre
+              {mode === 'easy' ? 'Pick a genre' : 'Customize your jingle'}
             </h2>
             <button
               onClick={() => setStep('name')}
@@ -278,27 +337,67 @@ export default function JingleGeneratorPage() {
             </button>
           </div>
 
-          <p className="mb-6 text-gray-500 text-sm">
-            Singing: <span className="font-display text-retro-red">♪ {phoneticPreview} ♪</span>
+          <p className="mb-4 text-gray-500 text-sm">
+            {mode === 'easy' ? 'Singing: ' : 'Shop: '}
+            <span className="text-retro-red font-bold">{mode === 'easy' ? phoneticPreview : shopName}</span>
           </p>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
+          {/* Genre Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-3 mb-6">
             {genres.map((genre) => (
               <button
                 key={genre.id}
                 onClick={() => setSelectedGenre(genre)}
-                className={`p-4 border-2 text-center transition-all ${
+                className={`p-3 border-2 text-center transition-all ${
                   selectedGenre?.id === genre.id
                     ? 'border-retro-red bg-red-50 shadow-retro scale-105'
                     : 'border-black bg-white hover:bg-retro-cream hover:shadow-retro'
                 }`}
               >
-                <span className="text-2xl block mb-1">{genre.icon}</span>
-                <span className="font-heading text-sm block">{genre.name}</span>
-                <span className="text-xs text-gray-500 block mt-1 leading-tight">{genre.description}</span>
+                <span className="text-xl block mb-1">{genre.icon}</span>
+                <span className="font-heading text-xs block">{genre.name}</span>
               </button>
             ))}
           </div>
+
+          {/* Custom Mode Fields */}
+          {mode === 'custom' && (
+            <div className="space-y-4 mb-6 p-4 bg-retro-cream border-2 border-dashed border-retro-navy rounded">
+              <div>
+                <label className="block text-sm font-heading text-retro-navy mb-1">
+                  Custom Genre / Style (optional)
+                </label>
+                <input
+                  type="text"
+                  value={customGenre}
+                  onChange={(e) => setCustomGenre(e.target.value)}
+                  placeholder="e.g., 80s synthwave, mariachi, gospel choir, lo-fi beats..."
+                  className="w-full p-3 border-2 border-black font-heading text-sm focus:outline-none focus:ring-2 focus:ring-retro-red"
+                  maxLength={200}
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  Describe any genre or style. Leave blank to use the selected preset above.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-heading text-retro-navy mb-1">
+                  Custom Lyrics (optional)
+                </label>
+                <textarea
+                  value={customLyrics}
+                  onChange={(e) => setCustomLyrics(e.target.value)}
+                  placeholder={"e.g.,\nJay Double-Yew Auto Care\nWe fix your ride right\nJay Double-Yew Auto Care\nDay or night"}
+                  className="w-full p-3 border-2 border-black font-heading text-sm focus:outline-none focus:ring-2 focus:ring-retro-red resize-y min-h-[100px]"
+                  maxLength={500}
+                  rows={4}
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  Write your own lyrics (one line per row). Leave blank to auto-repeat your shop name.
+                </p>
+              </div>
+            </div>
+          )}
 
           <button
             onClick={handleGenerate}
@@ -326,7 +425,7 @@ export default function JingleGeneratorPage() {
             Composing Your Jingle...
           </h2>
           <p className="text-gray-600 mb-6">
-            Creating a <span className="font-heading">{selectedGenre?.name}</span> jingle for{' '}
+            Creating a <span className="font-heading">{customGenre || selectedGenre?.name}</span> jingle for{' '}
             <span className="font-heading">"{shopName}"</span>
           </p>
 
@@ -356,10 +455,12 @@ export default function JingleGeneratorPage() {
             <p className="text-gray-600">
               <span className="font-heading">Genre:</span> {result.genreName}
             </p>
-            <p className="text-gray-600">
-              <span className="font-heading">Lyrics:</span>{' '}
-              <span className="font-display text-retro-red">♪ {result.phoneticName} ♪</span>
-            </p>
+            {result.phoneticName && (
+              <p className="text-gray-600">
+                <span className="font-heading">Lyrics:</span>{' '}
+                <span className="text-retro-red font-bold">{result.phoneticName}</span>
+              </p>
+            )}
           </div>
 
           <div className="bg-retro-cream border-2 border-black p-4 mb-6">

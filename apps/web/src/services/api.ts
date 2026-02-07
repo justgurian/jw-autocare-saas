@@ -689,8 +689,13 @@ export const jingleGeneratorApi = {
   getGenres: () => api.get('/tools/jingle-generator/genres'),
   preview: (shopName: string) =>
     api.post('/tools/jingle-generator/preview', { shopName }),
-  generate: (data: { shopName: string; genreId: string }) =>
-    api.post('/tools/jingle-generator/generate', data),
+  generate: (data: {
+    shopName: string;
+    genreId: string;
+    mode?: 'easy' | 'custom';
+    customGenre?: string;
+    customLyrics?: string;
+  }) => api.post('/tools/jingle-generator/generate', data),
   getJob: (jobId: string) => api.get(`/tools/jingle-generator/jobs/${jobId}`),
   getHistory: (params?: { limit?: number; offset?: number }) =>
     api.get('/tools/jingle-generator/history', { params }),
