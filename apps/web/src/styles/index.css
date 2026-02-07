@@ -3,73 +3,273 @@
 @tailwind utilities;
 
 /* ============================================
-   BAYFILLER - RETRO 1950s THEME
+   BAYFILLER — PREMIUM GARAGE DESIGN SYSTEM
+   CSS Custom Properties + Dark Mode
    ============================================ */
 
 @layer base {
+  :root {
+    /* Page surfaces */
+    --color-background: 252 248 240;
+    --color-foreground: 26 54 93;
+    --color-surface: 255 253 249;
+    --color-surface-alt: 248 244 236;
+
+    /* Brand colors (space-separated RGB for Tailwind alpha support) */
+    --color-retro-red: 197 48 48;
+    --color-retro-teal: 44 122 123;
+    --color-retro-mustard: 214 158 46;
+    --color-retro-navy: 26 54 93;
+    --color-retro-cream: 252 248 240;
+    --color-retro-mint: 154 230 180;
+    --color-retro-pink: 254 215 226;
+    --color-retro-orange: 221 107 32;
+    --color-retro-brown: 116 66 16;
+    --color-retro-chrome: 160 174 192;
+
+    /* Semantic colors */
+    --color-accent: 197 48 48;
+    --color-accent-hover: 185 28 28;
+    --color-secondary: 44 122 123;
+    --color-secondary-hover: 15 118 110;
+    --color-highlight: 214 158 46;
+
+    /* Text */
+    --color-text-primary: 26 54 93;
+    --color-text-secondary: 107 114 128;
+    --color-text-muted: 156 163 175;
+
+    /* Borders */
+    --color-border: 0 0 0;
+    --color-border-muted: 209 213 219;
+    --border-width: 1px;
+
+    /* Shadows (modern, not offset) */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.08);
+    --shadow-md: 0 2px 8px -1px rgb(0 0 0 / 0.1), 0 1px 3px -1px rgb(0 0 0 / 0.08);
+    --shadow-lg: 0 4px 16px -2px rgb(0 0 0 / 0.12), 0 2px 6px -2px rgb(0 0 0 / 0.06);
+    --shadow-card: 0 2px 8px -1px rgb(0 0 0 / 0.1);
+
+    /* Sidebar */
+    --color-sidebar-bg: 26 54 93;
+    --color-sidebar-text: 255 255 255;
+    --color-sidebar-active: 197 48 48;
+    --color-sidebar-border: 0 0 0;
+
+    /* Scrollbar */
+    --color-scrollbar-track: 229 231 235;
+    --color-scrollbar-thumb: 26 54 93;
+
+    /* Radius */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+
+    /* shadcn/ui compatibility aliases */
+    --background: var(--color-background);
+    --foreground: var(--color-foreground);
+    --card: var(--color-surface);
+    --card-foreground: var(--color-text-primary);
+    --primary: var(--color-accent);
+    --primary-foreground: 255 255 255;
+    --secondary: var(--color-surface-alt);
+    --secondary-foreground: var(--color-text-primary);
+    --muted: var(--color-surface-alt);
+    --muted-foreground: var(--color-text-secondary);
+    --accent: var(--color-highlight);
+    --accent-foreground: var(--color-foreground);
+    --destructive: 239 68 68;
+    --destructive-foreground: 255 255 255;
+    --border: var(--color-border-muted);
+    --input: var(--color-border-muted);
+    --ring: var(--color-accent);
+    --radius: var(--radius-md);
+  }
+
+  .dark {
+    /* Page surfaces */
+    --color-background: 24 24 27;
+    --color-foreground: 250 250 250;
+    --color-surface: 39 39 42;
+    --color-surface-alt: 52 52 56;
+
+    /* Brand colors — brightened for dark mode contrast */
+    --color-retro-red: 239 68 68;
+    --color-retro-teal: 45 212 191;
+    --color-retro-mustard: 251 191 36;
+    --color-retro-navy: 30 41 59;
+    --color-retro-cream: 39 39 42;
+    --color-retro-mint: 52 211 153;
+    --color-retro-pink: 251 113 133;
+    --color-retro-orange: 251 146 60;
+    --color-retro-brown: 180 83 9;
+    --color-retro-chrome: 148 163 184;
+
+    /* Semantic colors */
+    --color-accent: 239 68 68;
+    --color-accent-hover: 248 113 113;
+    --color-secondary: 45 212 191;
+    --color-secondary-hover: 94 234 212;
+    --color-highlight: 251 191 36;
+
+    /* Text */
+    --color-text-primary: 250 250 250;
+    --color-text-secondary: 161 161 170;
+    --color-text-muted: 113 113 122;
+
+    /* Borders */
+    --color-border: 63 63 70;
+    --color-border-muted: 52 52 56;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+    --shadow-md: 0 2px 8px -1px rgb(0 0 0 / 0.4), 0 1px 3px -1px rgb(0 0 0 / 0.3);
+    --shadow-lg: 0 4px 16px -2px rgb(0 0 0 / 0.5), 0 2px 6px -2px rgb(0 0 0 / 0.3);
+    --shadow-card: 0 2px 8px -1px rgb(0 0 0 / 0.4);
+
+    /* Sidebar */
+    --color-sidebar-bg: 15 15 20;
+    --color-sidebar-text: 250 250 250;
+    --color-sidebar-active: 239 68 68;
+    --color-sidebar-border: 63 63 70;
+
+    /* Scrollbar */
+    --color-scrollbar-track: 39 39 42;
+    --color-scrollbar-thumb: 82 82 91;
+
+    /* shadcn dark aliases */
+    --destructive: 220 38 38;
+    --destructive-foreground: 255 255 255;
+  }
+
+  /* Dark mode overrides for inline Tailwind classes */
+  .dark .border-black {
+    border-color: rgb(var(--color-border));
+  }
+  .dark .bg-white {
+    background-color: rgb(var(--color-surface));
+  }
+  .dark .bg-gray-50 {
+    background-color: rgb(var(--color-surface-alt));
+  }
+  .dark .bg-gray-100 {
+    background-color: rgb(var(--color-surface-alt));
+  }
+  .dark .bg-gray-200 {
+    background-color: rgb(63 63 70);
+  }
+  .dark .text-gray-500 {
+    color: rgb(var(--color-text-secondary));
+  }
+  .dark .text-gray-600 {
+    color: rgb(var(--color-text-secondary));
+  }
+  .dark .text-gray-400 {
+    color: rgb(var(--color-text-muted));
+  }
+  .dark .border-gray-200 {
+    border-color: rgb(var(--color-border));
+  }
+  .dark .border-gray-300 {
+    border-color: rgb(var(--color-border));
+  }
+
   html {
     font-family: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, sans-serif;
   }
 
   body {
-    @apply bg-retro-cream text-retro-navy antialiased;
+    background-color: rgb(var(--color-background));
+    color: rgb(var(--color-foreground));
+    @apply antialiased;
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Oswald', 'Franklin Gothic Medium', sans-serif;
     @apply font-bold tracking-tight;
   }
-
-  .font-display {
-    font-family: 'Bebas Neue', 'Impact', sans-serif;
-  }
-
-  .font-script {
-    font-family: 'Pacifico', cursive;
-  }
 }
 
+/* ============================================
+   COMPONENT CLASSES — Premium Garage Edition
+   ============================================ */
+
 @layer components {
-  /* Retro Button */
+  /* Retro Button — elevated with subtle lift on hover */
   .btn-retro {
     @apply px-6 py-3 font-heading font-bold uppercase tracking-wide;
-    @apply border-2 border-black shadow-retro;
-    @apply transition-all duration-150;
-    @apply hover:translate-x-1 hover:translate-y-1 hover:shadow-none;
-    @apply active:translate-x-1 active:translate-y-1 active:shadow-none;
+    @apply transition-all duration-200 ease-out;
+    border: var(--border-width) solid rgb(var(--color-border));
+    box-shadow: var(--shadow-sm);
+    border-radius: var(--radius-sm);
+  }
+  .btn-retro:hover {
+    @apply -translate-y-0.5;
+    box-shadow: var(--shadow-md);
+  }
+  .btn-retro:active {
+    @apply translate-y-0;
+    box-shadow: var(--shadow-sm);
   }
 
   .btn-retro-primary {
-    @apply btn-retro bg-retro-red text-white hover:bg-red-700;
+    @apply btn-retro text-white;
+    background-color: rgb(var(--color-accent));
+  }
+  .btn-retro-primary:hover {
+    background-color: rgb(var(--color-accent-hover));
   }
 
   .btn-retro-secondary {
-    @apply btn-retro bg-retro-teal text-white hover:bg-teal-700;
+    @apply btn-retro text-white;
+    background-color: rgb(var(--color-secondary));
+  }
+  .btn-retro-secondary:hover {
+    background-color: rgb(var(--color-secondary-hover));
   }
 
   .btn-retro-outline {
-    @apply btn-retro bg-transparent text-retro-navy hover:bg-retro-navy hover:text-white;
+    @apply btn-retro;
+    background-color: transparent;
+    color: rgb(var(--color-foreground));
+  }
+  .btn-retro-outline:hover {
+    background-color: rgb(var(--color-foreground));
+    @apply text-white;
   }
 
-  /* Retro Card */
+  /* Retro Card — refined with modern shadow */
   .card-retro {
-    @apply bg-white border-2 border-black shadow-retro;
+    background-color: rgb(var(--color-surface));
+    border: var(--border-width) solid rgb(var(--color-border));
+    box-shadow: var(--shadow-card);
+    border-radius: var(--radius-md);
     @apply p-6;
+    @apply transition-shadow duration-200 ease-out;
+  }
+  .card-retro:hover {
+    box-shadow: var(--shadow-lg);
   }
 
   /* Retro Input */
   .input-retro {
-    @apply w-full px-4 py-3 bg-white;
-    @apply border-2 border-black;
-    @apply font-body text-retro-navy;
-    @apply focus:outline-none focus:ring-2 focus:ring-retro-red focus:border-retro-red;
-    @apply placeholder:text-gray-400;
+    @apply w-full px-4 py-3;
+    background-color: rgb(var(--color-surface));
+    border: var(--border-width) solid rgb(var(--color-border));
+    color: rgb(var(--color-text-primary));
+    border-radius: var(--radius-sm);
+    @apply font-body;
+    @apply focus:outline-none focus:ring-2 focus:border-transparent;
+    --tw-ring-color: rgb(var(--color-accent));
+  }
+  .input-retro::placeholder {
+    color: rgb(var(--color-text-muted));
   }
 
   /* Retro Select */
   .select-retro {
     @apply input-retro appearance-none cursor-pointer;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%231A365D'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
     background-position: right 12px center;
     background-repeat: no-repeat;
     background-size: 20px;
@@ -80,34 +280,34 @@
   .badge-retro {
     @apply inline-flex items-center px-3 py-1;
     @apply text-xs font-heading font-bold uppercase tracking-wider;
-    @apply border-2 border-black;
+    border: var(--border-width) solid rgb(var(--color-border));
+    border-radius: var(--radius-sm);
   }
 
   /* Retro Heading Styles */
   .heading-retro {
-    @apply font-display text-4xl md:text-5xl uppercase tracking-wider;
-    @apply text-retro-navy;
-    text-shadow: 3px 3px 0 rgba(0,0,0,0.1);
+    @apply font-heading text-4xl md:text-5xl uppercase tracking-wider;
+    color: rgb(var(--color-foreground));
   }
 
   .subheading-retro {
     @apply font-heading text-xl md:text-2xl uppercase tracking-wide;
-    @apply text-retro-teal;
+    color: rgb(var(--color-secondary));
   }
 
   /* Retro Divider */
   .divider-retro {
-    @apply border-b-4 border-black;
+    border-bottom: 2px solid rgb(var(--color-border));
     @apply my-6;
   }
 
   /* Checkerboard Background */
   .bg-checkerboard {
     background-image:
-      linear-gradient(45deg, #e5e5e5 25%, transparent 25%),
-      linear-gradient(-45deg, #e5e5e5 25%, transparent 25%),
-      linear-gradient(45deg, transparent 75%, #e5e5e5 75%),
-      linear-gradient(-45deg, transparent 75%, #e5e5e5 75%);
+      linear-gradient(45deg, rgb(var(--color-border) / 0.05) 25%, transparent 25%),
+      linear-gradient(-45deg, rgb(var(--color-border) / 0.05) 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, rgb(var(--color-border) / 0.05) 75%),
+      linear-gradient(-45deg, transparent 75%, rgb(var(--color-border) / 0.05) 75%);
     background-size: 20px 20px;
     background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
   }
@@ -123,7 +323,7 @@
 
   /* Vintage Paper Texture */
   .paper-texture {
-    background-color: #FDF6E3;
+    background-color: rgb(var(--color-retro-cream));
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' viewBox='0 0 4 4'%3E%3Cpath fill='%239C92AC' fill-opacity='0.05' d='M1 3h1v1H1V3zm2-2h1v1H3V1z'%3E%3C/path%3E%3C/svg%3E");
   }
 
@@ -134,29 +334,38 @@
 
   /* Retro Progress Bar */
   .progress-retro {
-    @apply h-6 bg-gray-200 border-2 border-black;
+    @apply h-6;
+    background-color: rgb(var(--color-surface-alt));
+    border: var(--border-width) solid rgb(var(--color-border));
+    border-radius: var(--radius-sm);
   }
 
   .progress-retro-fill {
-    @apply h-full bg-retro-teal;
+    @apply h-full;
+    background-color: rgb(var(--color-secondary));
     @apply transition-all duration-300 ease-out;
+    border-radius: var(--radius-sm);
   }
 
   /* Retro Toggle */
   .toggle-retro {
     @apply relative w-14 h-8;
-    @apply bg-gray-300 border-2 border-black;
+    background-color: rgb(var(--color-surface-alt));
+    border: var(--border-width) solid rgb(var(--color-border));
+    border-radius: var(--radius-lg);
     @apply cursor-pointer transition-colors;
   }
 
   .toggle-retro.active {
-    @apply bg-retro-teal;
+    background-color: rgb(var(--color-secondary));
   }
 
   .toggle-retro::after {
     content: '';
     @apply absolute top-1 left-1 w-5 h-5;
-    @apply bg-white border-2 border-black;
+    background-color: rgb(var(--color-surface));
+    border: var(--border-width) solid rgb(var(--color-border));
+    border-radius: 50%;
     @apply transition-transform;
   }
 
@@ -167,8 +376,11 @@
   /* Retro Tooltip */
   .tooltip-retro {
     @apply absolute z-50 px-3 py-2;
-    @apply bg-retro-navy text-white text-sm;
-    @apply border-2 border-black shadow-retro-sm;
+    background-color: rgb(var(--color-foreground));
+    @apply text-white text-sm;
+    border: var(--border-width) solid rgb(var(--color-border));
+    box-shadow: var(--shadow-md);
+    border-radius: var(--radius-sm);
     @apply opacity-0 invisible transition-all;
   }
 
@@ -177,69 +389,8 @@
   }
 }
 
-@layer utilities {
-  /* Animation utilities */
-  .animate-bounce-slow {
-    animation: bounce 2s infinite;
-  }
-
-  /* Retro shadow variations */
-  .shadow-retro-red {
-    box-shadow: 4px 4px 0px 0px #C53030;
-  }
-
-  .shadow-retro-teal {
-    box-shadow: 4px 4px 0px 0px #2C7A7B;
-  }
-
-  .shadow-retro-navy {
-    box-shadow: 4px 4px 0px 0px #1A365D;
-  }
-
-  /* Gradient text */
-  .text-gradient-retro {
-    @apply bg-gradient-to-r from-retro-red via-retro-mustard to-retro-teal;
-    @apply bg-clip-text text-transparent;
-  }
-
-  /* Hover lift effect */
-  .hover-lift {
-    @apply transition-transform duration-200;
-    @apply hover:-translate-y-1;
-  }
-}
-
-/* Disabled button cursor */
-button:disabled,
-button[disabled] {
-  cursor: not-allowed;
-}
-
-/* Scrollbar styling */
-::-webkit-scrollbar {
-  width: 12px;
-}
-
-::-webkit-scrollbar-track {
-  @apply bg-gray-200;
-}
-
-::-webkit-scrollbar-thumb {
-  @apply bg-retro-navy border-2 border-black;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  @apply bg-retro-teal;
-}
-
-/* Selection styling */
-::selection {
-  @apply bg-retro-red text-white;
-}
-
 /* ============================================
    MOBILE-FIRST OPTIMIZATIONS
-   Touch targets, spacing, and responsiveness
    ============================================ */
 
 @layer components {
@@ -270,7 +421,7 @@ button[disabled] {
   /* Mobile-optimized form fields */
   .input-mobile {
     @apply min-h-[48px] px-4 py-3;
-    @apply text-base; /* Prevents iOS zoom on focus */
+    @apply text-base;
   }
 
   /* Mobile navigation item */
@@ -299,7 +450,8 @@ button[disabled] {
   /* Bottom action bar for mobile */
   .bottom-action-bar {
     @apply fixed bottom-0 left-0 right-0;
-    @apply bg-white border-t-4 border-black;
+    background-color: rgb(var(--color-surface));
+    border-top: 2px solid rgb(var(--color-border));
     @apply p-4 pb-safe;
     @apply flex items-center justify-center gap-4;
     @apply z-50;
@@ -339,49 +491,116 @@ button[disabled] {
   .fab {
     @apply fixed bottom-6 right-6;
     @apply w-16 h-16 rounded-full;
-    @apply bg-retro-red text-white;
-    @apply border-4 border-black shadow-retro;
+    background-color: rgb(var(--color-accent));
+    @apply text-white;
+    border: 2px solid rgb(var(--color-border));
+    box-shadow: var(--shadow-lg);
     @apply flex items-center justify-center;
     @apply active:scale-95 transition-transform;
     @apply z-40;
   }
 
   .fab-with-bar {
-    @apply bottom-24; /* Account for bottom action bar */
+    @apply bottom-24;
   }
+}
+
+@layer utilities {
+  /* Animation utilities */
+  .animate-bounce-slow {
+    animation: bounce 2s infinite;
+  }
+
+  /* Retro shadow variations — variable-based */
+  .shadow-retro-red {
+    box-shadow: 0 2px 8px -1px rgb(var(--color-retro-red) / 0.3);
+  }
+
+  .shadow-retro-teal {
+    box-shadow: 0 2px 8px -1px rgb(var(--color-retro-teal) / 0.3);
+  }
+
+  .shadow-retro-navy {
+    box-shadow: 0 2px 8px -1px rgb(var(--color-retro-navy) / 0.3);
+  }
+
+  /* Gradient text */
+  .text-gradient-retro {
+    @apply bg-gradient-to-r from-retro-red via-retro-mustard to-retro-teal;
+    @apply bg-clip-text text-transparent;
+  }
+
+  /* Hover lift effect */
+  .hover-lift {
+    @apply transition-transform duration-200;
+    @apply hover:-translate-y-1;
+  }
+}
+
+/* Disabled button cursor */
+button:disabled,
+button[disabled] {
+  cursor: not-allowed;
+  @apply opacity-60;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: rgb(var(--color-scrollbar-track));
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgb(var(--color-scrollbar-thumb));
+  border-radius: var(--radius-sm);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(var(--color-secondary));
+}
+
+/* Selection styling */
+::selection {
+  background-color: rgb(var(--color-accent));
+  color: white;
+}
+
+/* Focus-visible accessibility */
+:focus-visible {
+  outline: 2px solid rgb(var(--color-accent));
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
 }
 
 /* Mobile-specific media queries */
 @media (max-width: 640px) {
-  /* Larger text for mobile readability */
   .heading-retro {
     @apply text-3xl;
   }
 
-  /* More padding on mobile cards */
   .card-retro {
     @apply p-4;
   }
 
-  /* Full-width buttons on mobile */
   .btn-retro {
     @apply w-full justify-center;
   }
 
-  /* Stack form labels on mobile */
   .form-group-mobile {
     @apply flex flex-col gap-2;
   }
 
-  /* Larger checkboxes and radios on mobile */
   input[type="checkbox"],
   input[type="radio"] {
     @apply w-6 h-6;
   }
 
-  /* Better touch spacing for lists */
   .list-touch li {
-    @apply py-3 border-b border-gray-200;
+    @apply py-3;
+    border-bottom: 1px solid rgb(var(--color-border-muted));
   }
 }
 
@@ -403,7 +622,6 @@ button[disabled] {
   animation: easy-pulse 2s ease-in-out infinite;
 }
 
-
 /* Reduce motion for users who prefer it */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -418,19 +636,14 @@ button[disabled] {
 /* High contrast mode support */
 @media (prefers-contrast: high) {
   .card-retro {
-    @apply border-4;
+    border-width: 3px;
   }
 
   .btn-retro {
-    @apply border-4;
+    border-width: 3px;
   }
 
   .input-retro {
-    @apply border-4;
+    border-width: 3px;
   }
-}
-
-/* Dark mode preparation (if enabled later) */
-@media (prefers-color-scheme: dark) {
-  /* Can be enabled later with a toggle */
 }

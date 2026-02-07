@@ -130,7 +130,7 @@ export default function OnboardingPage() {
           <h1 className="font-display text-5xl text-retro-navy tracking-wider">
             SHOP SETUP
           </h1>
-          <p className="font-script text-2xl text-retro-mustard mt-2">
+          <p className="font-heading text-2xl text-retro-mustard mt-2 italic">
             Let's get you rolling!
           </p>
         </div>

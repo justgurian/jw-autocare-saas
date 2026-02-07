@@ -5,7 +5,7 @@ import { Power, Download, Share2, RefreshCw, Sparkles, Video } from 'lucide-reac
 import toast from 'react-hot-toast';
 import ShareModal from './ShareModal';
 import VideoFromFlyerModal from './VideoFromFlyerModal';
-import RetroLoadingStage from '../ui/RetroLoadingStage';
+import RetroLoadingStage from '../garage/RetroLoadingStage';
 import { useFileDownload } from '../../hooks/useFileDownload';
 import type { GeneratedContent } from '../../types/content';
 import FlyerFeedback from './FlyerFeedback';

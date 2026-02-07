@@ -22,7 +22,7 @@ import ContentSelector from '../../../components/batch-flyer/ContentSelector';
 import ThemeSelector from '../../../components/batch-flyer/ThemeSelector';
 import FlyerCarousel from '../../../components/batch-flyer/FlyerCarousel';
 import FlyerEditor from '../../../components/flyer-editor/FlyerEditor';
-import RetroLoadingStage from '../../../components/ui/RetroLoadingStage';
+import RetroLoadingStage from '../../../components/garage/RetroLoadingStage';
 
 // Types
 interface BatchFlyer {

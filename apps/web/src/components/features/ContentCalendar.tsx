@@ -5,7 +5,7 @@ import { Calendar, Download, Share2, RefreshCw, ChevronLeft, ChevronRight, Check
 import toast from 'react-hot-toast';
 import ShareModal from './ShareModal';
 import FlyerFeedback from './FlyerFeedback';
-import RetroLoadingStage from '../ui/RetroLoadingStage';
+import RetroLoadingStage from '../garage/RetroLoadingStage';
 import { useFileDownload } from '../../hooks/useFileDownload';
 
 interface CalendarFlyer {

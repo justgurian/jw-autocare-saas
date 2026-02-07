@@ -1,30 +1,37 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
-        // Retro 1950s color palette
+        // Retro palette — now reads from CSS custom properties
         retro: {
-          cream: '#FDF6E3',
-          red: '#C53030',
-          teal: '#2C7A7B',
-          mustard: '#D69E2E',
-          navy: '#1A365D',
-          mint: '#9AE6B4',
-          pink: '#FED7E2',
-          orange: '#DD6B20',
-          brown: '#744210',
-          chrome: '#A0AEC0',
+          cream: 'rgb(var(--color-retro-cream) / <alpha-value>)',
+          red: 'rgb(var(--color-retro-red) / <alpha-value>)',
+          teal: 'rgb(var(--color-retro-teal) / <alpha-value>)',
+          mustard: 'rgb(var(--color-retro-mustard) / <alpha-value>)',
+          navy: 'rgb(var(--color-retro-navy) / <alpha-value>)',
+          mint: 'rgb(var(--color-retro-mint) / <alpha-value>)',
+          pink: 'rgb(var(--color-retro-pink) / <alpha-value>)',
+          orange: 'rgb(var(--color-retro-orange) / <alpha-value>)',
+          brown: 'rgb(var(--color-retro-brown) / <alpha-value>)',
+          chrome: 'rgb(var(--color-retro-chrome) / <alpha-value>)',
         },
-        // Primary brand colors (can be overridden per tenant)
+        // Semantic surface colors
+        background: 'rgb(var(--color-background) / <alpha-value>)',
+        foreground: 'rgb(var(--color-foreground) / <alpha-value>)',
+        surface: 'rgb(var(--color-surface) / <alpha-value>)',
+        'surface-alt': 'rgb(var(--color-surface-alt) / <alpha-value>)',
+        accent: 'rgb(var(--color-accent) / <alpha-value>)',
+        // Primary brand colors (full scale for gradients etc.)
         primary: {
           50: '#FEF2F2',
           100: '#FEE2E2',
           200: '#FECACA',
           300: '#FCA5A5',
           400: '#F87171',
-          500: '#C53030', // Retro red
+          500: 'rgb(var(--color-retro-red) / <alpha-value>)',
           600: '#B91C1C',
           700: '#991B1B',
           800: '#7F1D1D',
@@ -36,7 +43,7 @@ export default {
           200: '#99F6E4',
           300: '#5EEAD4',
           400: '#2DD4BF',
-          500: '#2C7A7B', // Retro teal
+          500: 'rgb(var(--color-retro-teal) / <alpha-value>)',
           600: '#0D9488',
           700: '#0F766E',
           800: '#115E59',
@@ -44,20 +51,19 @@ export default {
         },
       },
       fontFamily: {
-        // Retro typography
-        display: ['"Bebas Neue"', '"Impact"', 'sans-serif'],
+        display: ['"Oswald"', '"Franklin Gothic Medium"', 'sans-serif'],
         heading: ['"Oswald"', '"Franklin Gothic Medium"', 'sans-serif'],
         body: ['"Source Sans Pro"', '"Helvetica Neue"', 'sans-serif'],
-        script: ['"Pacifico"', 'cursive'],
       },
       boxShadow: {
-        retro: '4px 4px 0px 0px rgba(0,0,0,0.9)',
-        'retro-sm': '2px 2px 0px 0px rgba(0,0,0,0.9)',
-        'retro-lg': '6px 6px 0px 0px rgba(0,0,0,0.9)',
+        retro: 'var(--shadow-md)',
+        'retro-sm': 'var(--shadow-sm)',
+        'retro-lg': 'var(--shadow-lg)',
+        card: 'var(--shadow-card)',
         neon: '0 0 5px currentColor, 0 0 10px currentColor, 0 0 20px currentColor',
       },
       borderRadius: {
-        retro: '0px',
+        retro: 'var(--radius-sm)',
       },
       backgroundImage: {
         'checkerboard': "url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h20v20H0V0zm20 20h20v20H20V20z' fill='%23000' fill-opacity='0.05'/%3E%3C/svg%3E\")",
@@ -113,16 +119,14 @@ export default {
       spacing: {
         'safe': 'env(safe-area-inset-bottom, 0px)',
         'safe-top': 'env(safe-area-inset-top, 0px)',
-        'touch': '44px', // Minimum touch target
-        'touch-lg': '48px', // Comfortable touch target
+        'touch': '44px',
+        'touch-lg': '48px',
       },
-      // Mobile-friendly minimum heights
       minHeight: {
         'touch': '44px',
         'touch-lg': '48px',
         'btn': '44px',
       },
-      // Mobile-friendly minimum widths
       minWidth: {
         'touch': '44px',
         'touch-lg': '48px',

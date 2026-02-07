@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Share2, Download, X, Sparkles } from 'lucide-react';
 import Confetti from './Confetti';
-import FocusTrap from '../ui/FocusTrap';
+import FocusTrap from '../garage/FocusTrap';
 
 interface FirstFlyerCelebrationProps {
   isOpen: boolean;
@@ -67,7 +67,7 @@ export default function FirstFlyerCelebration({
               YOUR FIRST MASTERPIECE!
             </h2>
 
-            <p className="font-script text-xl text-retro-red mb-4">
+            <p className="font-heading text-xl text-retro-red mb-4 italic">
               You did it!
             </p>
 

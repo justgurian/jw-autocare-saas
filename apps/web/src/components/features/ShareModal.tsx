@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
-import FocusTrap from '../ui/FocusTrap';
+import FocusTrap from '../garage/FocusTrap';
 import { useFileDownload } from '../../hooks/useFileDownload';
 import { useClipboard } from '../../hooks/useClipboard';
 import type { SocialAccount } from '../../types/content';
