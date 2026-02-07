@@ -11,6 +11,8 @@ export interface Character {
   isBuiltIn: boolean;
   /** If set, this character can only be used with scenes in this category */
   restrictToCategory?: string;
+  /** URL to the mascot thumbnail image (custom mascots only) */
+  imageUrl?: string;
 }
 
 export const CHARACTERS: Character[] = [

@@ -46,6 +46,7 @@ import {
 } from './promo-flyer.types';
 
 import { buildNostalgicImagePrompt } from '../../services/prompt-builder.service';
+import { fetchMascotAsBase64 } from '../../services/mascot.util';
 
 const router = Router();
 
@@ -662,6 +663,17 @@ router.post('/instant', generationRateLimiter, async (req: Request, res: Respons
       finalImagePrompt += buildVehiclePromptForFlyer(selectedVehicle2);
     }
 
+    // Handle optional mascot
+    const mascotId = req.body?.mascotId as string | undefined;
+    let mascotImageData: { base64: string; mimeType: string } | undefined;
+    if (mascotId) {
+      const mascot = await fetchMascotAsBase64(mascotId, tenantId);
+      if (mascot) {
+        finalImagePrompt += '\n\nFeaturing the shop mascot character: ' + mascot.characterPrompt;
+        mascotImageData = { base64: mascot.base64, mimeType: mascot.mimeType };
+      }
+    }
+
     // Generate caption in parallel
     const captionPromise = geminiService.generateMarketingCopyWithProfile({
       type: 'caption',
@@ -682,11 +694,13 @@ router.post('/instant', generationRateLimiter, async (req: Request, res: Respons
       contentType: content.type,
       subject: content.subject,
       hasLogo: !!logoImage,
+      hasMascot: !!mascotImageData,
     });
 
     const imageResult = await geminiService.generateImage(finalImagePrompt, {
       aspectRatio: '4:5',
       logoImage: logoImage || undefined,
+      mascotImage: mascotImageData,
       contactInfo: {
         phone: brandKit?.phone || undefined,
         website: brandKit?.website || undefined,
@@ -887,6 +901,17 @@ router.post('/generate', generationRateLimiter, async (req: Request, res: Respon
       }) + vehiclePromptAddition;
     }
 
+    // Handle optional mascot
+    const mascotId = req.body?.mascotId as string | undefined;
+    let mascotImageData: { base64: string; mimeType: string } | undefined;
+    if (mascotId) {
+      const mascot = await fetchMascotAsBase64(mascotId, tenantId);
+      if (mascot) {
+        imagePrompt += '\n\nFeaturing the shop mascot character: ' + mascot.characterPrompt;
+        mascotImageData = { base64: mascot.base64, mimeType: mascot.mimeType };
+      }
+    }
+
     // Generate captions based on language option
     const captionPromises: Promise<string>[] = [];
 
@@ -919,10 +944,11 @@ router.post('/generate', generationRateLimiter, async (req: Request, res: Respon
     const contentId = uuidv4();
 
     // Generate actual image using Nano Banana Pro
-    logger.info('Generating image with Nano Banana Pro', { themeId: selectedThemeId, subject, vehicle: selectedVehicle?.name, hasLogo: !!logoImage });
+    logger.info('Generating image with Nano Banana Pro', { themeId: selectedThemeId, subject, vehicle: selectedVehicle?.name, hasLogo: !!logoImage, hasMascot: !!mascotImageData });
     const imageResult = await geminiService.generateImage(imagePrompt, {
       aspectRatio: '4:5',
       logoImage: logoImage || undefined,
+      mascotImage: mascotImageData,
       contactInfo: {
         phone: brandKit?.phone || undefined,
         website: brandKit?.website || undefined,

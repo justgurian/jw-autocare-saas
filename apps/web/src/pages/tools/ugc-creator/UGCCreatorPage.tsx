@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
-import { ugcCreatorApi } from '../../../services/api';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { ugcCreatorApi, servicesApi, specialsApi } from '../../../services/api';
 import {
   Film,
   Laugh,
@@ -33,8 +33,18 @@ interface Character {
   id: string;
   name: string;
   personality: string;
-  icon: string;
+  isBuiltIn?: boolean;
+  imageUrl?: string;
+  restrictToCategory?: string;
 }
+
+const BUILTIN_EMOJI: Record<string, string> = {
+  'classic-tony': '\uD83E\uDDF8',
+  'karen-puppet': '\uD83D\uDE24',
+  'human-male': '\uD83D\uDC68\u200D\uD83D\uDD27',
+  'human-female': '\uD83D\uDC69\u200D\uD83D\uDD27',
+  'puppet-hands': '\uD83E\uDD32',
+};
 
 const SCENES: Scene[] = [
   // Comedy
@@ -77,13 +87,6 @@ const SCENES: Scene[] = [
   { id: 'tv-commercial', name: 'TV Commercial', shortDescription: 'Custom sales pitch to camera.', category: 'tv-spot' },
 ];
 
-const CHARACTERS: Character[] = [
-  { id: 'classic-tony', name: 'Tony (Puppet)', personality: 'The Classic Mascot', icon: '\uD83E\uDDF8' },
-  { id: 'karen-puppet', name: 'Karen (Puppet)', personality: 'Manager Request Mode', icon: '\uD83D\uDE24' },
-  { id: 'human-male', name: 'Human Mechanic (Male)', personality: 'Trustworthy Pro', icon: '\uD83D\uDC68\u200D\uD83D\uDD27' },
-  { id: 'human-female', name: 'Human Mechanic (Female)', personality: 'Skilled Expert', icon: '\uD83D\uDC69\u200D\uD83D\uDD27' },
-];
-
 type Category = 'comedy' | 'relatable' | 'asmr' | 'tv-spot';
 
 const CATEGORY_META: Record<Category, { label: string; icon: typeof Laugh }> = {
@@ -118,6 +121,36 @@ export default function UGCCreatorPage() {
   const [showShareModal, setShowShareModal] = useState(false);
 
   const filteredScenes = SCENES.filter((s) => s.category === selectedCategory);
+
+  // Fetch characters from API
+  const { data: charactersData } = useQuery({
+    queryKey: ['ugc-characters'],
+    queryFn: () => ugcCreatorApi.getCharacters().then(r => r.data),
+  });
+  const allCharacters: Character[] = (charactersData?.data || []);
+
+  const availableCharacters = selectedCategory === 'asmr'
+    ? allCharacters.filter(c => c.restrictToCategory === 'asmr' || c.id === 'puppet-hands')
+    : allCharacters.filter(c => c.restrictToCategory !== 'asmr');
+
+  // Fetch services and specials for TV Spot dropdown
+  const { data: servicesData } = useQuery({
+    queryKey: ['services'],
+    queryFn: () => servicesApi.getAll().then(r => r.data),
+  });
+  const { data: specialsData } = useQuery({
+    queryKey: ['specials'],
+    queryFn: () => specialsApi.getAll().then(r => r.data),
+  });
+  const services = servicesData?.data || [];
+  const specials = specialsData?.data || [];
+
+  const formatDiscount = (s: any) => {
+    if (s.discountType === 'percentage') return `${s.discountValue}% OFF`;
+    if (s.discountType === 'fixed') return `$${s.discountValue} OFF`;
+    if (s.discountType === 'bogo') return 'BOGO';
+    return 'Special Offer';
+  };
 
   // Polling
   const { job: currentJob, startPolling } = usePollJob({
@@ -330,7 +363,7 @@ export default function UGCCreatorPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              {CHARACTERS.map((char) => (
+              {availableCharacters.map((char) => (
                 <button
                   key={char.id}
                   onClick={() => setSelectedCharacter(char)}
@@ -340,11 +373,20 @@ export default function UGCCreatorPage() {
                       : 'border-gray-300 hover:border-gray-500'
                   }`}
                 >
-                  <span className="text-2xl">{char.icon}</span>
+                  {char.isBuiltIn !== false ? (
+                    <span className="text-2xl">{BUILTIN_EMOJI[char.id] || '🎭'}</span>
+                  ) : char.imageUrl ? (
+                    <img src={char.imageUrl} alt={char.name} className="w-10 h-10 rounded object-cover" />
+                  ) : (
+                    <span className="text-2xl">🎭</span>
+                  )}
                   <h4 className="font-heading uppercase mt-1">{char.name}</h4>
                   <p className="text-xs text-gray-500">{char.personality}</p>
                 </button>
               ))}
+              {availableCharacters.length === 0 && (
+                <p className="col-span-2 text-sm text-gray-500 font-heading uppercase">No characters available for this category</p>
+              )}
             </div>
           </div>
 
@@ -518,15 +560,46 @@ export default function UGCCreatorPage() {
 
           {/* Commercial script (TV Spot only) */}
           {selectedScene?.category === 'tv-spot' && (
-            <div>
-              <label className="block font-heading text-sm uppercase mb-2">Commercial Script</label>
-              <textarea
-                value={commercialScript}
-                onChange={(e) => setCommercialScript(e.target.value)}
-                placeholder="Write your sales pitch script..."
-                rows={4}
-                className="w-full p-3 border-2 border-black focus:ring-2 focus:ring-retro-red focus:border-retro-red text-sm"
-              />
+            <div className="space-y-3">
+              <div>
+                <label className="block font-heading text-sm uppercase mb-2">Pick a Promo to Pitch</label>
+                <select
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val) setCommercialScript(val);
+                  }}
+                  className="w-full p-3 border-2 border-black rounded focus:ring-2 focus:ring-retro-red"
+                  defaultValue=""
+                >
+                  <option value="" disabled>-- Pick a promo to pitch --</option>
+                  {specials.length > 0 && (
+                    <optgroup label="Specials">
+                      {specials.map((s: any) => {
+                        const script = `Hey! Come check out our ${formatDiscount(s)} on ${s.title}! ${s.description || "Don't miss this deal!"}. Call today!`;
+                        return <option key={s.id} value={script}>{formatDiscount(s)} {s.title}</option>;
+                      })}
+                    </optgroup>
+                  )}
+                  {services.length > 0 && (
+                    <optgroup label="Services">
+                      {services.map((s: any) => {
+                        const script = `Hey! Come check out our ${s.name}! ${s.description || "Don't miss this deal!"}. Call today!`;
+                        return <option key={s.id} value={script}>{s.name}</option>;
+                      })}
+                    </optgroup>
+                  )}
+                </select>
+              </div>
+              <div>
+                <label className="block font-heading text-sm uppercase mb-2">Commercial Script</label>
+                <textarea
+                  value={commercialScript}
+                  onChange={(e) => setCommercialScript(e.target.value)}
+                  placeholder="Write your sales pitch script..."
+                  rows={4}
+                  className="w-full p-3 border-2 border-black focus:ring-2 focus:ring-retro-red focus:border-retro-red text-sm"
+                />
+              </div>
             </div>
           )}
 

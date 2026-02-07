@@ -591,6 +591,14 @@ export const mascotBuilderApi = {
   deleteMascot: (id: string) => api.delete(`/tools/mascot-builder/mascots/${id}`),
 };
 
+export const servicesApi = {
+  getAll: () => api.get('/services'),
+};
+
+export const specialsApi = {
+  getAll: () => api.get('/specials'),
+};
+
 // Named export for convenience
 export { api };
 

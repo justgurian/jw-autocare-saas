@@ -41,6 +41,7 @@ interface ImageGenerationOptions {
   negativePrompt?: string;
   outputDir?: string;
   logoImage?: { base64: string; mimeType: string };
+  mascotImage?: { base64: string; mimeType: string };
   contactInfo?: { phone?: string; website?: string };
 }
 
@@ -200,20 +201,42 @@ Generate a single, stunning marketing image that a premium auto repair shop woul
 
       logger.info('Calling image model for generation...', {
         hasLogo: !!options.logoImage,
+        hasMascot: !!options.mascotImage,
       });
 
       let contents: Part[] | string;
-      if (options.logoImage) {
-        // Pass logo as inline image so the model can see and incorporate it
-        contents = [
-          {
+      const hasLogo = !!options.logoImage;
+      const hasMascot = !!options.mascotImage;
+
+      if (hasLogo || hasMascot) {
+        const parts: Part[] = [];
+        if (hasLogo) {
+          parts.push({
             inlineData: {
-              data: options.logoImage.base64,
-              mimeType: options.logoImage.mimeType,
+              data: options.logoImage!.base64,
+              mimeType: options.logoImage!.mimeType,
             },
-          },
-          { text: fullPrompt + '\n\nIMPORTANT: The attached image is the business logo. You MUST incorporate this exact logo into the flyer design. Place it prominently where it is clearly visible — typically in the top or bottom area of the flyer. CRITICAL: If the logo has a white, colored, or solid background rectangle/box, IGNORE that background entirely — treat it as transparent. Only render the actual logo design/artwork itself, seamlessly integrated into the flyer. There should be NO visible bounding box, white rectangle, or background shape around the logo.' },
-        ];
+          });
+        }
+        if (hasMascot) {
+          parts.push({
+            inlineData: {
+              data: options.mascotImage!.base64,
+              mimeType: options.mascotImage!.mimeType,
+            },
+          });
+        }
+
+        let textAddendum = '';
+        if (hasLogo) {
+          textAddendum += '\n\nIMPORTANT: The attached image is the business logo. You MUST incorporate this exact logo into the flyer design. Place it prominently where it is clearly visible — typically in the top or bottom area of the flyer. CRITICAL: If the logo has a white, colored, or solid background rectangle/box, IGNORE that background entirely — treat it as transparent. Only render the actual logo design/artwork itself, seamlessly integrated into the flyer. There should be NO visible bounding box, white rectangle, or background shape around the logo.';
+        }
+        if (hasMascot) {
+          textAddendum += "\n\nIMPORTANT: The attached image is the shop's custom mascot character — a Muppet-style puppet. Feature this exact puppet character prominently in the image as a key visual element. Keep the character's appearance, colors, outfit, and style exactly as shown in the reference image.";
+        }
+
+        parts.push({ text: fullPrompt + textAddendum });
+        contents = parts;
       } else {
         contents = fullPrompt;
       }

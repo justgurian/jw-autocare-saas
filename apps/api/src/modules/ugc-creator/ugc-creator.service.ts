@@ -67,9 +67,10 @@ export const ugcCreatorService = {
         builtIn.push({
           id: `custom-${m.id}`,
           name: m.title || 'Custom Mascot',
-          description: (meta.characterDescription as string) || m.caption || '',
+          description: (meta.characterPrompt as string) || m.caption || '',
           personality: (meta.personality as string) || '',
           isBuiltIn: false,
+          imageUrl: m.imageUrl || undefined,
         });
       }
     } catch (err) {

@@ -9,6 +9,7 @@ import { MEME_STYLES, getMemeStyle, buildMemePrompt, getRandomTopicForStyle } fr
 import { ValidationError } from '../../middleware/error.middleware';
 import { logger } from '../../utils/logger';
 import { v4 as uuidv4 } from 'uuid';
+import { fetchMascotAsBase64 } from '../../services/mascot.util';
 
 const router = Router();
 
@@ -48,6 +49,7 @@ const generateMemeSchema = z.object({
   styleId: z.string().min(1),
   topic: z.string().min(1).max(200),
   customText: z.string().max(300).optional(),
+  mascotId: z.string().optional(),
 });
 
 // Generate meme
@@ -63,7 +65,7 @@ router.post('/generate', generationRateLimiter, async (req: Request, res: Respon
       );
     }
 
-    const { styleId, topic, customText } = result.data;
+    const { styleId, topic, customText, mascotId } = result.data;
 
     // Get meme style
     const style = getMemeStyle(styleId);
@@ -77,12 +79,22 @@ router.post('/generate', generationRateLimiter, async (req: Request, res: Respon
     });
 
     // Build the prompt
-    const imagePrompt = buildMemePrompt(style, {
+    let imagePrompt = buildMemePrompt(style, {
       topic,
       customText,
       businessName: brandKit?.businessName || undefined,
       tagline: brandKit?.tagline || undefined,
     });
+
+    // Handle optional mascot
+    let mascotImageData: { base64: string; mimeType: string } | undefined;
+    if (mascotId) {
+      const mascot = await fetchMascotAsBase64(mascotId, tenantId);
+      if (mascot) {
+        imagePrompt += '\n\nFeaturing the shop mascot character: ' + mascot.characterPrompt;
+        mascotImageData = { base64: mascot.base64, mimeType: mascot.mimeType };
+      }
+    }
 
     // Generate caption for social media
     const captionPromise = geminiService.generateMarketingCopyWithProfile({
@@ -104,11 +116,13 @@ router.post('/generate', generationRateLimiter, async (req: Request, res: Respon
       styleName: style.name,
       topic,
       tenantId,
+      hasMascot: !!mascotImageData,
     });
 
     // Generate image
     const imageResult = await geminiService.generateImage(imagePrompt, {
       aspectRatio: '1:1', // Square for social media
+      mascotImage: mascotImageData,
     });
 
     let imageUrl: string;

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { videoCreatorApi } from '../../../services/api';
+import { videoCreatorApi, servicesApi, specialsApi } from '../../../services/api';
 import {
   Video,
   Film,
@@ -71,6 +71,9 @@ export default function VideoCreatorPage() {
   });
   const [generatedVideo, setGeneratedVideo] = useState<GeneratedVideo | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [customTopic, setCustomTopic] = useState(false);
+  const [customHighlight, setCustomHighlight] = useState(false);
+  const [customCta, setCustomCta] = useState(false);
 
   // Shared polling hook
   const { job: currentJob, startPolling } = usePollJob({
@@ -108,6 +111,25 @@ export default function VideoCreatorPage() {
     queryKey: ['video-options'],
     queryFn: () => videoCreatorApi.getOptions().then((res) => res.data),
   });
+
+  // Fetch services and specials for dropdowns
+  const { data: servicesData } = useQuery({
+    queryKey: ['services'],
+    queryFn: () => servicesApi.getAll().then(r => r.data),
+  });
+  const { data: specialsData } = useQuery({
+    queryKey: ['specials'],
+    queryFn: () => specialsApi.getAll().then(r => r.data),
+  });
+  const services = servicesData?.data || [];
+  const specials = specialsData?.data || [];
+
+  const formatDiscount = (s: any) => {
+    if (s.discountType === 'percentage') return `${s.discountValue}% OFF`;
+    if (s.discountType === 'fixed') return `$${s.discountValue} OFF`;
+    if (s.discountType === 'bogo') return 'BOGO';
+    return 'Special Offer';
+  };
 
   const templates: VideoTemplate[] = templatesData?.data || [];
   const options = optionsData?.data;
@@ -316,39 +338,130 @@ export default function VideoCreatorPage() {
               <label className="block font-heading text-sm uppercase mb-1">
                 Topic / Main Message *
               </label>
-              <input
-                type="text"
-                value={formData.topic}
-                onChange={(e) => handleChange('topic', e.target.value)}
-                placeholder="e.g., Summer AC Special, Brake Safety Week, Oil Change Deal"
-                className="w-full p-3 border-2 border-black rounded focus:ring-2 focus:ring-retro-red focus:border-retro-red"
-              />
+              <select
+                value={customTopic ? '__custom__' : formData.topic}
+                onChange={(e) => {
+                  if (e.target.value === '__custom__') {
+                    setCustomTopic(true);
+                    handleChange('topic', '');
+                  } else {
+                    setCustomTopic(false);
+                    handleChange('topic', e.target.value);
+                  }
+                }}
+                className="w-full p-3 border-2 border-black rounded focus:ring-2 focus:ring-retro-red"
+              >
+                <option value="" disabled>-- Select a topic --</option>
+                {specials.length > 0 && (
+                  <optgroup label="Specials">
+                    {specials.map((s: any) => {
+                      const label = `${formatDiscount(s)} ${s.title}`;
+                      return <option key={s.id} value={label}>{label}</option>;
+                    })}
+                  </optgroup>
+                )}
+                {services.length > 0 && (
+                  <optgroup label="Services">
+                    {services.map((s: any) => (
+                      <option key={s.id} value={`${s.name} Special`}>{s.name} Special</option>
+                    ))}
+                  </optgroup>
+                )}
+                <option value="__custom__">Custom...</option>
+              </select>
+              {customTopic && (
+                <input
+                  type="text"
+                  value={formData.topic}
+                  onChange={(e) => handleChange('topic', e.target.value)}
+                  placeholder="e.g., Summer AC Special, Brake Safety Week, Oil Change Deal"
+                  className="w-full p-3 border-2 border-black rounded focus:ring-2 focus:ring-retro-red focus:border-retro-red mt-2"
+                />
+              )}
             </div>
 
             <div>
               <label className="block font-heading text-sm uppercase mb-1">
                 Service Highlight
               </label>
-              <input
-                type="text"
-                value={formData.serviceHighlight}
-                onChange={(e) => handleChange('serviceHighlight', e.target.value)}
-                placeholder="e.g., $49.99 oil change, Free AC check, 10% off brakes"
-                className="w-full p-3 border-2 border-black rounded focus:ring-2 focus:ring-retro-red focus:border-retro-red"
-              />
+              <select
+                value={customHighlight ? '__custom__' : formData.serviceHighlight}
+                onChange={(e) => {
+                  if (e.target.value === '__custom__') {
+                    setCustomHighlight(true);
+                    handleChange('serviceHighlight', '');
+                  } else {
+                    setCustomHighlight(false);
+                    handleChange('serviceHighlight', e.target.value);
+                  }
+                }}
+                className="w-full p-3 border-2 border-black rounded focus:ring-2 focus:ring-retro-red"
+              >
+                <option value="">-- Select a highlight --</option>
+                {services.length > 0 && (
+                  <optgroup label="Services">
+                    {services.map((s: any) => {
+                      const label = `${s.name}${s.priceRange ? ' - ' + s.priceRange : ''}`;
+                      return <option key={s.id} value={label}>{label}</option>;
+                    })}
+                  </optgroup>
+                )}
+                {specials.length > 0 && (
+                  <optgroup label="Specials">
+                    {specials.map((s: any) => {
+                      const label = `${s.title} - ${s.description}`;
+                      return <option key={s.id} value={label}>{label}</option>;
+                    })}
+                  </optgroup>
+                )}
+                <option value="__custom__">Custom...</option>
+              </select>
+              {customHighlight && (
+                <input
+                  type="text"
+                  value={formData.serviceHighlight}
+                  onChange={(e) => handleChange('serviceHighlight', e.target.value)}
+                  placeholder="e.g., $49.99 oil change, Free AC check, 10% off brakes"
+                  className="w-full p-3 border-2 border-black rounded focus:ring-2 focus:ring-retro-red focus:border-retro-red mt-2"
+                />
+              )}
             </div>
 
             <div>
               <label className="block font-heading text-sm uppercase mb-1">
                 Call to Action
               </label>
-              <input
-                type="text"
-                value={formData.callToAction}
-                onChange={(e) => handleChange('callToAction', e.target.value)}
-                placeholder="e.g., Call now!, Book online today, Visit us in Scottsdale"
-                className="w-full p-3 border-2 border-black rounded focus:ring-2 focus:ring-retro-red focus:border-retro-red"
-              />
+              <select
+                value={customCta ? '__custom__' : formData.callToAction}
+                onChange={(e) => {
+                  if (e.target.value === '__custom__') {
+                    setCustomCta(true);
+                    handleChange('callToAction', '');
+                  } else {
+                    setCustomCta(false);
+                    handleChange('callToAction', e.target.value);
+                  }
+                }}
+                className="w-full p-3 border-2 border-black rounded focus:ring-2 focus:ring-retro-red"
+              >
+                <option value="">-- Select a CTA --</option>
+                <option value="Call Now!">Call Now!</option>
+                <option value="Book Online Today">Book Online Today</option>
+                <option value="Visit Us Today">Visit Us Today</option>
+                <option value="Schedule Your Appointment">Schedule Your Appointment</option>
+                <option value="Limited Time Offer - Act Now!">Limited Time Offer - Act Now!</option>
+                <option value="Stop By Today">Stop By Today</option>
+                <option value="__custom__">Custom...</option>
+              </select>
+              {customCta && (
+                <input
+                  type="text"
+                  value={formData.callToAction}
+                  onChange={(e) => handleChange('callToAction', e.target.value)}
+                  placeholder="e.g., Call now!, Book online today, Visit us in Scottsdale"
+                  className="w-full p-3 border-2 border-black rounded focus:ring-2 focus:ring-retro-red focus:border-retro-red mt-2"
+                />
+              )}
             </div>
 
             {/* Style, Duration, Aspect Ratio */}
