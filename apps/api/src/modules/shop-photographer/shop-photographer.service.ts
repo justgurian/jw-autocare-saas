@@ -505,7 +505,7 @@ Return ONLY the JSON.`;
       });
 
       const imageResult = await geminiService.generateImage(prompt, {
-        aspectRatio: (input.aspectRatio as any) || '16:9',
+        aspectRatio: (input.aspectRatio as any) || '9:16',
       });
 
       if (!imageResult.success || !imageResult.imageData) {
@@ -519,7 +519,7 @@ Return ONLY the JSON.`;
       const animationPrompt = buildVideoAnimationPrompt({ scene, businessName });
 
       const veoConfig: VeoConfig = {
-        aspectRatio: input.aspectRatio || '16:9',
+        aspectRatio: input.aspectRatio || '9:16',
         durationSeconds: input.duration || 8,
         resolution: '720p',
       };
@@ -557,7 +557,7 @@ Return ONLY the JSON.`;
             type: 'video',
             sceneId: input.sceneId,
             aestheticId: input.aestheticId,
-            aspectRatio: input.aspectRatio || '16:9',
+            aspectRatio: input.aspectRatio || '9:16',
             duration: input.duration || 8,
             jobId,
           } as any,

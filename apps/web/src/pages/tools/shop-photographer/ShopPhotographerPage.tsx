@@ -21,6 +21,8 @@ import {
   X,
   Plus,
   Trash2,
+  Monitor,
+  Smartphone,
 } from 'lucide-react';
 
 interface SceneItem {
@@ -61,6 +63,16 @@ const OUTPUT_MODES = [
   { id: 'video', label: 'Video', Icon: Video },
 ];
 
+const IMAGE_RATIOS = [
+  { id: '4:5', label: 'Timeline (4:5)', description: 'Instagram & Facebook feed', Icon: Smartphone },
+  { id: '9:16', label: 'Reels (9:16)', description: 'Stories, Reels, TikTok', Icon: Smartphone },
+];
+
+const VIDEO_RATIOS = [
+  { id: '9:16', label: 'Reels (9:16)', description: 'Vertical — Stories, Reels, TikTok', Icon: Smartphone },
+  { id: '16:9', label: 'Widescreen (16:9)', description: 'Horizontal — YouTube, Facebook', Icon: Monitor },
+];
+
 export default function ShopPhotographerPage() {
   const queryClient = useQueryClient();
 
@@ -75,6 +87,8 @@ export default function ShopPhotographerPage() {
   const [shopSource, setShopSource] = useState<'photos' | 'style'>('style');
   const [uploadedPhoto, setUploadedPhoto] = useState<{ base64: string; mimeType: string; preview: string } | null>(null);
   const [textContent, setTextContent] = useState({ headline: '', subheadline: '', cta: '' });
+  const [imageAspectRatio, setImageAspectRatio] = useState<'4:5' | '9:16'>('4:5');
+  const [videoAspectRatio, setVideoAspectRatio] = useState<'9:16' | '16:9'>('9:16');
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [resultIsVideo, setResultIsVideo] = useState(false);
@@ -190,6 +204,7 @@ export default function ShopPhotographerPage() {
           photoMimeType: uploadedPhoto.mimeType,
           outputMode: outputMode as any,
           enhancementStyle: enhancementStyle as any,
+          aspectRatio: videoAspectRatio,
         });
         const jobId = response.data?.data?.job?.id || response.data?.data?.id || response.data?.id;
         if (jobId) {
@@ -209,6 +224,7 @@ export default function ShopPhotographerPage() {
         outputMode: outputMode as any,
         enhancementStyle: enhancementStyle as any,
         textContent: outputMode === 'photo-text' ? textContent : undefined,
+        aspectRatio: imageAspectRatio,
       });
       setResultUrl(response.data?.data?.imageUrl || response.data?.imageUrl);
       setResultIsVideo(false);
@@ -231,6 +247,7 @@ export default function ShopPhotographerPage() {
         const response = await shopPhotographerApi.generateVideo({
           sceneId: selectedScene,
           aestheticId: selectedAesthetic || undefined,
+          aspectRatio: videoAspectRatio,
         });
         const jobId = response.data?.data?.job?.id || response.data?.data?.id || response.data?.id;
         startPolling(jobId);
@@ -248,6 +265,7 @@ export default function ShopPhotographerPage() {
         outputMode: outputMode as any,
         aestheticId: selectedAesthetic || undefined,
         textContent: outputMode === 'photo-text' ? textContent : undefined,
+        aspectRatio: imageAspectRatio,
       });
       setResultUrl(response.data?.data?.imageUrl || response.data?.imageUrl);
       setResultIsVideo(false);
@@ -269,6 +287,7 @@ export default function ShopPhotographerPage() {
       const response = await shopPhotographerApi.generateVideo({
         sceneId: selectedScene,
         aestheticId: selectedAesthetic || undefined,
+        aspectRatio: videoAspectRatio,
       });
       const jobId = response.data?.data?.job?.id || response.data?.data?.id || response.data?.id;
       startPolling(jobId);
@@ -290,6 +309,8 @@ export default function ShopPhotographerPage() {
     setShopSource('style');
     setUploadedPhoto(null);
     setTextContent({ headline: '', subheadline: '', cta: '' });
+    setImageAspectRatio('4:5');
+    setVideoAspectRatio('9:16');
     setResultUrl(null);
     setIsGenerating(false);
     setResultIsVideo(false);
@@ -437,6 +458,37 @@ export default function ShopPhotographerPage() {
                 >
                   <Icon className="w-4 h-4" />
                   {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Aspect Ratio */}
+          <div className="bg-white border-4 border-black shadow-retro p-6">
+            <h3 className="font-display text-xl text-retro-navy mb-4">
+              {outputMode === 'video' ? 'Video Format' : 'Image Format'}
+            </h3>
+            <div className="flex flex-wrap gap-3">
+              {(outputMode === 'video' ? VIDEO_RATIOS : IMAGE_RATIOS).map(({ id, label, description, Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => outputMode === 'video'
+                    ? setVideoAspectRatio(id as '9:16' | '16:9')
+                    : setImageAspectRatio(id as '4:5' | '9:16')
+                  }
+                  className={`flex items-center gap-3 px-5 py-3 border-2 border-black transition-colors ${
+                    (outputMode === 'video' ? videoAspectRatio : imageAspectRatio) === id
+                      ? 'bg-retro-red text-white'
+                      : 'bg-white hover:bg-retro-cream'
+                  }`}
+                >
+                  <Icon className="w-5 h-5" />
+                  <div className="text-left">
+                    <p className="font-heading text-xs uppercase font-bold">{label}</p>
+                    <p className={`text-xs ${(outputMode === 'video' ? videoAspectRatio : imageAspectRatio) === id ? 'text-red-100' : 'text-gray-500'}`}>
+                      {description}
+                    </p>
+                  </div>
                 </button>
               ))}
             </div>
@@ -686,6 +738,37 @@ export default function ShopPhotographerPage() {
             </div>
           </div>
 
+          {/* Aspect Ratio */}
+          <div className="bg-white border-4 border-black shadow-retro p-6">
+            <h3 className="font-display text-xl text-retro-navy mb-4">
+              {outputMode === 'video' ? 'Video Format' : 'Image Format'}
+            </h3>
+            <div className="flex flex-wrap gap-3">
+              {(outputMode === 'video' ? VIDEO_RATIOS : IMAGE_RATIOS).map(({ id, label, description, Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => outputMode === 'video'
+                    ? setVideoAspectRatio(id as '9:16' | '16:9')
+                    : setImageAspectRatio(id as '4:5' | '9:16')
+                  }
+                  className={`flex items-center gap-3 px-5 py-3 border-2 border-black transition-colors ${
+                    (outputMode === 'video' ? videoAspectRatio : imageAspectRatio) === id
+                      ? 'bg-retro-red text-white'
+                      : 'bg-white hover:bg-retro-cream'
+                  }`}
+                >
+                  <Icon className="w-5 h-5" />
+                  <div className="text-left">
+                    <p className="font-heading text-xs uppercase font-bold">{label}</p>
+                    <p className={`text-xs ${(outputMode === 'video' ? videoAspectRatio : imageAspectRatio) === id ? 'text-red-100' : 'text-gray-500'}`}>
+                      {description}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Text Fields (conditional) */}
           {outputMode === 'photo-text' && (
             <div className="bg-white border-4 border-black shadow-retro p-6">
@@ -794,14 +877,24 @@ export default function ShopPhotographerPage() {
               Generate Again
             </button>
             {!resultIsVideo && outputMode !== 'video' && mode === 'generate' && selectedScene && (
-              <button
-                onClick={handleCreateVideo}
-                disabled={isGenerating}
-                className="flex items-center gap-2 px-6 py-3 bg-retro-mustard text-retro-navy font-heading text-sm uppercase border-2 border-black hover:bg-yellow-400 transition-colors disabled:opacity-50"
-              >
-                <Video className="w-4 h-4" />
-                Create Video
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleCreateVideo}
+                  disabled={isGenerating}
+                  className="flex items-center gap-2 px-6 py-3 bg-retro-mustard text-retro-navy font-heading text-sm uppercase border-2 border-black hover:bg-yellow-400 transition-colors disabled:opacity-50"
+                >
+                  <Video className="w-4 h-4" />
+                  Create Video
+                </button>
+                <select
+                  value={videoAspectRatio}
+                  onChange={(e) => setVideoAspectRatio(e.target.value as '9:16' | '16:9')}
+                  className="px-3 py-3 border-2 border-black font-heading text-xs uppercase bg-white"
+                >
+                  <option value="9:16">9:16 Reels</option>
+                  <option value="16:9">16:9 Widescreen</option>
+                </select>
+              </div>
             )}
             <button
               onClick={resetAll}
