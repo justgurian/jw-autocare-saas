@@ -34,6 +34,7 @@ import {
   PartyPopper,
   Palette,
   Wand2,
+  Music,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -118,6 +119,12 @@ const navigationGroups = [
         href: '/tools/mascot-builder',
         icon: Palette,
         description: 'Create custom characters',
+      },
+      {
+        name: 'Jingle Generator',
+        href: '/tools/jingle-generator',
+        icon: Music,
+        description: 'AI-generated song jingles',
       },
     ],
   },

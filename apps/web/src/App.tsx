@@ -43,6 +43,7 @@ const CelebrationPage = lazy(() => import('./pages/tools/celebration/Celebration
 const MascotBuilderPage = lazy(() => import('./pages/tools/mascot-builder/MascotBuilderPage'));
 const StyleClonerPage = lazy(() => import('./pages/tools/style-cloner/StyleClonerPage'));
 const ShopPhotographerPage = lazy(() => import('./pages/tools/shop-photographer/ShopPhotographerPage'));
+const JingleGeneratorPage = lazy(() => import('./pages/tools/jingle-generator/JingleGeneratorPage'));
 const ServicesSpecialsPage = lazy(() => import('./pages/settings/ServicesSpecialsPage'));
 
 // Page loading spinner
@@ -127,6 +128,7 @@ function App() {
             <Route path="/tools/mascot-builder" element={<ErrorBoundary><MascotBuilderPage /></ErrorBoundary>} />
             <Route path="/tools/style-cloner" element={<ErrorBoundary><StyleClonerPage /></ErrorBoundary>} />
             <Route path="/tools/shop-photographer" element={<ErrorBoundary><ShopPhotographerPage /></ErrorBoundary>} />
+            <Route path="/tools/jingle-generator" element={<ErrorBoundary><JingleGeneratorPage /></ErrorBoundary>} />
             <Route path="/tools/review-reply" element={<ErrorBoundary><ReviewReplyPage /></ErrorBoundary>} />
             <Route path="/tools/theme-browser" element={<ErrorBoundary><ThemeBrowserPage /></ErrorBoundary>} />
             <Route path="/tools/image-editor" element={<ErrorBoundary><ImageEditorPage /></ErrorBoundary>} />
