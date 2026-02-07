@@ -650,6 +650,41 @@ export const styleClonerApi = {
     api.post(`/tools/style-cloner/reject/${id}`),
 };
 
+export const shopPhotographerApi = {
+  getScenes: (category?: string) => api.get('/tools/shop-photographer/scenes', { params: { category } }),
+  getAesthetics: () => api.get('/tools/shop-photographer/aesthetics'),
+  getGallery: () => api.get('/tools/shop-photographer/gallery'),
+  addToGallery: (data: { imageBase64: string; mimeType: string }) =>
+    api.post('/tools/shop-photographer/gallery', data),
+  removeFromGallery: (index: number) => api.delete(`/tools/shop-photographer/gallery/${index}`),
+  analyzeGallery: () => api.post('/tools/shop-photographer/gallery/analyze'),
+  enhance: (data: {
+    photoBase64: string;
+    photoMimeType: string;
+    outputMode: 'photo-only' | 'photo-logo' | 'photo-text' | 'video';
+    enhancementStyle: 'dramatic' | 'clean' | 'moody' | 'bright' | 'auto';
+    textContent?: { headline?: string; subheadline?: string; cta?: string };
+    aspectRatio?: string;
+  }) => api.post('/tools/shop-photographer/enhance', data),
+  generate: (data: {
+    sceneId: string;
+    outputMode: 'photo-only' | 'photo-logo' | 'photo-text' | 'video';
+    aestheticId?: string;
+    textContent?: { headline?: string; subheadline?: string; cta?: string };
+    aspectRatio?: string;
+  }) => api.post('/tools/shop-photographer/generate', data),
+  generateVideo: (data: {
+    sceneId: string;
+    aestheticId?: string;
+    aspectRatio?: string;
+    duration?: number;
+  }) => api.post('/tools/shop-photographer/generate-video', data),
+  getJob: (jobId: string) => api.get(`/tools/shop-photographer/jobs/${jobId}`),
+  getHistory: (params?: { limit?: number; offset?: number }) =>
+    api.get('/tools/shop-photographer/history', { params }),
+  delete: (id: string) => api.delete(`/tools/shop-photographer/${id}`),
+};
+
 export const servicesApi = {
   getAll: () => api.get('/services'),
   create: (data: any) => api.post('/services', data),

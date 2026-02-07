@@ -75,6 +75,12 @@ const navigationGroups = [
         icon: Package,
         description: 'Generate a whole week of content at once',
       },
+      {
+        name: 'Shop Photographer',
+        href: '/tools/shop-photographer',
+        icon: Camera,
+        description: 'Professional photos without a photographer',
+      },
     ],
   },
   {

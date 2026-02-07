@@ -47,6 +47,7 @@ import directorsCutRoutes from './modules/directors-cut/directors-cut.routes';
 import celebrationRoutes from './modules/celebration/celebration.routes';
 import mascotBuilderRoutes from './modules/mascot-builder/mascot-builder.routes';
 import styleClonerRoutes from './modules/style-cloner/style-cloner.routes';
+import shopPhotographerRoutes from './modules/shop-photographer/shop-photographer.routes';
 
 // Initialize Redis (non-blocking, app works without it)
 getRedisClient();
@@ -148,6 +149,7 @@ apiV1.use('/tools/directors-cut', directorsCutRoutes);
 apiV1.use('/tools/celebration', celebrationRoutes);
 apiV1.use('/tools/mascot-builder', mascotBuilderRoutes);
 apiV1.use('/tools/style-cloner', styleClonerRoutes);
+apiV1.use('/tools/shop-photographer', shopPhotographerRoutes);
 
 app.use('/api/v1', apiV1);
 
