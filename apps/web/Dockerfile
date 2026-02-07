@@ -29,21 +29,20 @@ RUN npm run build
 # Production stage - serve with nginx
 FROM nginx:alpine AS runner
 
-# Copy custom nginx config
-COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
+# Copy nginx config as a template (uses ${PORT} variable substituted at runtime)
+COPY apps/web/nginx.conf /etc/nginx/templates/default.conf.template
 
 # Limit nginx workers to 2 (default 'auto' spawns one per vCPU which is excessive on Railway)
-# Use a regex-compatible sed to handle any whitespace between 'worker_processes' and 'auto'
 RUN sed -i 's/worker_processes.*auto;/worker_processes 2;/' /etc/nginx/nginx.conf
 
 # Copy built files
 COPY --from=builder /app/apps/web/dist /usr/share/nginx/html
 
-# Expose port
-EXPOSE 80
+# Default port (Railway overrides via PORT env var)
+ENV PORT=80
 
-# Health check
+# Health check uses the dynamic PORT
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:80 || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT}/health || exit 1
 
 CMD ["nginx", "-g", "daemon off;"]
