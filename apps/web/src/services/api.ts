@@ -450,6 +450,10 @@ export const brandKitApi = {
   removeSpecialty: (specialty: string) => api.delete('/brand-kit/specialties', { data: { specialty } }),
   addUSP: (usp: string) => api.post('/brand-kit/usps', { usp }),
   removeUSP: (usp: string) => api.delete('/brand-kit/usps', { data: { usp } }),
+  importWebsite: (data: { url?: string; pastedText?: string }) =>
+    api.post('/brand-kit/import-website', data),
+  importConfirm: (data: any) =>
+    api.post('/brand-kit/import-confirm', data),
 };
 
 export const campaignApi = {
@@ -593,10 +597,16 @@ export const mascotBuilderApi = {
 
 export const servicesApi = {
   getAll: () => api.get('/services'),
+  create: (data: any) => api.post('/services', data),
+  update: (id: string, data: any) => api.put(`/services/${id}`, data),
+  delete: (id: string) => api.delete(`/services/${id}`),
 };
 
 export const specialsApi = {
   getAll: () => api.get('/specials'),
+  create: (data: any) => api.post('/specials', data),
+  update: (id: string, data: any) => api.put(`/specials/${id}`, data),
+  delete: (id: string) => api.delete(`/specials/${id}`),
 };
 
 // Named export for convenience

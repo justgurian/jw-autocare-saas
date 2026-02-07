@@ -5,6 +5,10 @@ import { tenantContext } from '../../middleware/tenant.middleware';
 import { prisma } from '../../db/client';
 import { ValidationError } from '../../middleware/error.middleware';
 import { cache, invalidateCache } from '../../services/redis.service';
+import { generationRateLimiter } from '../../middleware/rate-limit.middleware';
+import { geminiService } from '../../services/gemini.service';
+import { fetchWebsiteText } from '../../services/scraper.util';
+import { logger } from '../../utils/logger';
 
 const router = Router();
 
@@ -366,6 +370,250 @@ router.delete('/usps/:index', async (req: Request, res: Response, next: NextFunc
 
     await invalidateCache(`brand-kit:${tenantId}*`);
     res.json(brandKit);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ============================================================================
+// WEBSITE IMPORT
+// ============================================================================
+
+const importWebsiteSchema = z.object({
+  url: z.string().url().optional(),
+  pastedText: z.string().max(100_000).optional(),
+}).refine(data => data.url || data.pastedText, {
+  message: 'Either url or pastedText must be provided',
+});
+
+const EXTRACTION_PROMPT = `You are a business data extraction expert. Analyze the following text from an auto repair shop's website and extract structured information.
+
+Return a JSON object with this EXACT structure:
+{
+  "businessInfo": {
+    "name": "Business Name",
+    "phone": "555-555-5555",
+    "address": "123 Main St",
+    "city": "City",
+    "state": "CA",
+    "zipCode": "90210",
+    "website": "https://...",
+    "hours": "Mon-Fri 8am-6pm, Sat 9am-3pm",
+    "tagline": "Your trusted mechanic",
+    "aboutUs": "Brief description..."
+  },
+  "services": [
+    {
+      "name": "Oil Change",
+      "description": "Full synthetic and conventional oil changes",
+      "priceRange": "$49.99-$79.99",
+      "category": "Maintenance"
+    }
+  ],
+  "specials": [
+    {
+      "title": "Summer AC Special",
+      "description": "Complete AC system check and recharge",
+      "discountType": "percentage",
+      "discountValue": 15
+    }
+  ],
+  "talkingPoints": [
+    "Family-owned since 1985",
+    "ASE Certified technicians",
+    "Free estimates"
+  ]
+}
+
+Rules:
+- For services, use these categories: Maintenance, Brakes, Tires, AC/Heating, Engine, Transmission, Electrical, Body, Inspection, Other
+- For specials, discountType must be: "percentage", "fixed", or "bogo"
+- Extract ALL services mentioned, even if pricing isn't listed (leave priceRange as "Call for pricing")
+- Look for certifications, awards, years in business as talking points
+- If information isn't available, use null for that field
+- Return ONLY valid JSON, no markdown code blocks
+
+Website content:
+`;
+
+// POST /import-website — scrape or accept pasted text, extract via Gemini
+router.post('/import-website', generationRateLimiter, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const parsed = importWebsiteSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw new ValidationError('Validation failed',
+        Object.fromEntries(parsed.error.errors.map(e => [e.path.join('.'), [e.message]]))
+      );
+    }
+
+    const { url, pastedText } = parsed.data;
+    let text: string;
+    let source: 'url' | 'text';
+
+    if (url) {
+      source = 'url';
+      text = await fetchWebsiteText(url);
+    } else {
+      source = 'text';
+      text = pastedText!;
+    }
+
+    logger.info('Running Gemini extraction for website import', {
+      source,
+      textLength: text.length,
+      tenantId: req.user!.tenantId,
+    });
+
+    const result = await geminiService.generateText(EXTRACTION_PROMPT + text, {
+      temperature: 0.2,
+      maxTokens: 4096,
+    });
+
+    const responseText = result.text || '';
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      logger.warn('Gemini returned no parseable JSON', { responsePreview: responseText.slice(0, 300) });
+      res.status(422).json({ success: false, error: 'Could not extract structured data. Try pasting the text directly.' });
+      return;
+    }
+
+    let extracted: any;
+    try {
+      extracted = JSON.parse(jsonMatch[0]);
+    } catch {
+      logger.warn('Failed to parse extracted JSON', { raw: jsonMatch[0].slice(0, 500) });
+      res.status(422).json({ success: false, error: 'Extraction produced invalid JSON. Try pasting the text directly.' });
+      return;
+    }
+
+    res.json({
+      success: true,
+      extracted,
+      source,
+      sourceUrl: url || null,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /import-confirm — save reviewed/edited import data to DB
+const importConfirmSchema = z.object({
+  services: z.array(z.object({
+    name: z.string().max(255),
+    description: z.string().optional().nullable(),
+    priceRange: z.string().max(50).optional().nullable(),
+    category: z.string().max(100).optional().nullable(),
+    isSpecialty: z.boolean().optional().default(false),
+  })).optional(),
+  specials: z.array(z.object({
+    title: z.string().max(255),
+    description: z.string().optional().nullable(),
+    discountType: z.enum(['percentage', 'fixed', 'bogo']).optional().nullable(),
+    discountValue: z.number().optional().nullable(),
+  })).optional(),
+  businessInfo: z.object({
+    name: z.string().max(255).optional().nullable(),
+    phone: z.string().max(20).optional().nullable(),
+    tagline: z.string().max(255).optional().nullable(),
+    website: z.string().max(255).optional().nullable(),
+    address: z.string().optional().nullable(),
+    city: z.string().max(100).optional().nullable(),
+    state: z.string().max(50).optional().nullable(),
+    zipCode: z.string().max(20).optional().nullable(),
+  }).optional(),
+  talkingPoints: z.array(z.string()).optional(),
+});
+
+router.post('/import-confirm', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const parsed = importConfirmSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw new ValidationError('Validation failed',
+        Object.fromEntries(parsed.error.errors.map(e => [e.path.join('.'), [e.message]]))
+      );
+    }
+
+    const tenantId = req.user!.tenantId;
+    const { services, specials, businessInfo, talkingPoints } = parsed.data;
+    const results: Record<string, any> = {};
+
+    // Services: delete existing then recreate
+    if (services && services.length > 0) {
+      await prisma.service.deleteMany({ where: { tenantId } });
+      const created = await Promise.all(
+        services.map((svc, idx) =>
+          prisma.service.create({
+            data: {
+              tenantId,
+              name: svc.name,
+              description: svc.description ?? null,
+              priceRange: svc.priceRange ?? null,
+              category: svc.category ?? null,
+              isSpecialty: svc.isSpecialty ?? false,
+              sortOrder: idx,
+            },
+          })
+        )
+      );
+      results.servicesImported = created.length;
+    }
+
+    // Specials: delete existing then recreate
+    if (specials && specials.length > 0) {
+      await prisma.special.deleteMany({ where: { tenantId } });
+      const created = await Promise.all(
+        specials.map(sp =>
+          prisma.special.create({
+            data: {
+              tenantId,
+              title: sp.title,
+              description: sp.description ?? null,
+              discountType: sp.discountType ?? null,
+              discountValue: sp.discountValue ?? null,
+              isActive: true,
+            },
+          })
+        )
+      );
+      results.specialsImported = created.length;
+    }
+
+    // Business info: update BrandKit fields
+    if (businessInfo) {
+      const updateData: Record<string, any> = {};
+      if (businessInfo.name) updateData.businessName = businessInfo.name;
+      if (businessInfo.phone) updateData.phone = businessInfo.phone;
+      if (businessInfo.tagline) updateData.tagline = businessInfo.tagline;
+      if (businessInfo.website) updateData.website = businessInfo.website;
+      if (businessInfo.address) updateData.address = businessInfo.address;
+      if (businessInfo.city) updateData.city = businessInfo.city;
+      if (businessInfo.state) updateData.state = businessInfo.state;
+      if (businessInfo.zipCode) updateData.zipCode = businessInfo.zipCode;
+
+      if (Object.keys(updateData).length > 0) {
+        await prisma.brandKit.update({
+          where: { tenantId },
+          data: updateData,
+        });
+        results.businessInfoUpdated = true;
+      }
+    }
+
+    // Talking points: update uniqueSellingPoints
+    if (talkingPoints && talkingPoints.length > 0) {
+      await prisma.brandKit.update({
+        where: { tenantId },
+        data: { uniqueSellingPoints: talkingPoints },
+      });
+      results.talkingPointsImported = talkingPoints.length;
+    }
+
+    await invalidateCache(`brand-kit:${tenantId}*`);
+
+    logger.info('Website import confirmed', { tenantId, results });
+
+    res.json({ success: true, ...results });
   } catch (error) {
     next(error);
   }

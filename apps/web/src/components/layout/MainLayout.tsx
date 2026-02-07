@@ -185,6 +185,12 @@ const navigationGroups = [
         description: 'Your logo, colors, and contact info',
       },
       {
+        name: 'Services & Specials',
+        href: '/settings/services',
+        icon: Wrench,
+        description: 'Manage your services, repairs, and specials',
+      },
+      {
         name: 'Social Accounts',
         href: '/settings/social',
         icon: Share2,

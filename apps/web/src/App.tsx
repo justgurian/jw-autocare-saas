@@ -41,6 +41,7 @@ const UGCCreatorPage = lazy(() => import('./pages/tools/ugc-creator/UGCCreatorPa
 const DirectorsCutPage = lazy(() => import('./pages/tools/directors-cut/DirectorsCutPage'));
 const CelebrationPage = lazy(() => import('./pages/tools/celebration/CelebrationPage'));
 const MascotBuilderPage = lazy(() => import('./pages/tools/mascot-builder/MascotBuilderPage'));
+const ServicesSpecialsPage = lazy(() => import('./pages/settings/ServicesSpecialsPage'));
 
 // Page loading spinner
 function PageLoader() {
@@ -136,6 +137,7 @@ function App() {
             <Route path="/content" element={<ErrorBoundary><ContentGalleryPage /></ErrorBoundary>} />
             <Route path="/content/:id" element={<ErrorBoundary><ContentDetailPage /></ErrorBoundary>} />
             <Route path="/settings/profile" element={<ErrorBoundary><ProfilePage /></ErrorBoundary>} />
+            <Route path="/settings/services" element={<ErrorBoundary><ServicesSpecialsPage /></ErrorBoundary>} />
             <Route path="/settings/social" element={<ErrorBoundary><SocialPage /></ErrorBoundary>} />
             <Route path="/settings/auto-pilot" element={<ErrorBoundary><AutoPilotPage /></ErrorBoundary>} />
           </Route>
