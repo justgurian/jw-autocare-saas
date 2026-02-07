@@ -70,7 +70,8 @@ const allowedOrigins = [
   config.webUrl,
   'http://localhost:3000',
   'http://localhost:5173', // Vite default port
-  // Production web
+  // Production web (current + legacy)
+  'https://bayfiller.up.railway.app',
   'https://web-production-58966.up.railway.app',
   // Development web
   'https://web-development-3362.up.railway.app',
