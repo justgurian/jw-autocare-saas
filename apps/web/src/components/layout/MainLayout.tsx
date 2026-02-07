@@ -33,6 +33,7 @@ import {
   Clapperboard,
   PartyPopper,
   Palette,
+  Wand2,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -219,6 +220,12 @@ const navigationGroups = [
         href: '/tools/image-editor',
         icon: Wrench,
         description: 'Crop, filter, and adjust any image',
+      },
+      {
+        name: 'Style Cloner',
+        href: '/tools/style-cloner',
+        icon: Wand2,
+        description: 'Clone any art style into a theme',
       },
     ],
   },

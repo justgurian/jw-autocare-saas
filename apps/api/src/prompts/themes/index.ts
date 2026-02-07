@@ -41,6 +41,8 @@ import {
   getWeeklyDropFamily,
   getCurrentWeekString,
 } from './style-families';
+import { customThemeStore } from '../../services/custom-theme-store';
+import { buildClonedStylePrompt, ExtractedStyle } from '../../services/style-cloner.service';
 
 export interface ThemeImagePrompt {
   style: string;
@@ -398,6 +400,7 @@ export const THEME_CATEGORIES = [
   { id: 'retro', name: 'Retro', icon: '📼', description: '80s and 90s throwback' },
   { id: 'nostalgic', name: 'Nostalgic', icon: '🎬', description: 'Comic, movie, and magazine styles from classic eras' },
   { id: 'general', name: 'General', icon: '🎨', description: 'All-purpose styles' },
+  { id: 'custom', name: 'Custom Styles', icon: '🎨', description: 'Admin-curated styles from any industry' },
 ];
 
 // Era definitions for nostalgic themes
@@ -418,12 +421,12 @@ export const NOSTALGIC_STYLES = [
 // Theme registry
 export const themeRegistry = {
   getAllThemes(): ThemeDefinition[] {
-    return themes;
+    return [...themes, ...customThemeStore.getAll()];
   },
 
   // Get total theme count
   getThemeCount(): number {
-    return themes.length;
+    return themes.length + customThemeStore.getAll().length;
   },
 
   // Get premium brand styles only (for featured display)
@@ -432,7 +435,7 @@ export const themeRegistry = {
   },
 
   getTheme(id: string): ThemeDefinition | undefined {
-    return themes.find(t => t.id === id);
+    return themes.find(t => t.id === id) || customThemeStore.getById(id);
   },
 
   // Get comprehensive brand style for enhanced prompts
@@ -451,6 +454,25 @@ export const themeRegistry = {
       logoInstructions?: string;
     }
   ): string {
+    // Custom theme — use cloned style prompt builder
+    if (styleId.startsWith('custom-')) {
+      const customTheme = customThemeStore.getById(styleId);
+      if (customTheme) {
+        // Build an ExtractedStyle from the theme definition
+        const style: ExtractedStyle = {
+          name: customTheme.name,
+          shortDescription: customTheme.shortDescription || '',
+          sourceIndustry: 'custom',
+          imagePrompt: customTheme.imagePrompt,
+          compositionNotes: (customTheme as any).compositionNotes || 'Strong composition with clear visual hierarchy.',
+          avoidList: (customTheme as any).avoidList || 'Human faces/hands, copyrighted content, cluttered layouts',
+          previewColors: customTheme.previewColors || [],
+          textPrompt: customTheme.textPrompt,
+        };
+        return buildClonedStylePrompt(style, content);
+      }
+    }
+
     const brandStyle = getBrandStyle(styleId);
     if (brandStyle) {
       return buildBrandStyleImagePrompt(brandStyle, content);
@@ -518,7 +540,11 @@ Create ONE stunning 4:5 aspect ratio promotional image that an auto repair shop 
   },
 
   getThemesByCategory(category: string): ThemeDefinition[] {
-    return themes.filter(t => t.category === category);
+    const base = themes.filter(t => t.category === category);
+    if (category === 'custom') {
+      return [...base, ...customThemeStore.getAll()];
+    }
+    return base;
   },
 
   // Get themes organized by category for UI display
@@ -540,7 +566,8 @@ Create ONE stunning 4:5 aspect ratio promotional image that an auto repair shop 
   // Search themes by name or description
   searchThemes(query: string): ThemeDefinition[] {
     const lowerQuery = query.toLowerCase();
-    return themes.filter(t =>
+    const all = [...themes, ...customThemeStore.getAll()];
+    return all.filter(t =>
       t.name.toLowerCase().includes(lowerQuery) ||
       t.shortDescription?.toLowerCase().includes(lowerQuery) ||
       t.category.toLowerCase().includes(lowerQuery)

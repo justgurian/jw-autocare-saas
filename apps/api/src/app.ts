@@ -46,6 +46,7 @@ import ugcCreatorRoutes from './modules/ugc-creator/ugc-creator.routes';
 import directorsCutRoutes from './modules/directors-cut/directors-cut.routes';
 import celebrationRoutes from './modules/celebration/celebration.routes';
 import mascotBuilderRoutes from './modules/mascot-builder/mascot-builder.routes';
+import styleClonerRoutes from './modules/style-cloner/style-cloner.routes';
 
 // Initialize Redis (non-blocking, app works without it)
 getRedisClient();
@@ -146,6 +147,7 @@ apiV1.use('/tools/ugc-creator', ugcCreatorRoutes);
 apiV1.use('/tools/directors-cut', directorsCutRoutes);
 apiV1.use('/tools/celebration', celebrationRoutes);
 apiV1.use('/tools/mascot-builder', mascotBuilderRoutes);
+apiV1.use('/tools/style-cloner', styleClonerRoutes);
 
 app.use('/api/v1', apiV1);
 

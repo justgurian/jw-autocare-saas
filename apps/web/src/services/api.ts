@@ -612,6 +612,44 @@ export const mascotBuilderApi = {
   deleteMascot: (id: string) => api.delete(`/tools/mascot-builder/mascots/${id}`),
 };
 
+export const styleClonerApi = {
+  // Admin endpoints
+  analyze: (data: { imageBase64: string; mimeType: string }) =>
+    api.post('/tools/style-cloner/analyze', data),
+  save: (data: {
+    name: string;
+    shortDescription?: string;
+    sourceIndustry?: string;
+    imagePrompt: { style: string; colorPalette: string; typography: string; elements: string; mood: string };
+    compositionNotes?: string;
+    avoidList?: string;
+    previewColors?: string[];
+    textPrompt?: { tone: string; vocabulary: string[] };
+    referenceImageBase64: string;
+    referenceMimeType: string;
+  }) => api.post('/tools/style-cloner/save', data),
+  preview: (id: string) =>
+    api.post(`/tools/style-cloner/preview/${id}`),
+  deploy: (id: string) =>
+    api.put(`/tools/style-cloner/deploy/${id}`),
+  getThemes: () =>
+    api.get('/tools/style-cloner/themes'),
+  getTheme: (id: string) =>
+    api.get(`/tools/style-cloner/themes/${id}`),
+  updateTheme: (id: string, data: Record<string, unknown>) =>
+    api.put(`/tools/style-cloner/themes/${id}`, data),
+  deleteTheme: (id: string) =>
+    api.delete(`/tools/style-cloner/themes/${id}`),
+
+  // User endpoints
+  getNewStyles: () =>
+    api.get('/tools/style-cloner/new-styles'),
+  approve: (id: string) =>
+    api.post(`/tools/style-cloner/approve/${id}`),
+  reject: (id: string) =>
+    api.post(`/tools/style-cloner/reject/${id}`),
+};
+
 export const servicesApi = {
   getAll: () => api.get('/services'),
   create: (data: any) => api.post('/services', data),

@@ -1,4 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
+import * as fs from 'fs';
+import * as path from 'path';
 import { authenticate } from '../../middleware/auth.middleware';
 import { tenantContext } from '../../middleware/tenant.middleware';
 import { generationRateLimiter } from '../../middleware/rate-limit.middleware';
@@ -912,6 +914,24 @@ router.post('/generate', generationRateLimiter, async (req: Request, res: Respon
       }
     }
 
+    // Load reference image for custom themes
+    let referenceImage: { base64: string; mimeType: string } | undefined;
+    if (selectedThemeId.startsWith('custom-')) {
+      const customContent = await prisma.content.findFirst({
+        where: { id: selectedThemeId.replace('custom-', ''), tool: 'style_cloner' },
+      });
+      if (customContent?.imageUrl) {
+        const refPath = path.join(process.cwd(), customContent.imageUrl);
+        if (fs.existsSync(refPath)) {
+          const refExt = path.extname(refPath).toLowerCase();
+          referenceImage = {
+            base64: fs.readFileSync(refPath).toString('base64'),
+            mimeType: refExt === '.png' ? 'image/png' : refExt === '.webp' ? 'image/webp' : 'image/jpeg',
+          };
+        }
+      }
+    }
+
     // Generate captions based on language option
     const captionPromises: Promise<string>[] = [];
 
@@ -944,11 +964,12 @@ router.post('/generate', generationRateLimiter, async (req: Request, res: Respon
     const contentId = uuidv4();
 
     // Generate actual image using Nano Banana Pro
-    logger.info('Generating image with Nano Banana Pro', { themeId: selectedThemeId, subject, vehicle: selectedVehicle?.name, hasLogo: !!logoImage, hasMascot: !!mascotImageData });
+    logger.info('Generating image with Nano Banana Pro', { themeId: selectedThemeId, subject, vehicle: selectedVehicle?.name, hasLogo: !!logoImage, hasMascot: !!mascotImageData, hasReference: !!referenceImage });
     const imageResult = await geminiService.generateImage(imagePrompt, {
       aspectRatio: '4:5',
       logoImage: logoImage || undefined,
       mascotImage: mascotImageData,
+      referenceImage,
       contactInfo: {
         phone: brandKit?.phone || undefined,
         website: brandKit?.website || undefined,

@@ -42,6 +42,7 @@ interface ImageGenerationOptions {
   outputDir?: string;
   logoImage?: { base64: string; mimeType: string };
   mascotImage?: { base64: string; mimeType: string };
+  referenceImage?: { base64: string; mimeType: string };
   contactInfo?: { phone?: string; website?: string };
 }
 
@@ -202,13 +203,15 @@ Generate a single, stunning marketing image that a premium auto repair shop woul
       logger.info('Calling image model for generation...', {
         hasLogo: !!options.logoImage,
         hasMascot: !!options.mascotImage,
+        hasReference: !!options.referenceImage,
       });
 
       let contents: Part[] | string;
       const hasLogo = !!options.logoImage;
       const hasMascot = !!options.mascotImage;
+      const hasReference = !!options.referenceImage;
 
-      if (hasLogo || hasMascot) {
+      if (hasLogo || hasMascot || hasReference) {
         const parts: Part[] = [];
         if (hasLogo) {
           parts.push({
@@ -226,6 +229,14 @@ Generate a single, stunning marketing image that a premium auto repair shop woul
             },
           });
         }
+        if (hasReference) {
+          parts.push({
+            inlineData: {
+              data: options.referenceImage!.base64,
+              mimeType: options.referenceImage!.mimeType,
+            },
+          });
+        }
 
         let textAddendum = '';
         if (hasLogo) {
@@ -233,6 +244,9 @@ Generate a single, stunning marketing image that a premium auto repair shop woul
         }
         if (hasMascot) {
           textAddendum += "\n\nIMPORTANT: The attached image is the shop's custom mascot character — a Muppet-style puppet. Feature this exact puppet character prominently in the image as a key visual element. Keep the character's appearance, colors, outfit, and style exactly as shown in the reference image.";
+        }
+        if (hasReference) {
+          textAddendum += '\n\nREFERENCE STYLE IMAGE: Match the visual style, color palette, typography, layout, decorative elements, and overall aesthetic of the attached reference image — but create new auto-repair-shop marketing content as specified. The reference shows the TARGET STYLE to replicate.';
         }
 
         parts.push({ text: fullPrompt + textAddendum });
@@ -801,6 +815,28 @@ Aspect ratio: ${options.aspectRatio || '4:5'} (portrait orientation for social m
       return response.text || '';
     } catch (error) {
       logger.error('Gemini image analysis failed', { error });
+      throw error;
+    }
+  },
+
+  // Analyze image from base64 data (for style extraction, etc.)
+  async analyzeImageFromBase64(base64: string, mimeType: string, prompt: string): Promise<string> {
+    try {
+      const response = await ai.models.generateContent({
+        model: TEXT_MODEL,
+        contents: [
+          {
+            inlineData: {
+              data: base64,
+              mimeType,
+            },
+          },
+          { text: prompt },
+        ],
+      });
+      return response.text || '';
+    } catch (error) {
+      logger.error('Gemini image analysis from base64 failed', { error });
       throw error;
     }
   },
