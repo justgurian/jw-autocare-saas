@@ -121,8 +121,8 @@ export default function VideoCreatorPage() {
     queryKey: ['specials'],
     queryFn: () => specialsApi.getAll().then(r => r.data),
   });
-  const services = servicesData?.data || [];
-  const specials = specialsData?.data || [];
+  const services = Array.isArray(servicesData) ? servicesData : servicesData?.data || [];
+  const specials = Array.isArray(specialsData) ? specialsData : specialsData?.data || [];
 
   const formatDiscount = (s: any) => {
     if (s.discountType === 'percentage') return `${s.discountValue}% OFF`;

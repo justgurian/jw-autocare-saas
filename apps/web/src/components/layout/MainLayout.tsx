@@ -69,12 +69,6 @@ const navigationGroups = [
         description: 'Show off customer cars and build community',
       },
       {
-        name: 'Make a Video',
-        href: '/tools/video-creator',
-        icon: Video,
-        description: 'Short videos that grab attention on social media',
-      },
-      {
         name: 'Week of Posts',
         href: '/tools/instant-pack',
         icon: Package,
@@ -88,6 +82,12 @@ const navigationGroups = [
     icon: Film,
     description: 'Character videos, animations, and celebrations',
     items: [
+      {
+        name: 'Make a Video',
+        href: '/tools/video-creator',
+        icon: Video,
+        description: 'Quick promotional videos',
+      },
       {
         name: 'UGC Creator',
         href: '/tools/ugc-creator',
