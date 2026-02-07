@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build --config vite.config.ts",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -31,8 +31,6 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.0",
     "date-fns": "^3.3.0",
-    "framer-motion": "^10.18.0",
-    "ical-generator": "^7.0.0",
     "lucide-react": "^0.309.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

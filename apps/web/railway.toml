@@ -1,5 +1,5 @@
 [build]
-builder = "dockerfile"
+builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
 
 [build.args]
@@ -8,8 +8,5 @@ VITE_API_URL = "https://api-production-b51d.up.railway.app"
 [deploy]
 healthcheckPath = "/health"
 healthcheckTimeout = 100
-restartPolicyType = "on_failure"
+restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
-
-[service]
-internalPort = 80

@@ -141,8 +141,14 @@ export const useAuthStore = create<AuthState>()(
   )
 );
 
-// Initialize auth check on app load
+// Initialize auth check on app load — non-blocking revalidation
+// If persisted state already has a user, skip the loading spinner
 if (typeof window !== 'undefined') {
+  const persisted = JSON.parse(localStorage.getItem('auth-storage') || '{}');
+  if (persisted?.state?.isAuthenticated && persisted?.state?.user) {
+    // Trust persisted state, set isLoading false immediately, revalidate in background
+    useAuthStore.setState({ isLoading: false });
+  }
   useAuthStore.getState().checkAuth();
 }
 
