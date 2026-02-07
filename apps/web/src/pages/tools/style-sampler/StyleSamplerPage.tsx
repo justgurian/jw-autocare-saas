@@ -110,7 +110,7 @@ export default function StyleSamplerPage() {
   const handleFeedback = async (flyerId: string, type: FeedbackType) => {
     setFeedback(prev => ({ ...prev, [flyerId]: type }));
     try {
-      await promoFlyerApi.sendFeedback({ contentId: flyerId, rating: type });
+      await promoFlyerApi.submitFeedback(flyerId, type);
     } catch {
       // Silently fail — feedback is optional
     }

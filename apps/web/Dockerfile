@@ -11,8 +11,8 @@ COPY turbo.json ./
 COPY apps/web/package*.json ./apps/web/
 COPY packages/shared/package*.json ./packages/shared/
 
-# Install dependencies
-RUN npm ci
+# Install dependencies (--ignore-scripts avoids postinstall failures from dev tools like @railway/cli)
+RUN npm ci --ignore-scripts
 
 # Copy source code
 COPY apps/web ./apps/web
