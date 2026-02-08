@@ -114,6 +114,21 @@ export const STYLE_FAMILIES: StyleFamily[] = [
     themeIds: ['nascar-speed', 'vintage-rally'],
     tags: ['racing', 'speed', 'nascar', 'rally', 'motorsport', 'checkered'],
   },
+  {
+    id: 'auto-magazine',
+    name: 'Auto Magazine',
+    description: 'Classic car magazine covers reimagined — Motor Trend, Road & Track & more',
+    emoji: '📰',
+    previewImage: '/images/families/auto-magazine.svg',
+    themeIds: [
+      'mt-60s-car-of-year', 'mt-70s-road-test', 'mt-80s-performance',
+      'mt-2000s-dark-hero', 'mt-modern-digital',
+      'rt-60s-grand-touring', 'rt-70s-open-road', 'rt-80s-red-ferrari',
+      'rt-modern-cinematic', 'rt-california-lifestyle',
+      'hotrod-custom-build', 'dub-custom-wheels', 'import-tuner-night', 'rt-racing-cockpit',
+    ],
+    tags: ['magazine', 'cover', 'motor-trend', 'road-track', 'hot-rod', 'dub', 'editorial', 'newsstand'],
+  },
 ];
 
 // ============================================================================

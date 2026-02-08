@@ -517,6 +517,310 @@ const VINTAGE_RALLY: ThemeDefinition = {
 };
 
 // ============================================================================
+// FAMILY 11: Auto Magazine 📰
+// ============================================================================
+
+// --- Motor Trend Style (5 themes) ---
+
+const MT_60S_CAR_OF_YEAR: ThemeDefinition = {
+  id: 'mt-60s-car-of-year',
+  name: 'Motor Trend 1960s',
+  category: 'Auto Magazine',
+  shortDescription: '1960s award issue — collage layout, gold trophy, dense text',
+  previewColors: ['#CC0000', '#FFD700', '#F5F5DC', '#1A1A1A'],
+  imagePrompt: {
+    style: 'A 1960s automotive award publication cover. Multiple cars shown at different dramatic angles in a stacked collage composition — a sedan at top, a coupe at center, a convertible at bottom. A gold trophy or award emblem anchors one corner. The background is a warm gradient from deep red to gold. The composition is dense and information-rich, like a newsstand publication fighting for attention. Saturated Kodachrome color with slight film grain.',
+    colorPalette: 'Deep Red #CC0000, Gold #FFD700, Cream #F5F5DC, Black #1A1A1A. Warm, rich, award-ceremony palette.',
+    typography: 'Bold serif masthead at the very top in the largest type. The business name IS the masthead — rendered like a 1960s publication logo in heavy condensed serif. "Car of the Year!" or "SPECIAL ISSUE" in a secondary bold serif. Dense teaser text in small serif along the top edge.',
+    elements: 'Gold award trophy or emblem badge, multiple car illustrations at different angles, "SPECIAL ISSUE" burst flag, stacked car layout showing 3 vehicles, dense teaser text along all four edges in small serif type: road test references, tech features, comparison notes. Price tag element in upper corner. Aged paper texture overlay.',
+    mood: 'Prestigious, information-dense, newsstand excitement',
+  },
+  textPrompt: {
+    tone: 'Authoritative, award-giving, excited about automotive excellence.',
+    vocabulary: ['award', 'top pick', 'best', 'tested', 'review'],
+  },
+  mockupScenes: ['magazine-cover', 'newsstand'],
+  compatibleTools: ['promo_flyer', 'social_post'],
+};
+
+const MT_70S_ROAD_TEST: ThemeDefinition = {
+  id: 'mt-70s-road-test',
+  name: 'Motor Trend 1970s',
+  category: 'Auto Magazine',
+  shortDescription: '1970s road test — earth tones, desert setting, Cooper Black type',
+  previewColors: ['#DAA520', '#8B4513', '#F5DEB3', '#4A4A4A'],
+  imagePrompt: {
+    style: 'A 1970s automotive publication cover. A car parked in a sun-baked desert or rural highway setting. The sky is a hazy warm amber. A person stands next to the car for scale and lifestyle context — rendered in the artistic style of the theme, not photorealistic. The overall feel is warm, slightly faded Kodak film with lifted blacks. Earth tones dominate. The composition is relaxed and editorial, like a lifestyle road trip feature.',
+    colorPalette: 'Goldenrod #DAA520, Saddle Brown #8B4513, Wheat #F5DEB3, Warm Gray #4A4A4A, Avocado Green #6B8E23. Warm 1970s earth-tone palette throughout.',
+    typography: 'Chunky rounded serif masthead (Cooper Black or Souvenir Bold feel) at the top. The business name rendered as the publication masthead in this chunky warm serif. Headline in a lighter serif below. Year date and price elements. Teaser text in small serif along top edge in warm brown tones.',
+    elements: 'Desert or rural highway setting, warm hazy sky, person standing beside car, "Road Test" or "New Cars" callout badges, film grain texture, teaser text along top: model comparisons, driving impressions, engineering notes. Vintage price tag "50¢" element in corner. Muted, warm color grading throughout.',
+    mood: 'Warm, laid-back, road-trip editorial',
+  },
+  textPrompt: {
+    tone: 'Relaxed, warm, road-trip storytelling.',
+    vocabulary: ['road test', 'drive', 'new model', 'touring', 'cruising'],
+  },
+  mockupScenes: ['magazine-cover', 'newsstand'],
+  compatibleTools: ['promo_flyer', 'social_post'],
+};
+
+const MT_80S_PERFORMANCE: ThemeDefinition = {
+  id: 'mt-80s-performance',
+  name: 'Motor Trend 1980s',
+  category: 'Auto Magazine',
+  shortDescription: '1980s king of the road — bold stats, red/black drama, metallic type',
+  previewColors: ['#CC0000', '#C0C0C0', '#1A1A1A', '#FFD700'],
+  imagePrompt: {
+    style: 'A 1980s-90s performance automotive publication cover. A powerful car photographed at a low dramatic angle against a dark moody background — slightly wet road catching reflections, dark sky. The car is aggressive and dominant, filling 60% of the frame. The lighting is dramatic: single key light from front-left creating sharp highlights along body lines, with the rest falling into shadow. High-contrast, punchy color. The energy screams horsepower and speed.',
+    colorPalette: 'Racing Red #CC0000, Metallic Silver #C0C0C0, Deep Black #1A1A1A, Gold #FFD700. High-contrast palette — dark backgrounds with bright metallic accents.',
+    typography: 'Ultra-bold condensed sans-serif masthead (Impact or Bebas Neue feel) across the top, slightly italic for speed feel. The business name IS the masthead — enormous, bold, commanding. Headline text in white or metallic silver, giant point size. Performance numbers (horsepower, 0-60 times) rendered as large display elements near the car.',
+    elements: 'Star rating badges, "EXCLUSIVE" or "FIRST TEST" corner flags in red, horsepower and performance statistics rendered prominently: "540 HP" "0-60: 3.9s". Comparison bar at very bottom edge listing competitor vehicles in small condensed type. Multiple edge teasers in condensed sans-serif. Row of star ratings. The layout feels dense with information like a real newsstand publication competing for attention.',
+    mood: 'Aggressive, performance-obsessed, newsstand dominant',
+  },
+  textPrompt: {
+    tone: 'Bold, aggressive, performance-focused. King of the road energy.',
+    vocabulary: ['power', 'king', 'exclusive', 'tested', 'performance'],
+  },
+  mockupScenes: ['magazine-cover', 'newsstand'],
+  compatibleTools: ['promo_flyer', 'social_post'],
+};
+
+const MT_2000S_DARK_HERO: ThemeDefinition = {
+  id: 'mt-2000s-dark-hero',
+  name: 'Motor Trend 2000s',
+  category: 'Auto Magazine',
+  shortDescription: '2000s dark studio — dramatic lighting, metallic text, hero shot',
+  previewColors: ['#0A1628', '#C0C0C0', '#FFFFFF', '#333333'],
+  imagePrompt: {
+    style: 'A 2000s automotive publication cover. Dark, dramatic studio environment with a single hero car lit by controlled studio lighting — three-point setup with a strong key light creating sharp specular highlights along the body, a fill light for shadow detail, and a rim light separating the car from the near-black background. The floor is polished dark, catching faint reflections. A subtle lens flare cuts diagonally. Cool color temperature. The image is technically perfect — this is professional studio photography.',
+    colorPalette: 'Navy Black #0A1628, Metallic Silver #C0C0C0, Pure White #FFFFFF, Dark Gray #333333, Cool Blue accent #4682B4.',
+    typography: 'Bold modern sans-serif masthead in white or silver-metallic. The business name as masthead spans the full width at top. Headline in bold condensed white with subtle chrome/metallic text effect. Secondary text in lighter weight. Clean, professional hierarchy. Slight drop shadow or outer glow on text for readability against dark background.',
+    elements: 'Dark gradient studio background, controlled three-point lighting on car, subtle lens flare, polished reflective floor, metallic text effects, comparison bar at bottom in small sans-serif listing competing vehicles. Minimal edge teasers — 2-3 maximum in small clean type. "FIRST TEST" badge. Technology and luxury emphasis.',
+    mood: 'Dark, dramatic, studio-perfect, premium',
+  },
+  textPrompt: {
+    tone: 'Professional, dramatic, technically impressive.',
+    vocabulary: ['exclusive', 'first drive', 'tested', 'technology', 'precision'],
+  },
+  mockupScenes: ['magazine-cover', 'newsstand'],
+  compatibleTools: ['promo_flyer', 'social_post'],
+};
+
+const MT_MODERN_DIGITAL: ThemeDefinition = {
+  id: 'mt-modern-digital',
+  name: 'Motor Trend Modern',
+  category: 'Auto Magazine',
+  shortDescription: 'Modern clean — white background, bold statement, digital polish',
+  previewColors: ['#FFFFFF', '#1A1A1A', '#E63946', '#333333'],
+  imagePrompt: {
+    style: 'A modern digital-era automotive publication cover. Clean white or very light gray background. A single dramatic vehicle dominates the center of the frame — shot at a slight low angle with clean, even studio lighting and no harsh shadows. The composition is airy and minimal with generous white space. Everything feels polished, high-resolution, and contemporary. Think Apple-product-launch level visual cleanliness applied to an automotive layout.',
+    colorPalette: 'Clean White #FFFFFF, Near Black #1A1A1A, Bold Red accent #E63946, Dark Gray #333333. Minimal palette — the car provides the color.',
+    typography: 'Clean geometric sans-serif masthead (Montserrat, Futura, or similar) in bold black at the top. The business name as masthead — large, clean, authoritative. Headline in bold sans-serif, possibly with one word in the accent color for emphasis. Minimal teaser text — just 1-2 lines along the very top edge. Modern, digital-native typography with generous letter-spacing.',
+    elements: 'White/light background with no distracting environment, single hero vehicle as the absolute focus, minimal edge text — maximum 2 teasers in small clean sans-serif at top edge. "EXCLUSIVE" or "SPECIAL REPORT" label in red accent. Clean drop shadow grounding the car. The design breathes — at least 30% white space. Digital polish throughout.',
+    mood: 'Clean, modern, digitally polished',
+  },
+  textPrompt: {
+    tone: 'Contemporary, clean, authoritative.',
+    vocabulary: ['exclusive', 'special report', 'future', 'innovation', 'tested'],
+  },
+  mockupScenes: ['magazine-cover', 'digital-edition'],
+  compatibleTools: ['promo_flyer', 'social_post'],
+};
+
+// --- Road & Track Style (5 themes) ---
+
+const RT_60S_GRAND_TOURING: ThemeDefinition = {
+  id: 'rt-60s-grand-touring',
+  name: 'Road & Track 1960s',
+  category: 'Auto Magazine',
+  shortDescription: '1960s grand touring — elegant serif, European cars, dense editorial text',
+  previewColors: ['#1A1A1A', '#8B0000', '#F5F5DC', '#4682B4'],
+  imagePrompt: {
+    style: 'A 1960s European automotive enthusiast publication cover. An elegant sports car (Ferrari, Porsche, Jaguar, or BMW silhouette) photographed in a pastoral European setting or on a scenic coastal road. The photography has a slightly desaturated, vintage film quality — muted warm tones with excellent contrast. Multiple car photos may be stacked in a collage layout. The composition references sophisticated 1960s automotive journalism — refined, knowledgeable, European-inflected.',
+    colorPalette: 'Near Black #1A1A1A, Dark Red #8B0000, Cream #F5F5DC, Steel Blue #4682B4, Warm Gray #A9A9A9. Refined, subdued palette with warmth.',
+    typography: 'Elegant serif masthead with a decorative ampersand "&" symbol as a distinctive design element. The business name rendered as a prestigious publication masthead in elegant serif (Garamond, Caslon, or Baskerville feel). "The Motor Enthusiasts\' Magazine" style subtitle in small italic. Dense teaser text in small serif along top and sides — road test listings, car comparisons, technical articles. Refined typographic hierarchy.',
+    elements: 'European sports car in pastoral or coastal setting, elegant serif ampersand "&" as a design feature, stacked photo collage of multiple cars, dense classified-style teaser text along all edges: "Road Tests:..." "Driving Impressions:..." "Technical Analysis:..." listings. Issue number and date in small serif. Vintage paper texture. The layout is information-rich but elegantly organized.',
+    mood: 'Elegant, sophisticated, European automotive culture',
+  },
+  textPrompt: {
+    tone: 'Refined, knowledgeable, European sensibility.',
+    vocabulary: ['grand touring', 'driving impressions', 'road test', 'elegance', 'precision'],
+  },
+  mockupScenes: ['magazine-cover', 'newsstand'],
+  compatibleTools: ['promo_flyer', 'social_post'],
+};
+
+const RT_70S_OPEN_ROAD: ThemeDefinition = {
+  id: 'rt-70s-open-road',
+  name: 'Road & Track 1970s',
+  category: 'Auto Magazine',
+  shortDescription: '1970s open road — convertibles, pastoral scenery, driving impressions',
+  previewColors: ['#87CEEB', '#228B22', '#DAA520', '#F5F5DC'],
+  imagePrompt: {
+    style: 'A 1970s automotive enthusiast publication cover. A convertible sports car driving on an open country road through rolling green hills and pastoral scenery. Blue sky with photogenic clouds. Natural golden-hour sunlight. The composition is relaxed and contemplative — this is about the joy of driving, not speed. The photography has warm 1970s film quality with soft highlights and slightly amber shadows. The setting could be British countryside, California coast, or European countryside.',
+    colorPalette: 'Sky Blue #87CEEB, Forest Green #228B22, Goldenrod #DAA520, Cream #F5F5DC, Earth Brown #8B7355. Natural outdoor palette — greens, blues, golds.',
+    typography: 'Serif masthead with an elegant ampersand "&" at the top — refined but warmer than the 1960s version. The business name as masthead in warm serif type. "Driving Impressions" style subtitle. Headline in a friendly serif — not aggressive, conversational. Teaser text along top edge in small serif: performance comparisons, model reviews.',
+    elements: 'Open country road, rolling hills, blue sky with clouds, convertible with top down, natural scenery dominating the background. Teaser text at top: "Improved Performance for..." and model comparison headlines. Issue date and "The Motor Enthusiasts\' Magazine" subtitle. Warm, natural atmosphere. Person driving the car visible but small — the drive experience is the focus.',
+    mood: 'Pastoral, contemplative, driving-pleasure focused',
+  },
+  textPrompt: {
+    tone: 'Warm, relaxed, focused on the driving experience.',
+    vocabulary: ['open road', 'driving', 'performance', 'touring', 'impressions'],
+  },
+  mockupScenes: ['magazine-cover', 'newsstand'],
+  compatibleTools: ['promo_flyer', 'social_post'],
+};
+
+const RT_80S_RED_FERRARI: ThemeDefinition = {
+  id: 'rt-80s-red-ferrari',
+  name: 'Road & Track 1980s',
+  category: 'Auto Magazine',
+  shortDescription: '1980s supercar era — red Italian exotics, bold claims, 0-60 stats',
+  previewColors: ['#CC0000', '#FFFFFF', '#FFD700', '#1A1A1A'],
+  imagePrompt: {
+    style: 'A 1980s-90s exotic car publication cover. A red Italian supercar (Ferrari, Lamborghini silhouette) dominates the frame at an aggressive 3/4 front angle — low, wide, dramatic. The car fills 70% of the composition. Background is either a dramatic sunset gradient or dark studio setting. The lighting is warm and saturated, making the red paint absolutely glow. This is peak supercar era energy — excess, speed, desire. The car is the object of pure aspiration.',
+    colorPalette: 'Ferrari Red #CC0000, Pure White #FFFFFF, Gold #FFD700, Black #1A1A1A, Warm Orange accent #FF6600.',
+    typography: 'Bold sans-serif masthead with decorative ampersand "&" at the top. The business name in bold serif or sans-serif as the masthead. Massive headline in bold red or white — "RED HOT" or "THE MOST EXOTIC EVER" energy — dramatic claims in large point size. Performance stats rendered large: "240 bhp, 0-60: 5.5 seconds". Comparison listings at bottom in condensed type.',
+    elements: 'Red exotic supercar as absolute hero, aggressive low angle, "Collector\'s Edition" or "FIRST TEST" badge, bold performance statistics rendered prominently (bhp, 0-60 times, top speed). Bottom edge: condensed comparison listings of competing models. "50th Anniversary" or milestone celebration style. Saturated warm lighting making the red paint luminous.',
+    mood: 'Aspirational, exotic, red-hot desire',
+  },
+  textPrompt: {
+    tone: 'Passionate, aspirational, supercar-obsessed.',
+    vocabulary: ['exotic', 'supercar', 'red hot', 'bhp', 'first test'],
+  },
+  mockupScenes: ['magazine-cover', 'newsstand'],
+  compatibleTools: ['promo_flyer', 'social_post'],
+};
+
+const RT_MODERN_CINEMATIC: ThemeDefinition = {
+  id: 'rt-modern-cinematic',
+  name: 'Road & Track Editorial',
+  category: 'Auto Magazine',
+  shortDescription: 'Modern editorial — cinematic shadows, film-like color, minimal text',
+  previewColors: ['#8B0000', '#2C3E50', '#F0E68C', '#1A1A1A'],
+  imagePrompt: {
+    style: 'A modern cinematic automotive editorial cover. A single car shot from an unusual, artful angle — rear 3/4 in dramatic shadows, or low profile against dramatic sky. Film-like color grading with rich shadows and selective warm highlights. The composition is more cinema than journalism — long shadows, golden hour light, architectural framing. Shallow depth of field creating dreamy background bokeh. This is automotive photography as art — unexpected angles, moody lighting, the car as sculpture.',
+    colorPalette: 'Dark Red #8B0000, Slate Blue #2C3E50, Warm Gold #F0E68C, Near Black #1A1A1A, Warm Highlights #FFE4B5.',
+    typography: 'Clean modern serif or transitional serif masthead with a distinctive ampersand "&" design element. The business name as masthead — elegant, refined. Headline in editorial serif — thought-provoking, not aggressive: "Go to the Races That MATTER MOST" energy. Minimal text — just masthead, one headline, and perhaps a single line of secondary text. The photography speaks.',
+    elements: 'Cinematic car photography with dramatic shadows and selective lighting, golden hour atmosphere, architectural or landscape framing, film grain texture, minimal text — this cover breathes. One editorial headline positioned thoughtfully. No edge teasers or stats — modern editorial simplicity. The car\'s form and light tell the story.',
+    mood: 'Cinematic, artful, editorially sophisticated',
+  },
+  textPrompt: {
+    tone: 'Thoughtful, cinematic, editorially sophisticated.',
+    vocabulary: ['matters', 'sacred', 'pursuit', 'craft', 'experience'],
+  },
+  mockupScenes: ['magazine-cover', 'gallery-print'],
+  compatibleTools: ['promo_flyer', 'social_post'],
+};
+
+const RT_CALIFORNIA_LIFESTYLE: ThemeDefinition = {
+  id: 'rt-california-lifestyle',
+  name: 'Road & Track California',
+  category: 'Auto Magazine',
+  shortDescription: 'California lifestyle — teal retro grading, multiple Porsches, scenic',
+  previewColors: ['#008B8B', '#DAA520', '#F5F5DC', '#2F4F4F'],
+  imagePrompt: {
+    style: 'A modern lifestyle automotive editorial cover with retro-warm color grading. Multiple sports cars (Porsche 911s, vintage and modern mixed) gathered in a scenic California mountain parking area or coastal overlook. The color grading is distinctively retro — teal shadows, warm golden highlights, slightly desaturated mid-tones like a faded film postcard. People are casually present — leaning on cars, taking photos, enjoying the scene. This is automotive lifestyle as aspiration — the cars AND the life around them.',
+    colorPalette: 'Teal #008B8B, Warm Gold #DAA520, Cream #F5F5DC, Dark Teal #2F4F4F, Sunset Peach #FFDAB9.',
+    typography: 'Clean sans-serif masthead with bold ampersand "&" design element at the top. The business name as masthead. Playful editorial headline — "I\'m Going to CALIFORNIA" energy — aspirational, warm, inviting. Typography is clean and modern but with a retro-warm feel from the color grading. Minimal supporting text.',
+    elements: 'Multiple sports cars gathered in a scenic location (mountain parking lot, coastal overlook), people interacting casually with the cars, scenic California landscape (redwoods, mountains, coast), vintage-warm color grading throughout (teal + gold), lifestyle atmosphere. Minimal text — the scene tells the story. Perhaps a single "Vol. XX No. XX" issue reference in small type.',
+    mood: 'Aspirational, lifestyle-warm, California dreaming',
+  },
+  textPrompt: {
+    tone: 'Warm, aspirational, lifestyle-focused.',
+    vocabulary: ['California', 'gathering', 'community', 'drive', 'lifestyle'],
+  },
+  mockupScenes: ['magazine-cover', 'gallery-print'],
+  compatibleTools: ['promo_flyer', 'social_post'],
+};
+
+// --- Specialty Magazine Styles (4 themes) ---
+
+const HOTROD_CUSTOM_BUILD: ThemeDefinition = {
+  id: 'hotrod-custom-build',
+  name: 'Hot Rod Magazine',
+  category: 'Auto Magazine',
+  shortDescription: 'Hot Rod mag — American muscle, flames, chrome, custom builds',
+  previewColors: ['#FF4500', '#FFD700', '#1A1A1A', '#C0C0C0'],
+  imagePrompt: {
+    style: 'A classic Hot Rod publication cover. An American hot rod or muscle car with custom flame paint job, exposed chrome engine, and aggressive stance — photographed at a low angle in a garage or drag strip setting. The car is a work of art: candy paint catching light, chrome headers gleaming, fat rear tires. The energy is pure American custom car culture — raw, loud, proud. Saturated color photography with warm lighting emphasizing chrome and paint.',
+    colorPalette: 'Flame Orange-Red #FF4500, Gold #FFD700, Deep Black #1A1A1A, Chrome Silver #C0C0C0, Candy Red #9B111E.',
+    typography: 'Bold aggressive display type for the masthead — condensed, powerful, slightly vintage. The business name as masthead in aggressive bold type. Headlines in bold condensed: "AMERICA\'S HOTTEST BUILDS" energy. Performance stats rendered large. Edge teasers in bold condensed sans-serif: "TECH: How to..." and "DYNO RESULTS" callouts.',
+    elements: 'Custom flame paint job on the car, exposed chrome engine with headers, drag strip or garage setting, "TECH:" feature callouts, dyno results and horsepower statistics, speed equipment references, custom wheel details. Dense edge teasers: build features, tech tips, product reviews. The layout is packed with energy and information like a real enthusiast publication.',
+    mood: 'Raw, American muscle, custom car pride',
+  },
+  textPrompt: {
+    tone: 'Bold, proud, custom car culture through and through.',
+    vocabulary: ['custom', 'build', 'hot rod', 'chrome', 'power'],
+  },
+  mockupScenes: ['magazine-cover', 'newsstand'],
+  compatibleTools: ['promo_flyer', 'social_post'],
+};
+
+const DUB_CUSTOM_WHEELS: ThemeDefinition = {
+  id: 'dub-custom-wheels',
+  name: 'DUB Magazine',
+  category: 'Auto Magazine',
+  shortDescription: 'DUB mag — massive wheels, urban luxury, hip-hop culture',
+  previewColors: ['#FFD700', '#C0C0C0', '#1A1A1A', '#800080'],
+  imagePrompt: {
+    style: 'An urban custom car culture publication cover. A luxury vehicle (Escalade, Charger, or exotic car silhouette) sitting on massive oversized chrome wheels (24"+ rims) in an urban night setting — city lights reflecting off the chrome and candy paint. The car has an air-suspension stance, custom interior glow visible through tinted windows. Wet city street reflections. The aesthetic is hip-hop luxury meets automotive art — flashy, bold, unapologetic. Professional studio-quality photography with dramatic lighting.',
+    colorPalette: 'Gold #FFD700, Chrome Silver #C0C0C0, Deep Black #1A1A1A, Purple #800080, Candy Paint tones. Metallic and chrome finishes dominate.',
+    typography: 'Bold urban display type for masthead — thick, powerful, with gold or chrome text effects. The business name as masthead with metallic finish. Headlines with chrome or gold gradient text. "EXCLUSIVE" tags in bold. Typography is flashy and confident — gold outlines, emboss effects, luxury weight.',
+    elements: 'Oversized chrome wheels (24"+ deep-dish rims) as a prominent design element, candy paint with metallic flake, urban night cityscape background, air suspension stance, "EXCLUSIVE" and "WORLD PREMIERE" tags, chrome and gold accents throughout. Interior glow visible. Edge text with celebrity references and custom build specs.',
+    mood: 'Urban luxury, hip-hop culture, flashy and bold',
+  },
+  textPrompt: {
+    tone: 'Bold, flashy, luxury culture.',
+    vocabulary: ['exclusive', 'custom', 'luxury', 'premier', 'chrome'],
+  },
+  mockupScenes: ['magazine-cover', 'newsstand'],
+  compatibleTools: ['promo_flyer', 'social_post'],
+};
+
+const IMPORT_TUNER_NIGHT: ThemeDefinition = {
+  id: 'import-tuner-night',
+  name: 'Import Tuner',
+  category: 'Auto Magazine',
+  shortDescription: 'Super Street / Import Tuner — neon underglow, JDM, night scene',
+  previewColors: ['#39FF14', '#0066FF', '#1A1A1A', '#FF4500'],
+  imagePrompt: {
+    style: 'A JDM tuner culture publication cover. A modified Japanese import (Supra, GTR, Civic, or Evo silhouette) in a wet parking garage or city street at night. Neon underglow casts colored light on the wet asphalt. The car is slammed with aftermarket wheels, body kit, and visible intercooler. Rain puddles reflect neon signs. The atmosphere is Need for Speed Underground meets Tokyo street racing — electric, underground, adrenaline. Wide-angle low shot exaggerating the car\'s aggressive stance.',
+    colorPalette: 'Neon Green #39FF14, Electric Blue #0066FF, Night Black #1A1A1A, Flame Orange #FF4500, Purple underglow #9B30FF.',
+    typography: 'Angular tech-forward sans-serif masthead — sharp, aggressive, digital. The business name as masthead in angular bold type. Japanese katakana characters as decorative accent elements alongside English text. "DYNO TESTED" and "FULL BUILD SPEC" callout badges. Performance stats in tech-style display font: boost pressure, wheel horsepower.',
+    elements: 'Neon underglow reflecting on wet pavement, aftermarket body kit and oversized wing, wet street with puddle reflections of neon signs, Japanese characters as decorative accents, turbo boost gauge graphics, "DYNO TESTED: XXX WHP" statistics. Edge teasers in angular type: build specs, modification lists, product reviews. Night atmosphere with sodium-vapor and neon lighting.',
+    mood: 'Underground, electric, JDM adrenaline',
+  },
+  textPrompt: {
+    tone: 'Tech-forward, underground, performance-obsessed.',
+    vocabulary: ['boost', 'tuned', 'JDM', 'build', 'dyno'],
+  },
+  mockupScenes: ['magazine-cover', 'newsstand'],
+  compatibleTools: ['promo_flyer', 'social_post'],
+};
+
+const RT_RACING_COCKPIT: ThemeDefinition = {
+  id: 'rt-racing-cockpit',
+  name: 'Road & Track Racing',
+  category: 'Auto Magazine',
+  shortDescription: 'Racing special — cockpit view, helmet visor, dramatic illustration',
+  previewColors: ['#CC0000', '#FFFFFF', '#1A1A1A', '#DAA520'],
+  imagePrompt: {
+    style: 'A dramatic racing-focused automotive publication cover rendered as a painted illustration. The viewer looks over a racing driver\'s shoulder from inside the cockpit — gloved hands gripping the steering wheel, a glimpse of helmet visor with reflections, the track stretching ahead through the windscreen. The style is painted illustration, not photography — bold brush strokes, dramatic color, action-frozen composition. Inspired by 1960s motorsport art and racing posters. Red is the dominant color with dramatic contrast.',
+    colorPalette: 'Racing Red #CC0000, Pure White #FFFFFF, Near Black #1A1A1A, Gold #DAA520, Chrome accents.',
+    typography: 'Bold serif masthead with elegant ampersand "&" at the top — prestigious and classic. The business name as masthead in refined serif. "The Sporting Tradition" or "Racing Special" as a subtitle. Headline in a dramatic serif — bold racing claims. Minimal but impactful text — the dramatic illustration carries the cover.',
+    elements: 'Cockpit-perspective composition showing driver\'s gloved hands on wheel, helmet visor with reflections, track ahead through windscreen, racing car bodywork visible at frame edges. Painted illustration style with bold strokes. Racing number on the car visible. Wind and speed suggested through blur and motion. "RACING SPECIAL" edition label.',
+    mood: 'Dramatic, racing-heritage, heroic illustration',
+  },
+  textPrompt: {
+    tone: 'Dramatic, heritage-rich, racing passion.',
+    vocabulary: ['racing', 'heritage', 'tradition', 'driver', 'track'],
+  },
+  mockupScenes: ['magazine-cover', 'framed-print'],
+  compatibleTools: ['promo_flyer', 'social_post'],
+};
+
+// ============================================================================
 // EXPORTS
 // ============================================================================
 
@@ -553,6 +857,21 @@ export const CURATED_THEMES: ThemeDefinition[] = [
   // Family 10: Racing & Speed
   NASCAR_SPEED,
   VINTAGE_RALLY,
+  // Family 11: Auto Magazine
+  MT_60S_CAR_OF_YEAR,
+  MT_70S_ROAD_TEST,
+  MT_80S_PERFORMANCE,
+  MT_2000S_DARK_HERO,
+  MT_MODERN_DIGITAL,
+  RT_60S_GRAND_TOURING,
+  RT_70S_OPEN_ROAD,
+  RT_80S_RED_FERRARI,
+  RT_MODERN_CINEMATIC,
+  RT_CALIFORNIA_LIFESTYLE,
+  HOTROD_CUSTOM_BUILD,
+  DUB_CUSTOM_WHEELS,
+  IMPORT_TUNER_NIGHT,
+  RT_RACING_COCKPIT,
 ];
 
 export function getCuratedTheme(id: string): ThemeDefinition | undefined {
