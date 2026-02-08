@@ -248,6 +248,7 @@ router.get('/families', async (_req: Request, res: Response) => {
       emoji: f.emoji,
       previewImage: f.previewImage,
       themeCount: f.themeIds.length,
+      themeIds: f.themeIds,
       tags: f.tags,
     })),
   });

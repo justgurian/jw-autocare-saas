@@ -1,487 +1,533 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { Palette, ThumbsUp, Flame, Meh, ArrowRight, Wrench, RefreshCw } from 'lucide-react';
+import { Palette, Flame, ThumbsUp, Meh, ArrowRight, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { batchFlyerApi, promoFlyerApi } from '../../../services/api';
-import { usePollJob } from '../../../hooks/usePollJob';
+import { promoFlyerApi, batchFlyerApi } from '../../../services/api';
+import RetroLoadingStage from '../../../components/garage/RetroLoadingStage';
 
 type FeedbackType = 'fire' | 'solid' | 'meh';
 
-interface SamplerFlyer {
+interface Family {
+  id: string;
+  name: string;
+  description: string;
+  emoji: string;
+  themeIds: string[];
+}
+
+interface GeneratedFlyer {
   id: string;
   imageUrl: string;
   caption: string;
-  familyId: string | null;
-  familyName: string | null;
-  themeName: string;
-  round?: number;
+  familyId: string;
+  familyName: string;
+  themeId: string;
 }
 
-const FUN_FACTS = [
-  "Each style is inspired by a different decade of design",
-  "Your shop info is woven into every flyer automatically",
-  "The AI creates a unique composition for each style family",
-  "Rate your favorites — future flyers will match your taste",
-  "Over 48 retro themes across 10 style families",
-  "Pro tip: Styles you rate highest appear more often",
-  "Every image is unique — no templates, no stock photos",
-  "Your competitors are still using Canva templates...",
-];
+type Phase = 'loading-families' | 'loading-first' | 'rating' | 'summary';
+
+// Shuffle array (Fisher-Yates)
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+const LOADING_MESSAGES: Record<number, string[]> = {
+  0: ['Warming up the engine...', 'Turning the ignition...'],
+  1: ['Your AI designer is sketching...', 'Mixing the paint...'],
+  2: ['Adding the finishing touches...', 'Almost there...'],
+  3: ['Polishing the chrome...', 'Ready to roll!'],
+};
 
 export default function StyleSamplerPage() {
   const navigate = useNavigate();
-  const [step, setStep] = useState<'form' | 'generating' | 'results'>('form');
-  const [selectedServiceId, setSelectedServiceId] = useState('');
-  const [customMessage, setCustomMessage] = useState('');
-  const [flyers, setFlyers] = useState<SamplerFlyer[]>([]);
-  const [partialFlyers, setPartialFlyers] = useState<SamplerFlyer[]>([]);
-  const [feedback, setFeedback] = useState<Record<string, FeedbackType>>({});
-  const [revealedCount, setRevealedCount] = useState(0);
-  const [funFactIndex, setFunFactIndex] = useState(0);
-  const [round, setRound] = useState(1);
-  const [allRoundFlyers, setAllRoundFlyers] = useState<SamplerFlyer[]>([]);
-  const jobIdRef = useRef<string | null>(null);
-  const partialPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Fetch services for the form
+  // Family queue & current position
+  const [familyQueue, setFamilyQueue] = useState<Family[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  // Generated flyers keyed by family ID
+  const [flyerMap, setFlyerMap] = useState<Map<string, GeneratedFlyer>>(new Map());
+
+  // Animation state
+  const [swipeDirection, setSwipeDirection] = useState<'right' | 'left' | 'up' | null>(null);
+  const [isEntering, setIsEntering] = useState(false);
+
+  // Ratings
+  const [ratings, setRatings] = useState<Record<string, FeedbackType>>({});
+
+  // Phase
+  const [phase, setPhase] = useState<Phase>('loading-families');
+
+  // Track ongoing generation to prevent duplicates
+  const generatingRef = useRef<Set<string>>(new Set());
+
+  // Business context
+  const [businessName, setBusinessName] = useState('');
+  const [firstService, setFirstService] = useState('');
+
+  // Fetch families with themeIds
+  const { data: familiesData } = useQuery({
+    queryKey: ['style-families'],
+    queryFn: () => promoFlyerApi.getFamilies().then(r => r.data),
+  });
+
+  // Fetch suggestions for business context
   const { data: suggestions } = useQuery({
     queryKey: ['batch-suggestions'],
     queryFn: () => batchFlyerApi.getSuggestions().then(r => r.data),
   });
 
-  const services = suggestions?.allServices || [];
-
-  // Rotate fun facts every 4 seconds during generation
+  // Extract business context from suggestions
   useEffect(() => {
-    if (step !== 'generating') return;
-    const timer = setInterval(() => {
-      setFunFactIndex(prev => (prev + 1) % FUN_FACTS.length);
-    }, 4000);
-    return () => clearInterval(timer);
-  }, [step]);
+    if (!suggestions) return;
+    const services = suggestions.allServices || suggestions.services || [];
+    if (services.length > 0) {
+      const svc = services[0];
+      setFirstService(typeof svc === 'string' ? svc : svc.name || 'Auto Repair');
+    }
+    if (suggestions.businessName) {
+      setBusinessName(suggestions.businessName);
+    }
+  }, [suggestions]);
 
-  // Poll for partial flyers during generation
+  // Initialize family queue once families load
   useEffect(() => {
-    if (step !== 'generating' || !jobIdRef.current) return;
+    if (!familiesData?.families || familyQueue.length > 0) return;
+    const families: Family[] = familiesData.families
+      .filter((f: any) => f.themeIds && f.themeIds.length > 0)
+      .map((f: any) => ({
+        id: f.id,
+        name: f.name,
+        description: f.description,
+        emoji: f.emoji || '',
+        themeIds: f.themeIds,
+      }));
 
-    const pollPartialFlyers = async () => {
-      try {
-        const res = await batchFlyerApi.getJobFlyers(jobIdRef.current!);
-        const flyerData: SamplerFlyer[] = (res.data?.flyers || []).map((f: any) => ({
-          id: f.id,
-          imageUrl: f.imageUrl,
-          caption: f.caption,
-          familyId: f.familyId,
-          familyName: f.familyName,
-          themeName: f.themeName,
-        }));
-        if (flyerData.length > 0) {
-          setPartialFlyers(flyerData);
-        }
-      } catch {
-        // Silently continue — partial fetch is best-effort
-      }
-    };
-
-    // First poll after 8 seconds (first flyer takes ~8s), then every 4s
-    const initialTimer = setTimeout(() => {
-      pollPartialFlyers();
-      partialPollRef.current = setInterval(pollPartialFlyers, 4000);
-    }, 8000);
-
-    return () => {
-      clearTimeout(initialTimer);
-      if (partialPollRef.current) clearInterval(partialPollRef.current);
-    };
-  }, [step]);
-
-  // Poll for job completion
-  const { job, startPolling } = usePollJob({
-    intervalMs: 4000,
-    maxPollTimeMs: 300000,
-    getJob: batchFlyerApi.getJob,
-    onComplete: async (completedJob) => {
-      if (partialPollRef.current) clearInterval(partialPollRef.current);
-      try {
-        const res = await batchFlyerApi.getJobFlyers(completedJob.id);
-        const flyerData: SamplerFlyer[] = (res.data?.flyers || []).map((f: any) => ({
-          id: f.id,
-          imageUrl: f.imageUrl,
-          caption: f.caption,
-          familyId: f.familyId,
-          familyName: f.familyName,
-          themeName: f.themeName,
-          round,
-        }));
-        setFlyers(flyerData);
-        setAllRoundFlyers(prev => [...prev, ...flyerData]);
-        setPartialFlyers([]);
-        setStep('results');
-        // Staggered reveal for any not yet shown
-        const alreadyShown = partialFlyers.length;
-        flyerData.forEach((_, i) => {
-          if (i < alreadyShown) {
-            setRevealedCount(prev => Math.max(prev, i + 1));
-          } else {
-            setTimeout(() => setRevealedCount(prev => prev + 1), (i - alreadyShown) * 300);
-          }
-        });
-      } catch {
-        toast.error('Failed to load results');
-      }
-    },
-    onFailed: () => toast.error('Generation failed. Please try again.'),
-    onTimeout: () => toast.error('Generation timed out. Please try again.'),
-  });
-
-  const startGeneration = useCallback(async (isMore = false) => {
-    if (!isMore && !selectedServiceId && !customMessage) {
-      toast.error('Pick a service or enter a custom message');
+    if (families.length === 0) {
+      toast.error('No style families available');
       return;
     }
 
-    if (isMore) {
-      setRound(prev => prev + 1);
-    } else {
-      setRound(1);
-      setAllRoundFlyers([]);
-      setFeedback({});
-    }
+    const shuffled = shuffle(families);
+    setFamilyQueue(shuffled);
+    setPhase('loading-first');
+  }, [familiesData, familyQueue.length]);
 
-    setStep('generating');
-    setRevealedCount(0);
-    setFlyers([]);
-    setPartialFlyers([]);
-    setFunFactIndex(0);
+  // Generate a flyer for a specific family
+  const generateForFamily = useCallback(async (family: Family) => {
+    // Prevent duplicate generation
+    if (generatingRef.current.has(family.id)) return;
+    generatingRef.current.add(family.id);
+
+    const themeId = family.themeIds[Math.floor(Math.random() * family.themeIds.length)];
+    const subject = firstService || 'Auto Repair';
+    const shopName = businessName || 'your shop';
+    const message = `Professional marketing flyer for ${shopName} featuring ${subject}`;
 
     try {
-      const payload: any = {
-        mode: 'month' as const,
-        count: 10,
-        themeStrategy: 'family-sampler' as const,
-        language: 'en' as const,
+      const res = await promoFlyerApi.generate({
+        message,
+        subject,
+        themeId,
+      });
+
+      const flyer: GeneratedFlyer = {
+        id: res.data.id || res.data.contentId || `gen-${Date.now()}`,
+        imageUrl: res.data.imageUrl,
+        caption: res.data.caption || '',
+        familyId: family.id,
+        familyName: family.name,
+        themeId,
       };
 
-      if (selectedServiceId) {
-        payload.contentType = 'services';
-        payload.serviceIds = [selectedServiceId];
-      } else {
-        payload.contentType = 'custom';
-        payload.customContent = [{
-          message: customMessage,
-          subject: customMessage,
-        }];
+      setFlyerMap(prev => {
+        const next = new Map(prev);
+        next.set(family.id, flyer);
+        return next;
+      });
+
+      return flyer;
+    } catch (err) {
+      console.error(`Failed to generate for ${family.name}:`, err);
+      // Create error placeholder so we can skip it
+      setFlyerMap(prev => {
+        const next = new Map(prev);
+        next.set(family.id, {
+          id: `error-${family.id}`,
+          imageUrl: '',
+          caption: '',
+          familyId: family.id,
+          familyName: family.name,
+          themeId,
+        });
+        return next;
+      });
+      return null;
+    } finally {
+      generatingRef.current.delete(family.id);
+    }
+  }, [businessName, firstService]);
+
+  // Start pipeline: generate first 2 families
+  useEffect(() => {
+    if (phase !== 'loading-first' || familyQueue.length === 0) return;
+    // Wait for business context to be ready (or timeout after 2s)
+    const timer = setTimeout(() => {
+      generateForFamily(familyQueue[0]);
+      if (familyQueue.length > 1) {
+        generateForFamily(familyQueue[1]);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [phase, familyQueue, generateForFamily]);
+
+  // Transition from loading-first to rating when first flyer is ready
+  useEffect(() => {
+    if (phase !== 'loading-first') return;
+    if (familyQueue.length === 0) return;
+
+    const firstFamily = familyQueue[0];
+    const flyer = flyerMap.get(firstFamily.id);
+    if (flyer && flyer.imageUrl) {
+      setIsEntering(true);
+      setPhase('rating');
+      setTimeout(() => setIsEntering(false), 300);
+    }
+  }, [phase, familyQueue, flyerMap]);
+
+  // Handle rating
+  const handleRate = useCallback((type: FeedbackType) => {
+    const family = familyQueue[currentIndex];
+    if (!family) return;
+
+    const flyer = flyerMap.get(family.id);
+    if (!flyer) return;
+
+    // Save rating
+    setRatings(prev => ({ ...prev, [family.id]: type }));
+
+    // Submit feedback to API (fire-and-forget)
+    if (flyer.id && !flyer.id.startsWith('error-')) {
+      promoFlyerApi.submitFeedback(flyer.id, type).catch(() => {});
+    }
+
+    // Determine swipe direction
+    const direction = type === 'fire' ? 'right' : type === 'meh' ? 'up' : 'left';
+    setSwipeDirection(direction);
+
+    // After animation: advance
+    setTimeout(() => {
+      const nextIndex = currentIndex + 1;
+      setSwipeDirection(null);
+
+      if (nextIndex >= familyQueue.length) {
+        // All families rated
+        setPhase('summary');
+        return;
       }
 
-      const res = await batchFlyerApi.generate(payload);
-      const jobId = res.data?.jobId;
-      if (jobId) {
-        jobIdRef.current = jobId;
-        startPolling(jobId);
-      } else {
-        throw new Error('No job ID returned');
+      setCurrentIndex(nextIndex);
+      setIsEntering(true);
+      setTimeout(() => setIsEntering(false), 300);
+
+      // Pre-generate 2 ahead
+      const pipelineIndex = nextIndex + 1;
+      if (pipelineIndex < familyQueue.length) {
+        const nextFamily = familyQueue[pipelineIndex];
+        if (!flyerMap.has(nextFamily.id) && !generatingRef.current.has(nextFamily.id)) {
+          generateForFamily(nextFamily);
+        }
       }
-    } catch {
-      toast.error('Failed to start generation');
-      setStep(isMore ? 'results' : 'form');
-    }
-  }, [selectedServiceId, customMessage, startPolling]);
+    }, 400);
+  }, [currentIndex, familyQueue, flyerMap, generateForFamily]);
 
-  const handleGenerate = () => startGeneration(false);
-  const handleGenerateMore = () => startGeneration(true);
-
-  const handleFeedback = async (flyerId: string, type: FeedbackType) => {
-    setFeedback(prev => ({ ...prev, [flyerId]: type }));
-    try {
-      await promoFlyerApi.submitFeedback(flyerId, type);
-    } catch {
-      // Silently fail — feedback is optional
+  // Skip errored flyers automatically
+  useEffect(() => {
+    if (phase !== 'rating') return;
+    const family = familyQueue[currentIndex];
+    if (!family) return;
+    const flyer = flyerMap.get(family.id);
+    if (flyer && !flyer.imageUrl) {
+      // This family errored — auto-skip
+      const nextIndex = currentIndex + 1;
+      if (nextIndex >= familyQueue.length) {
+        setPhase('summary');
+      } else {
+        setCurrentIndex(nextIndex);
+      }
     }
+  }, [phase, currentIndex, familyQueue, flyerMap]);
+
+  // Summary stats
+  const fireCount = Object.values(ratings).filter(r => r === 'fire').length;
+  const solidCount = Object.values(ratings).filter(r => r === 'solid').length;
+  const mehCount = Object.values(ratings).filter(r => r === 'meh').length;
+
+  // Restart with fresh random themes
+  const handleRestart = () => {
+    const reshuffled = shuffle(familyQueue);
+    setFamilyQueue(reshuffled);
+    setCurrentIndex(0);
+    setFlyerMap(new Map());
+    setRatings({});
+    setSwipeDirection(null);
+    generatingRef.current.clear();
+    setPhase('loading-first');
   };
 
-  const progress = job?.progress || 0;
-
-  // Feedback summary
-  const feedbackCount = Object.keys(feedback).length;
-  const fireCount = Object.values(feedback).filter(f => f === 'fire').length;
-  const solidCount = Object.values(feedback).filter(f => f === 'solid').length;
-  const mehCount = Object.values(feedback).filter(f => f === 'meh').length;
+  // Current state
+  const currentFamily = familyQueue[currentIndex];
+  const currentFlyer = currentFamily ? flyerMap.get(currentFamily.id) : undefined;
+  const isFlyerReady = currentFlyer && currentFlyer.imageUrl;
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
+    <div className="max-w-lg mx-auto space-y-6 pb-8">
       {/* Header */}
       <div className="text-center">
         <div className="inline-flex items-center gap-3 mb-2">
-          <Palette size={32} className="text-retro-red" />
-          <h1 className="font-display text-3xl md:text-4xl text-retro-navy">Style Sampler</h1>
+          <Palette size={28} className="text-retro-red" />
+          <h1 className="font-display text-3xl text-retro-navy dark:text-gray-100">Style Sampler</h1>
         </div>
-        <p className="text-gray-600 text-lg">
-          See your shop in 10 different styles. Same content, 10 unique looks.
+        <p className="text-gray-600 dark:text-gray-400">
+          Rate each style to personalize your future flyers
         </p>
       </div>
 
-      {/* FORM STATE */}
-      {step === 'form' && (
-        <div className="card-retro max-w-xl mx-auto p-8">
-          <h2 className="font-heading text-xl mb-6 text-center">What should the flyer promote?</h2>
+      {/* LOADING FAMILIES */}
+      {phase === 'loading-families' && (
+        <div className="card-retro p-8 text-center">
+          <Loader2 size={32} className="animate-spin text-retro-red mx-auto mb-3" />
+          <p className="font-heading text-sm uppercase text-gray-500">Loading styles...</p>
+        </div>
+      )}
 
-          {/* Service picker */}
-          {services.length > 0 && (
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Pick a service</label>
-              <div className="grid grid-cols-2 gap-2">
-                {services.slice(0, 8).map((svc: any) => (
-                  <button
-                    key={svc.id}
-                    onClick={() => { setSelectedServiceId(svc.id); setCustomMessage(''); }}
-                    className={`p-3 text-left text-sm border-2 rounded-lg transition-all ${
-                      selectedServiceId === svc.id
-                        ? 'border-retro-red bg-retro-red/10 text-retro-red font-medium'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    {svc.name}
-                  </button>
-                ))}
+      {/* LOADING FIRST FLYER */}
+      {phase === 'loading-first' && (
+        <div className="card-retro p-8">
+          <RetroLoadingStage
+            isLoading
+            estimatedDuration={25000}
+            size="md"
+            showExhaust
+            phaseMessages={LOADING_MESSAGES}
+          />
+          <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-4 font-heading uppercase">
+            Generating your first sample...
+          </p>
+        </div>
+      )}
+
+      {/* RATING PHASE */}
+      {phase === 'rating' && currentFamily && (
+        <>
+          {/* Progress bar */}
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-retro-red to-retro-mustard transition-all duration-500"
+                style={{ width: `${((currentIndex) / familyQueue.length) * 100}%` }}
+              />
+            </div>
+            <span className="font-heading text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+              {currentIndex + 1} of {familyQueue.length}
+            </span>
+          </div>
+
+          {/* Family badge */}
+          <div className="text-center">
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-retro-navy/10 dark:bg-gray-700 border border-retro-navy/20 dark:border-gray-600">
+              <span className="text-lg">{currentFamily.emoji}</span>
+              <span className="font-heading text-sm uppercase text-retro-navy dark:text-gray-200">
+                {currentFamily.name}
+              </span>
+            </span>
+          </div>
+
+          {/* Card area */}
+          <div className="relative overflow-hidden" style={{ minHeight: '420px' }}>
+            {isFlyerReady ? (
+              <div
+                className={`
+                  ${swipeDirection === 'right' ? 'animate-swipe-right' : ''}
+                  ${swipeDirection === 'left' ? 'animate-swipe-left' : ''}
+                  ${swipeDirection === 'up' ? 'animate-swipe-up' : ''}
+                  ${isEntering ? 'animate-card-enter' : ''}
+                `}
+              >
+                <div className="aspect-[4/5] overflow-hidden border-2 border-black dark:border-gray-600 shadow-retro">
+                  <img
+                    src={currentFlyer!.imageUrl}
+                    alt={`${currentFamily.name} style flyer`}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              </div>
+            ) : (
+              /* Waiting for flyer to generate */
+              <div className="aspect-[4/5] border-2 border-dashed border-gray-300 dark:border-gray-600 flex flex-col items-center justify-center">
+                <RetroLoadingStage
+                  isLoading
+                  estimatedDuration={25000}
+                  size="sm"
+                  showExhaust={false}
+                  phaseMessages={LOADING_MESSAGES}
+                />
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-3 font-heading uppercase">
+                  Generating {currentFamily.name}...
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Rating buttons */}
+          <div className="flex gap-3 justify-center">
+            <button
+              onClick={() => handleRate('meh')}
+              disabled={!isFlyerReady || !!swipeDirection}
+              className="flex-1 max-w-[120px] flex flex-col items-center gap-1.5 py-4 px-3 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+            >
+              <Meh size={28} className="text-gray-400" />
+              <span className="font-heading text-xs uppercase text-gray-500">Meh</span>
+            </button>
+
+            <button
+              onClick={() => handleRate('solid')}
+              disabled={!isFlyerReady || !!swipeDirection}
+              className="flex-1 max-w-[120px] flex flex-col items-center gap-1.5 py-4 px-3 border-2 border-retro-teal dark:border-retro-teal bg-white dark:bg-gray-800 hover:bg-retro-teal/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+            >
+              <ThumbsUp size={28} className="text-retro-teal" />
+              <span className="font-heading text-xs uppercase text-retro-teal">Solid</span>
+            </button>
+
+            <button
+              onClick={() => handleRate('fire')}
+              disabled={!isFlyerReady || !!swipeDirection}
+              className="flex-1 max-w-[120px] flex flex-col items-center gap-1.5 py-4 px-3 border-2 border-retro-red dark:border-retro-red bg-white dark:bg-gray-800 hover:bg-retro-red/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+            >
+              <Flame size={28} className="text-retro-red" />
+              <span className="font-heading text-xs uppercase text-retro-red">Fire</span>
+            </button>
+          </div>
+
+          {/* Hint text */}
+          <p className="text-center text-xs text-gray-400 dark:text-gray-500">
+            {currentFamily.description}
+          </p>
+        </>
+      )}
+
+      {/* SUMMARY PHASE */}
+      {phase === 'summary' && (
+        <div className="card-retro p-8 text-center space-y-6">
+          <div>
+            <h2 className="font-display text-3xl text-retro-navy dark:text-gray-100 mb-2">
+              STYLE TASTE COMPLETE
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400">
+              Your future flyers will match your taste!
+            </p>
+          </div>
+
+          {/* Stats */}
+          <div className="flex justify-center gap-6">
+            {fireCount > 0 && (
+              <div className="text-center">
+                <div className="text-3xl font-display text-retro-red">{fireCount}</div>
+                <div className="flex items-center gap-1 text-xs font-heading uppercase text-retro-red">
+                  <Flame size={14} /> Loved
+                </div>
+              </div>
+            )}
+            {solidCount > 0 && (
+              <div className="text-center">
+                <div className="text-3xl font-display text-retro-teal">{solidCount}</div>
+                <div className="flex items-center gap-1 text-xs font-heading uppercase text-retro-teal">
+                  <ThumbsUp size={14} /> Liked
+                </div>
+              </div>
+            )}
+            {mehCount > 0 && (
+              <div className="text-center">
+                <div className="text-3xl font-display text-gray-400">{mehCount}</div>
+                <div className="flex items-center gap-1 text-xs font-heading uppercase text-gray-400">
+                  <Meh size={14} /> Passed
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Fire-rated families */}
+          {fireCount > 0 && (
+            <div className="space-y-2">
+              <p className="font-heading text-sm uppercase text-gray-500 dark:text-gray-400">
+                Your top styles
+              </p>
+              <div className="flex flex-wrap gap-2 justify-center">
+                {familyQueue
+                  .filter(f => ratings[f.id] === 'fire')
+                  .map(f => (
+                    <span
+                      key={f.id}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-retro-red/10 border border-retro-red/30 text-retro-red text-sm font-heading uppercase"
+                    >
+                      <span>{f.emoji}</span> {f.name}
+                    </span>
+                  ))}
               </div>
             </div>
           )}
 
-          <div className="flex items-center gap-4 mb-6">
-            <div className="flex-1 border-t border-gray-200" />
-            <span className="text-sm text-gray-400">or</span>
-            <div className="flex-1 border-t border-gray-200" />
-          </div>
-
-          {/* Custom text */}
-          <div className="mb-8">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Custom message</label>
-            <input
-              type="text"
-              value={customMessage}
-              onChange={(e) => { setCustomMessage(e.target.value); setSelectedServiceId(''); }}
-              placeholder="e.g. Spring Special: 20% Off Oil Changes"
-              className="input-retro w-full"
-              maxLength={200}
-            />
-          </div>
-
-          <button
-            onClick={handleGenerate}
-            disabled={!selectedServiceId && !customMessage}
-            className="btn-retro btn-retro-primary w-full text-lg py-4 disabled:opacity-50"
-          >
-            Generate 10 Styles
-          </button>
-          <p className="text-center text-sm text-gray-500 mt-3">Takes about 80 seconds</p>
-        </div>
-      )}
-
-      {/* GENERATING STATE */}
-      {step === 'generating' && (
-        <div className="space-y-6">
-          {/* Loading card with fun facts */}
-          <div className="card-retro p-8 max-w-lg mx-auto text-center">
-            {/* Animated wrench */}
-            <div className="relative w-16 h-16 mx-auto mb-4">
-              <Wrench size={40} className="text-retro-red absolute inset-0 m-auto animate-spin" style={{ animationDuration: '3s' }} />
-            </div>
-            <h2 className="font-heading text-xl mb-2">Creating your samples...</h2>
-            <p className="text-gray-600 mb-1">{partialFlyers.length} of 10 styles complete</p>
-
-            {/* Progress bar */}
-            <div className="w-full bg-gray-200 rounded-full h-3 mb-4">
-              <div
-                className="bg-gradient-to-r from-retro-red to-retro-mustard h-3 rounded-full transition-all duration-700"
-                style={{ width: `${Math.max(progress, 5)}%` }}
-              />
-            </div>
-
-            {/* Fun fact carousel */}
-            <div className="bg-retro-navy/5 border border-retro-navy/10 p-3 rounded-lg min-h-[40px] flex items-center justify-center">
-              <p className="text-sm text-gray-600 italic transition-opacity duration-500">
-                {FUN_FACTS[funFactIndex]}
-              </p>
-            </div>
-          </div>
-
-          {/* Live preview grid with actual images */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            {Array.from({ length: 10 }).map((_, i) => {
-              const flyer = partialFlyers[i];
+          {/* Thumbnail grid of all rated flyers */}
+          <div className="grid grid-cols-5 gap-2 mt-4">
+            {familyQueue.map(family => {
+              const flyer = flyerMap.get(family.id);
+              const rating = ratings[family.id];
+              if (!flyer || !flyer.imageUrl) return null;
               return (
-                <div key={i} className="aspect-[4/5] rounded-lg overflow-hidden border-2 border-gray-200">
-                  {flyer ? (
-                    <img
-                      src={flyer.imageUrl}
-                      alt={flyer.familyName || flyer.themeName}
-                      className="w-full h-full object-cover animate-fade-in"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gray-100 flex items-center justify-center animate-pulse">
-                      <span className="text-gray-400 text-xs">{i + 1}</span>
-                    </div>
-                  )}
+                <div
+                  key={family.id}
+                  className={`relative aspect-[4/5] overflow-hidden border-2 ${
+                    rating === 'fire'
+                      ? 'border-retro-red'
+                      : rating === 'solid'
+                      ? 'border-retro-teal'
+                      : 'border-gray-300 opacity-60'
+                  }`}
+                >
+                  <img
+                    src={flyer.imageUrl}
+                    alt={family.name}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute bottom-0 inset-x-0 bg-black/50 text-white text-[9px] text-center py-0.5 font-heading uppercase">
+                    {family.emoji} {rating === 'fire' ? '🔥' : rating === 'solid' ? '👍' : '😐'}
+                  </div>
                 </div>
               );
             })}
           </div>
-        </div>
-      )}
-
-      {/* RESULTS STATE */}
-      {step === 'results' && (
-        <div className="space-y-6">
-          <p className="text-center text-gray-600">
-            Rate each style to personalize your future flyers. Your favorites will appear more often!
-          </p>
-
-          {/* Feedback summary */}
-          {feedbackCount > 0 && (
-            <div className="flex justify-center gap-4 text-sm">
-              {fireCount > 0 && (
-                <span className="flex items-center gap-1 text-orange-600">
-                  <Flame size={14} /> Loved {fireCount}
-                </span>
-              )}
-              {solidCount > 0 && (
-                <span className="flex items-center gap-1 text-blue-600">
-                  <ThumbsUp size={14} /> Liked {solidCount}
-                </span>
-              )}
-              {mehCount > 0 && (
-                <span className="flex items-center gap-1 text-gray-500">
-                  <Meh size={14} /> Skipped {mehCount}
-                </span>
-              )}
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            {flyers.map((flyer, i) => (
-              <div
-                key={flyer.id}
-                className={`card-retro overflow-hidden transition-all duration-500 ${
-                  i < revealedCount ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-                }`}
-              >
-                {/* Flyer image */}
-                <div className="aspect-[4/5] overflow-hidden">
-                  <img
-                    src={flyer.imageUrl}
-                    alt={flyer.familyName || flyer.themeName}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-
-                {/* Family label */}
-                <div className="p-3">
-                  <p className="font-heading text-xs uppercase text-retro-navy truncate">
-                    {flyer.familyName || flyer.themeName}
-                  </p>
-
-                  {/* Feedback toast message */}
-                  {feedback[flyer.id] === 'fire' && (
-                    <p className="text-[10px] text-orange-600 mt-1">More of this style coming!</p>
-                  )}
-                  {feedback[flyer.id] === 'meh' && (
-                    <p className="text-[10px] text-gray-500 mt-1">Noted — less of this</p>
-                  )}
-
-                  {/* Feedback buttons */}
-                  <div className="flex gap-1 mt-2">
-                    <button
-                      onClick={() => handleFeedback(flyer.id, 'fire')}
-                      className={`flex-1 py-1.5 rounded text-xs font-medium transition-all ${
-                        feedback[flyer.id] === 'fire'
-                          ? 'bg-orange-500 text-white'
-                          : 'bg-gray-100 hover:bg-orange-100 text-gray-600'
-                      }`}
-                    >
-                      <Flame size={14} className="mx-auto" />
-                    </button>
-                    <button
-                      onClick={() => handleFeedback(flyer.id, 'solid')}
-                      className={`flex-1 py-1.5 rounded text-xs font-medium transition-all ${
-                        feedback[flyer.id] === 'solid'
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-gray-100 hover:bg-blue-100 text-gray-600'
-                      }`}
-                    >
-                      <ThumbsUp size={14} className="mx-auto" />
-                    </button>
-                    <button
-                      onClick={() => handleFeedback(flyer.id, 'meh')}
-                      className={`flex-1 py-1.5 rounded text-xs font-medium transition-all ${
-                        feedback[flyer.id] === 'meh'
-                          ? 'bg-gray-500 text-white'
-                          : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
-                      }`}
-                    >
-                      <Meh size={14} className="mx-auto" />
-                    </button>
-                  </div>
-
-                  {/* Use this style */}
-                  <button
-                    onClick={() => navigate(`/tools/promo-flyer${flyer.familyId ? `?family=${flyer.familyId}` : ''}`)}
-                    className="w-full mt-2 text-[11px] text-retro-red font-medium flex items-center justify-center gap-1 hover:gap-2 transition-all"
-                  >
-                    Use this style <ArrowRight size={12} />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
 
           {/* Actions */}
-          <div className="flex flex-col items-center gap-4 pt-4">
-            <div className="flex justify-center gap-4">
-              <button onClick={handleGenerateMore} className="btn-retro btn-retro-outline px-6 py-3 flex items-center gap-2">
-                <RefreshCw size={16} />
-                Generate 10 More
-              </button>
-              <button
-                onClick={() => navigate('/tools/promo-flyer')}
-                className="btn-retro btn-retro-primary px-6 py-3"
-              >
-                Start Making Flyers
-              </button>
-            </div>
-            {round > 1 && (
-              <p className="text-sm text-gray-500">
-                Round {round} — The more you rate, the better your future flyers!
-              </p>
-            )}
+          <div className="flex flex-col gap-3 pt-2">
+            <button
+              onClick={() => navigate('/tools/promo-flyer')}
+              className="btn-retro btn-retro-primary w-full py-3 text-lg flex items-center justify-center gap-2"
+            >
+              Start Making Flyers <ArrowRight size={20} />
+            </button>
+            <button
+              onClick={handleRestart}
+              className="btn-retro-outline w-full py-2.5 text-sm"
+            >
+              Try 10 More Styles
+            </button>
           </div>
-
-          {/* Previous rounds (collapsed) */}
-          {allRoundFlyers.length > flyers.length && (
-            <details className="mt-6">
-              <summary className="font-heading text-sm uppercase text-gray-500 cursor-pointer hover:text-retro-navy">
-                Previous rounds ({allRoundFlyers.length - flyers.length} flyers)
-              </summary>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-3">
-                {allRoundFlyers
-                  .filter(f => !flyers.some(cf => cf.id === f.id))
-                  .map(flyer => (
-                    <div key={flyer.id} className="card-retro overflow-hidden opacity-80">
-                      <div className="aspect-[4/5] overflow-hidden">
-                        <img src={flyer.imageUrl} alt={flyer.familyName || flyer.themeName} className="w-full h-full object-cover" />
-                      </div>
-                      <div className="p-2">
-                        <p className="font-heading text-[10px] uppercase text-gray-500 truncate">
-                          {flyer.familyName || flyer.themeName}
-                          {feedback[flyer.id] === 'fire' && ' — Loved'}
-                          {feedback[flyer.id] === 'meh' && ' — Skipped'}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            </details>
-          )}
         </div>
       )}
     </div>
