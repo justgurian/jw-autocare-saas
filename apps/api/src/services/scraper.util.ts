@@ -2,7 +2,7 @@ import { logger } from '../utils/logger';
 
 const JINA_BASE = 'https://r.jina.ai/';
 const JINA_API_KEY = process.env.JINA_API_KEY || '';
-const TIMEOUT_MS = 12_000;
+const TIMEOUT_MS = 15_000;
 const MAX_CONTENT_CHARS = 80_000;
 const USER_AGENT = 'Mozilla/5.0 (compatible; BayfillerBot/1.0)';
 
