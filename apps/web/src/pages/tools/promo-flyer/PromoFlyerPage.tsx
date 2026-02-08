@@ -32,6 +32,7 @@ export default function PromoFlyerPage() {
     themeId: searchParams.get('theme') || '',
     vehicle: { make: '', model: '', year: '', color: '', freeText: '' },
     language: 'en' as 'en' | 'es' | 'both',
+    subjectType: 'auto' as 'hero-car' | 'mechanic' | 'detail-shot' | 'shop-exterior' | 'text-only' | 'auto',
   });
 
   const [mascotId, setMascotId] = useState<string | null>(null);
@@ -67,6 +68,7 @@ export default function PromoFlyerPage() {
         details: formData.details || undefined,
         themeId: formData.themeId,
         language: formData.language,
+        subjectType: formData.subjectType,
         mascotId: mascotId || undefined,
         // Vehicle: random uses legacy vehicleId, structured/free text uses new fields
         ...(isRandom
@@ -204,6 +206,7 @@ export default function PromoFlyerPage() {
       themeId: '',
       vehicle: { make: '', model: '', year: '', color: '', freeText: '' },
       language: 'en',
+      subjectType: 'auto' as 'hero-car' | 'mechanic' | 'detail-shot' | 'shop-exterior' | 'text-only' | 'auto',
     });
     setPackType(null);
     setPackEra(null);

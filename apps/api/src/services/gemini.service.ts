@@ -44,6 +44,7 @@ interface ImageGenerationOptions {
   mascotImage?: { base64: string; mimeType: string };
   referenceImage?: { base64: string; mimeType: string };
   contactInfo?: { phone?: string; website?: string };
+  subjectType?: 'hero-car' | 'mechanic' | 'detail-shot' | 'shop-exterior' | 'text-only' | 'auto';
 }
 
 function buildContactSection(contactInfo?: { phone?: string; website?: string }): string {
@@ -137,7 +138,11 @@ export const geminiService = {
       // Build comprehensive prompt for high-quality auto repair marketing images
       const contactSection = buildContactSection(options.contactInfo);
 
-      const fullPrompt = `You are a world-class graphic designer creating a marketing image for an auto repair shop.
+      const facesRestriction = options.subjectType === 'mechanic'
+        ? '- Render people in the artistic style of the theme — stylized, not photorealistic'
+        : '- Realistic human faces or hands';
+
+      const fullPrompt = `Generate a single promotional image for an auto repair shop.
 
 ${prompt}
 
@@ -156,13 +161,16 @@ Rules:
 - Leave breathing room between text blocks
 
 === OUTPUT ===
-Single ${options.aspectRatio || '4:5'} image. Professional agency quality. Scroll-stopping on social media.
+Single ${options.aspectRatio || '4:5'} image.
 
 === DO NOT INCLUDE ===
-- Realistic human faces or hands
+${facesRestriction}
 - Copyrighted logos or characters
 - Garbled, misspelled, or unreadable text
 - Cluttered layouts with too many elements
+- The words "professional", "marketing", "flyer", or any instructional/meta text
+- Any text that describes what the image IS rather than promotional content
+- ONLY render the HEADLINE, BUSINESS NAME, DETAILS, and CTA text specified above — nothing else
 ${options.negativePrompt ? `- ${options.negativePrompt}` : ''}`;
 
       logger.info('Calling image model for generation...', {

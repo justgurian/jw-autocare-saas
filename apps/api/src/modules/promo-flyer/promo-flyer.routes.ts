@@ -50,6 +50,7 @@ import {
 
 import { buildNostalgicImagePrompt } from '../../services/prompt-builder.service';
 import { fetchMascotAsBase64 } from '../../services/mascot.util';
+import { getSubjectPromptInjection } from '../../prompts/themes/subject-types';
 
 const router = Router();
 
@@ -827,7 +828,7 @@ router.post('/generate', generationRateLimiter, async (req: Request, res: Respon
       );
     }
 
-    const { message, subject, details, themeId, vehicleId, vehicleMake, vehicleModel, vehicleYear, vehicleColor, vehicleFreeText, language, generateMockup } = result.data;
+    const { message, subject, details, themeId, vehicleId, vehicleMake, vehicleModel, vehicleYear, vehicleColor, vehicleFreeText, language, subjectType, generateMockup } = result.data;
     const tenantId = req.user!.tenantId;
 
     // Handle random theme selection
@@ -940,6 +941,12 @@ router.post('/generate', generationRateLimiter, async (req: Request, res: Respon
       }
     }
 
+    // Inject subject type prompt
+    const subjectInjection = getSubjectPromptInjection(subjectType);
+    if (subjectInjection) {
+      imagePrompt += '\n\n' + subjectInjection;
+    }
+
     // Load reference image for custom themes
     let referenceImage: { base64: string; mimeType: string } | undefined;
     if (selectedThemeId.startsWith('custom-')) {
@@ -990,12 +997,13 @@ router.post('/generate', generationRateLimiter, async (req: Request, res: Respon
     const contentId = uuidv4();
 
     // Generate actual image using Nano Banana Pro
-    logger.info('Generating image with Nano Banana Pro', { themeId: selectedThemeId, subject, vehicle: selectedVehicle?.name, hasLogo: !!logoImage, hasMascot: !!mascotImageData, hasReference: !!referenceImage });
+    logger.info('Generating image with Nano Banana Pro', { themeId: selectedThemeId, subject, vehicle: selectedVehicle?.name, hasLogo: !!logoImage, hasMascot: !!mascotImageData, hasReference: !!referenceImage, subjectType });
     const imageResult = await geminiService.generateImage(imagePrompt, {
       aspectRatio: '4:5',
       logoImage: logoImage || undefined,
       mascotImage: mascotImageData,
       referenceImage,
+      subjectType,
       contactInfo: {
         phone: brandKit?.phone || undefined,
         website: brandKit?.website || undefined,

@@ -169,6 +169,7 @@ export const promoFlyerApi = {
     vehicleColor?: string;
     vehicleFreeText?: string;
     language?: 'en' | 'es' | 'both';
+    subjectType?: 'hero-car' | 'mechanic' | 'detail-shot' | 'shop-exterior' | 'text-only' | 'auto';
     mascotId?: string;
   }) => api.post('/tools/promo-flyer/generate', data),
 

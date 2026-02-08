@@ -127,8 +127,17 @@ export default function StyleSamplerPage() {
 
     const themeId = family.themeIds[Math.floor(Math.random() * family.themeIds.length)];
     const subject = firstService || 'Auto Repair';
-    const shopName = businessName || 'your shop';
-    const message = `Professional marketing flyer for ${shopName} featuring ${subject}`;
+    const sampleHeadlines = [
+      `${subject} Special!`,
+      `Save on ${subject}`,
+      `Expert ${subject}`,
+      `${subject} — Book Today!`,
+      `Quality ${subject}`,
+      `${subject} Done Right`,
+      `Time for ${subject}!`,
+      `${subject} You Can Trust`,
+    ];
+    const message = sampleHeadlines[Math.floor(Math.random() * sampleHeadlines.length)];
 
     try {
       const res = await promoFlyerApi.generate({

@@ -61,13 +61,9 @@ export function buildNostalgicImagePrompt(
 
   const eraTypography = getEraTypographyDirective(theme);
 
-  return `You are the creative director at a premium automotive advertising agency that has won multiple industry awards for print and social media campaigns.
+  return `Generate a single finished 1080x1350 (4:5) image for an auto repair shop promotion.
 
-=== OUTPUT ===
-Create one finished, print-ready 1080x1350 (4:5) marketing flyer image.
-
-=== CREATIVE DIRECTION ===
-Create a promotional flyer in the "${theme.name}" style from the ${theme.era}.
+=== STYLE: "${theme.name}" (${theme.era}) ===
 This is a ${theme.style === 'comic-book' ? 'COMIC BOOK' : theme.style === 'movie-poster' ? 'MOVIE POSTER' : theme.style === 'advertising' ? 'CLASSIC ADVERTISING' : 'CAR MAGAZINE'} style design.
 
 === VISUAL STYLE SPECIFICATIONS ===
@@ -116,24 +112,7 @@ ${content.details ? `DETAILS: ${content.details}` : ''}
 ${content.businessName ? `BUSINESS NAME: "${content.businessName}" - include as branding (LARGEST text element)` : ''}
 ${content.logoInstructions ? `LOGO: ${content.logoInstructions}` : ''}
 
-=== QUALITY GATE ===
-The final image must look like it was created by a $100,000/year graphic designer, not by AI. It should be indistinguishable from professional agency work.
-- Professional marketing agency quality
-- Scroll-stopping visual impact
-- Clean, polished, impressive design
-- Auto repair industry appropriate
-- Authentic ${theme.era} ${theme.style} aesthetic
-
-=== MUST AVOID ===
+=== THEME-SPECIFIC AVOID LIST ===
 ${theme.avoidList}
-- Human faces/hands
-- Copyrighted logos or characters
-- Clip-art style elements
-- Blurry areas
-- Unreadable text
-- Cluttered layouts
-- Amateur or low-quality appearance
-${content.logoPlacementHint ? '- Placing text or important content in the logo placement area' : ''}
-
-Create ONE stunning marketing flyer image that an auto repair shop would proudly post on Instagram/Facebook.`;
+${content.logoPlacementHint ? '- Placing text or important content in the logo placement area' : ''}`;
 }

@@ -506,7 +506,7 @@ export const themeRegistry = {
     // Fallback for legacy and additional themes
     const theme = themes.find(t => t.id === styleId);
     if (theme) {
-      return `Create a professional marketing flyer in the "${theme.name}" style.
+      return `=== STYLE: "${theme.name}" ===
 
 === CREATIVE DIRECTION ===
 Visual Style: ${theme.imagePrompt.style}

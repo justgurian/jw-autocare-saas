@@ -21,6 +21,7 @@ export const generateSchema = z.object({
   vehicleColor: z.string().max(30).optional(),
   vehicleFreeText: z.string().max(200).optional(),
   language: z.enum(['en', 'es', 'both']).default('en'),
+  subjectType: z.enum(['hero-car', 'mechanic', 'detail-shot', 'shop-exterior', 'text-only', 'auto']).optional().default('auto'),
   generateMockup: z.boolean().default(false),
 });
 

@@ -687,7 +687,7 @@ export function buildBrandStyleImagePrompt(
 ): string {
   const { imagePrompt } = style;
 
-  return `Create a professional "${style.name}" marketing flyer for an auto repair shop.
+  return `=== STYLE: "${style.name}" ===
 
 === CREATIVE DIRECTION ===
 ${imagePrompt.styleDirective}

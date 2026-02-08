@@ -21,6 +21,7 @@ interface FormData {
   themeId: string;
   vehicle: VehicleSelection;
   language: 'en' | 'es' | 'both';
+  subjectType: 'hero-car' | 'mechanic' | 'detail-shot' | 'shop-exterior' | 'text-only' | 'auto';
 }
 
 interface ContentStepProps {
@@ -193,12 +194,45 @@ export function OptionsStep({
   packStyle,
   setPackStyle,
 }: OptionsStepProps) {
+  const subjectOptions: Array<{ id: FormData['subjectType']; label: string; icon: string }> = [
+    { id: 'hero-car', label: 'Hero Car', icon: '\u{1F697}' },
+    { id: 'mechanic', label: 'Mechanic', icon: '\u{1F527}' },
+    { id: 'detail-shot', label: 'Detail Shot', icon: '\u{1F4F8}' },
+    { id: 'shop-exterior', label: 'Shop', icon: '\u{1F3EA}' },
+    { id: 'text-only', label: 'Text Only', icon: '\u{270F}\u{FE0F}' },
+    { id: 'auto', label: 'Auto-pick', icon: '\u{2728}' },
+  ];
+
   return (
     <div className="space-y-6">
-      <VehicleSelector
-        value={formData.vehicle}
-        onChange={(vehicle) => setFormData({ ...formData, vehicle })}
-      />
+      {/* Subject Type Toggle */}
+      <div>
+        <label className="block font-heading uppercase text-sm mb-2">
+          Subject Focus
+        </label>
+        <div className="grid grid-cols-3 gap-2">
+          {subjectOptions.map((opt) => (
+            <button
+              key={opt.id}
+              onClick={() => setFormData({ ...formData, subjectType: opt.id })}
+              className={`py-2 px-3 border-2 text-sm font-medium transition-all ${
+                formData.subjectType === opt.id
+                  ? 'border-retro-red bg-red-50 text-retro-red'
+                  : 'border-gray-300 bg-white text-gray-600 hover:border-gray-500'
+              }`}
+            >
+              <span className="mr-1">{opt.icon}</span> {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {formData.subjectType !== 'text-only' && (
+        <VehicleSelector
+          value={formData.vehicle}
+          onChange={(vehicle) => setFormData({ ...formData, vehicle })}
+        />
+      )}
 
       <LanguageToggle
         language={formData.language}

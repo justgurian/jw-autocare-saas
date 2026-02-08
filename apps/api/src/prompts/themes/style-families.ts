@@ -7,6 +7,7 @@
 
 import type { ThemeDefinition, ThemeImagePrompt, ThemeTextPrompt } from './index';
 import { ALL_CONTENT_THEMES } from './content-themes';
+import { CURATED_THEMES } from './curated-themes';
 
 export interface StyleFamily {
   id: string;
@@ -26,202 +27,92 @@ export const STYLE_FAMILIES: StyleFamily[] = [
   {
     id: 'classic-americana',
     name: 'Classic Americana',
-    description: '1950s diners, Route 66, chrome fins & hand-lettered signs',
+    description: '1950s service stations, 60s muscle, 70s custom vans & chrome dreams',
     emoji: '🚗',
     previewImage: '/images/families/classic-americana.svg',
-    themeIds: [
-      '1950s-americana',     // brand style
-      'retro-garage',        // legacy
-      'route-66',            // additional
-      'chrome-diner',        // additional
-      'ad-50s-service-station', // nostalgic
-    ],
-    tags: ['vintage', 'retro', '1950s', 'nostalgia', 'diner', 'chrome'],
+    themeIds: ['50s-service-station', '60s-muscle-thunder', '70s-custom-van'],
+    tags: ['vintage', 'retro', '1950s', '1960s', '1970s', 'nostalgia', 'chrome'],
   },
   {
-    id: 'retro-racing',
-    name: 'Retro Racing',
-    description: 'Vintage motorsport posters, rally stripes & pit crew energy',
-    emoji: '🏁',
+    id: 'neon-synthwave',
+    name: 'Synthwave & Neon',
+    description: '80s retrowave grids, neon signs & wet city streets at night',
+    emoji: '🌆',
+    previewImage: '/images/families/neon-synthwave.svg',
+    themeIds: ['80s-synthwave', 'miami-vice-neon'],
+    tags: ['neon', 'synthwave', '80s', 'retrowave', 'miami', 'vaporwave'],
+  },
+  {
+    id: 'import-tuner',
+    name: 'Import & Tuner',
+    description: 'JDM street racing, drift culture & underglow nights',
+    emoji: '🏎',
     previewImage: '/images/families/retro-racing.svg',
-    themeIds: [
-      'muscle-performance',  // brand style
-      'vintage-racing',      // additional
-      'sports-car',          // legacy
-      'poster-60s-racing',   // nostalgic
-    ],
-    tags: ['racing', 'motorsport', 'speed', 'muscle', 'performance'],
-  },
-  {
-    id: 'premium-euro',
-    name: 'Premium Euro',
-    description: 'High-end dealership feel, brushed metal & luxury aesthetic',
-    emoji: '✨',
-    previewImage: '/images/families/premium-euro.svg',
-    themeIds: [
-      'european-luxury',     // brand style
-      'italian-exotic',      // additional
-      'japanese-precision',  // additional
-      'black-label',         // additional
-      'platinum-prestige',   // additional
-    ],
-    tags: ['luxury', 'premium', 'european', 'dealership', 'high-end'],
-  },
-  {
-    id: 'bold-modern',
-    name: 'Bold & Modern',
-    description: 'Clean sans-serif, gradient overlays & startup-sleek designs',
-    emoji: '⚡',
-    previewImage: '/images/families/bold-modern.svg',
-    themeIds: [
-      'modern-tech',         // brand style
-      'modern-minimal',      // legacy
-      'electric-future',     // additional
-      'digital-grid',        // additional
-    ],
-    tags: ['modern', 'clean', 'minimal', 'tech', 'futuristic'],
+    themeIds: ['90s-jdm-tuner', 'drift-king'],
+    tags: ['jdm', 'tuner', 'drift', 'import', '90s', 'street'],
   },
   {
     id: 'comic-pop-art',
     name: 'Comic & Pop Art',
-    description: 'Halftone dots, POW bubbles & bold Lichtenstein-style panels',
+    description: 'Halftone dots, POW bubbles & Warhol-style color pops',
     emoji: '💥',
     previewImage: '/images/families/comic-pop-art.svg',
-    themeIds: [
-      'comic-50s-golden-age',   // nostalgic
-      'comic-60s-marvel',       // nostalgic
-      'comic-70s-bronze-age',   // nostalgic
-      'comic-80s-dark-knight',  // nostalgic
-      'comic-80s-neon-action',  // nostalgic
-    ],
-    tags: ['comic', 'pop-art', 'superhero', 'halftone', 'bold'],
+    themeIds: ['comic-action', 'pop-art-garage'],
+    tags: ['comic', 'pop-art', 'superhero', 'halftone', 'bold', 'warhol'],
   },
   {
     id: 'cinematic',
     name: 'Cinematic',
-    description: 'Movie poster layouts, dramatic lighting & blockbuster typography',
+    description: 'Movie poster drama, film noir shadows & blockbuster energy',
     emoji: '🎬',
     previewImage: '/images/families/cinematic.svg',
-    themeIds: [
-      'poster-80s-blockbuster', // nostalgic
-      'poster-50s-drive-in',    // nostalgic
-      'poster-70s-road-movie',  // nostalgic
-      'poster-60s-racing',      // nostalgic (also in retro-racing, that's ok)
-      'drive-in-movie',         // additional
-    ],
-    tags: ['movie', 'cinema', 'poster', 'dramatic', 'blockbuster'],
+    themeIds: ['movie-poster', 'noir-detective'],
+    tags: ['movie', 'cinema', 'poster', 'dramatic', 'noir', 'blockbuster'],
   },
   {
-    id: 'vintage-workshop',
-    name: 'Vintage Workshop',
-    description: 'Grease-stained, hand tools & old-school garage vibes',
-    emoji: '🔧',
-    previewImage: '/images/families/vintage-workshop.svg',
-    themeIds: [
-      'urban-industrial',       // brand style
-      'classic-mechanic',       // legacy
-      'ad-70s-mechanic-hero',   // nostalgic
-      'ad-80s-garage-culture',  // nostalgic
-      'diesel-power',           // additional
-    ],
-    tags: ['workshop', 'mechanic', 'industrial', 'garage', 'tools'],
-  },
-  {
-    id: 'neon-synthwave',
-    name: 'Neon & Synthwave',
-    description: '80s retrowave, hot pink & cyan neon, Miami Vice grid horizon',
-    emoji: '🌆',
-    previewImage: '/images/families/neon-synthwave.svg',
-    themeIds: [
-      'synthwave',             // additional
-      'neon-nights',           // legacy
-      'pop-culture-80s',       // legacy
-      'cyberpunk-garage',      // additional
-      'neon-miami-vice',       // NEW
-    ],
-    tags: ['neon', 'synthwave', '80s', 'retrowave', 'miami', 'vaporwave'],
-  },
-  {
-    id: 'street-art-graffiti',
-    name: 'Street Art & Graffiti',
-    description: 'Urban murals, spray paint texture & bold tag typography',
+    id: 'retro-poster-art',
+    name: 'Retro Poster Art',
+    description: 'WPA travel posters, pin-up garage emblems & vintage illustration',
     emoji: '🎨',
     previewImage: '/images/families/street-art-graffiti.svg',
-    themeIds: [
-      'graffiti-garage',       // NEW
-      'mural-master',          // NEW
-      'stencil-street',        // NEW
-      'urban-tag',             // NEW
-    ],
-    tags: ['street-art', 'graffiti', 'urban', 'mural', 'spray-paint'],
+    themeIds: ['wpa-travel-poster', 'pinup-nose-art'],
+    tags: ['wpa', 'travel-poster', 'pin-up', 'emblem', 'illustration', 'vintage'],
   },
   {
-    id: 'anime-manga',
-    name: 'Anime & Manga',
-    description: 'Japanese animation style, speed lines & dynamic action poses',
-    emoji: '⛩️',
+    id: 'urban-street',
+    name: 'Urban & Street',
+    description: 'Graffiti wildstyle, lowrider culture & street art murals',
+    emoji: '🔥',
     previewImage: '/images/families/anime-manga.svg',
-    themeIds: [
-      'anime-drift-hero',     // NEW
-      'manga-mecha-shop',     // NEW
-      'manga-racing-spirit',  // NEW
-    ],
-    tags: ['anime', 'manga', 'japanese', 'animation', 'action'],
-  },
-  // ---- Content Category Families (6 new) ----
-  {
-    id: 'pro-photography',
-    name: 'Pro Photography',
-    description: 'Studio shots, golden hour, macro detail & workshop flatlays',
-    emoji: '📸',
-    previewImage: '/images/families/pro-photography.svg',
-    themeIds: ['showroom-hero', 'golden-hour-shop', 'detail-closeup', 'overhead-flatlay'],
-    tags: ['photography', 'studio', 'macro', 'professional', 'golden-hour'],
+    themeIds: ['graffiti-garage', 'lowrider-culture'],
+    tags: ['graffiti', 'lowrider', 'urban', 'street-art', 'chicano', 'mural'],
   },
   {
-    id: 'social-meme',
-    name: 'Social Meme',
-    description: 'Relatable car humor, mechanic wisdom & dashboard drama',
-    emoji: '😂',
-    previewImage: '/images/families/social-meme.svg',
-    themeIds: ['relatable-carowner', 'mechanic-wisdom', 'dashboard-drama'],
-    tags: ['meme', 'humor', 'social', 'relatable', 'shareable'],
+    id: 'clean-modern',
+    name: 'Clean & Modern',
+    description: 'Minimal design, luxury editorial & bold typography',
+    emoji: '⚡',
+    previewImage: '/images/families/bold-modern.svg',
+    themeIds: ['modern-minimal', 'luxury-editorial', 'bold-typography'],
+    tags: ['modern', 'clean', 'minimal', 'luxury', 'typography', 'editorial'],
   },
   {
-    id: 'before-after',
-    name: 'Before / After',
-    description: 'Side-by-side transforms, dramatic reveals & repair timelines',
-    emoji: '🔄',
-    previewImage: '/images/families/before-after.svg',
-    themeIds: ['split-transform', 'dramatic-reveal', 'repair-timeline'],
-    tags: ['before-after', 'transformation', 'results', 'comparison'],
+    id: 'workshop-craft',
+    name: 'Workshop & Craft',
+    description: 'Honest shop interiors, organized tool flatlays & warm lighting',
+    emoji: '🔧',
+    previewImage: '/images/families/vintage-workshop.svg',
+    themeIds: ['honest-workshop', 'knolling-flatlay'],
+    tags: ['workshop', 'tools', 'knolling', 'craft', 'honest', 'warm'],
   },
   {
-    id: 'bold-cta',
-    name: 'Bold CTA',
-    description: 'Giant offers, service menus & limited-time urgency',
-    emoji: '📣',
-    previewImage: '/images/families/bold-cta.svg',
-    themeIds: ['big-offer', 'quick-facts', 'urgency-countdown'],
-    tags: ['cta', 'offer', 'sale', 'pricing', 'urgency'],
-  },
-  {
-    id: 'editorial',
-    name: 'Editorial',
-    description: 'Magazine covers, editorial spreads & newsletter cards',
-    emoji: '📰',
-    previewImage: '/images/families/editorial.svg',
-    themeIds: ['magazine-cover', 'auto-editorial', 'newsletter-card'],
-    tags: ['editorial', 'magazine', 'newsletter', 'premium', 'article'],
-  },
-  {
-    id: 'edu-tips',
-    name: 'Edu-Tips',
-    description: 'Pro tips, top-5 lists & myth-busting infographics',
-    emoji: '💡',
-    previewImage: '/images/families/edu-tips.svg',
-    themeIds: ['tip-card', 'numbered-list', 'myth-buster'],
-    tags: ['educational', 'tips', 'infographic', 'advice', 'knowledge'],
+    id: 'racing-speed',
+    name: 'Racing & Speed',
+    description: 'NASCAR motion blur, vintage rally posters & checkered flags',
+    emoji: '🏁',
+    previewImage: '/images/families/retro-racing.svg',
+    themeIds: ['nascar-speed', 'vintage-rally'],
+    tags: ['racing', 'speed', 'nascar', 'rally', 'motorsport', 'checkered'],
   },
 ];
 
@@ -496,6 +387,7 @@ export const ALL_NEW_FAMILY_THEMES: ThemeDefinition[] = [
   ...streetArtNewThemes,
   ...animeMangaNewThemes,
   ...ALL_CONTENT_THEMES,
+  ...CURATED_THEMES,
 ];
 
 // ============================================================================
