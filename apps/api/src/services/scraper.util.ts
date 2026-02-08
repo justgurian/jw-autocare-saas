@@ -2,7 +2,7 @@ import { logger } from '../utils/logger';
 
 const JINA_BASE = 'https://r.jina.ai/';
 const JINA_API_KEY = process.env.JINA_API_KEY || '';
-const TIMEOUT_MS = 15_000;
+const TIMEOUT_MS = 12_000;
 const MAX_CONTENT_CHARS = 80_000;
 const USER_AGENT = 'Mozilla/5.0 (compatible; BayfillerBot/1.0)';
 
@@ -237,29 +237,39 @@ export async function scrapeWebsite(
     });
   }
 
-  // 4. Fetch subpages via Jina
+  // 4. Fetch subpages via Jina — in parallel for speed
   const allMarkdown = [homepageMarkdown];
-  const progressStart = 35;
-  const progressPerPage = subpages.length > 0 ? 30 / subpages.length : 0;
 
-  for (let i = 0; i < subpages.length; i++) {
-    const subUrl = subpages[i];
-    let pagePath: string;
-    try { pagePath = new URL(subUrl).pathname; } catch { pagePath = subUrl; }
-
+  if (subpages.length > 0) {
     onProgress({
       step: 'reading_subpage',
-      message: `Reading ${pagePath}...`,
-      detail: pagePath,
-      progress: Math.round(progressStart + i * progressPerPage),
+      message: `Reading ${subpages.length} pages in parallel...`,
+      progress: 35,
     });
 
-    try {
-      const md = await fetchViaJina(subUrl);
-      allMarkdown.push(`\n\n--- Page: ${pagePath} ---\n\n${md}`);
-    } catch (err: any) {
-      logger.warn(`Failed to fetch subpage ${subUrl}`, { error: err.message });
-      // Continue without this page
+    const subpageResults = await Promise.allSettled(
+      subpages.map(async (subUrl) => {
+        let pagePath: string;
+        try { pagePath = new URL(subUrl).pathname; } catch { pagePath = subUrl; }
+
+        onProgress({
+          step: 'reading_subpage',
+          message: `Reading ${pagePath}...`,
+          detail: pagePath,
+          progress: 40,
+        });
+
+        const md = await fetchViaJina(subUrl);
+        return { pagePath, md };
+      })
+    );
+
+    for (const result of subpageResults) {
+      if (result.status === 'fulfilled') {
+        allMarkdown.push(`\n\n--- Page: ${result.value.pagePath} ---\n\n${result.value.md}`);
+      } else {
+        logger.warn('Failed to fetch subpage', { error: result.reason?.message });
+      }
     }
   }
 

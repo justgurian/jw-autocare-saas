@@ -477,11 +477,11 @@ router.post('/import-website', generationRateLimiter, async (req: Request, res: 
     res.write(JSON.stringify(event) + '\n');
   };
 
-  // Master timeout: 60 seconds for the entire operation
+  // Master timeout: 120 seconds for the entire operation (multi-page crawl + Gemini)
   const masterTimeout = setTimeout(() => {
     send({ type: 'error', message: 'Import timed out. The website took too long to respond.' });
     res.end();
-  }, 60_000);
+  }, 120_000);
 
   try {
     logger.info('Starting website scrape with streaming', { url, tenantId: req.user!.tenantId });

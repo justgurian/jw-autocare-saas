@@ -170,7 +170,7 @@ export default function ServicesStep({
         <div className="bg-retro-navy/5 dark:bg-gray-700/30 p-6 border-2 border-retro-teal/40 dark:border-retro-teal/30 mb-6">
           <RetroLoadingStage
             isLoading={isImporting}
-            estimatedDuration={25000}
+            estimatedDuration={40000}
             size="md"
             showExhaust
             phaseMessages={importPhaseMessages}
