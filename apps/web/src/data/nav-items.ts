@@ -53,7 +53,7 @@ export interface NavigationGroup {
 export const allNavItems: NavItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: Home, description: 'Your command center' },
   { name: 'My Creations', href: '/content', icon: FolderOpen, description: 'Browse your generated content' },
-  { name: 'Nostalgic Flyers', href: '/tools/promo-flyer', icon: Image, description: '48 retro themes' },
+  { name: 'Create a Flyer', href: '/tools/promo-flyer', icon: Image, description: 'Easy button or full control' },
   { name: 'Batch Generator', href: '/tools/batch-flyer', icon: Image, description: 'Multiple flyers at once' },
   { name: 'Style Sampler', href: '/tools/style-sampler', icon: Palette, description: 'Compare all 10 style families' },
   { name: 'Now Hiring', href: '/tools/hiring-flyer', icon: Briefcase, description: 'Professional hiring flyers' },
@@ -104,7 +104,7 @@ export const navigationGroups: NavigationGroup[] = [
     icon: Image,
     description: 'Marketing graphics',
     items: [
-      { name: 'Nostalgic Flyers', href: '/tools/promo-flyer', icon: Image, description: '48 retro themes' },
+      { name: 'Create a Flyer', href: '/tools/promo-flyer', icon: Image, description: 'Easy button or full control' },
       { name: 'Batch Generator', href: '/tools/batch-flyer', icon: Image, description: 'Multiple flyers at once' },
       { name: 'Style Sampler', href: '/tools/style-sampler', icon: Palette, description: 'Compare all 10 style families' },
       { name: 'Now Hiring', href: '/tools/hiring-flyer', icon: Briefcase, description: 'Professional hiring flyers' },

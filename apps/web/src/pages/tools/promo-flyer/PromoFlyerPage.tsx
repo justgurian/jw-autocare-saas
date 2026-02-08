@@ -1,152 +1,331 @@
-import { useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { useSearchParams } from 'react-router-dom';
-import { promoFlyerApi, downloadApi } from '../../../services/api';
-import MascotSelector from '../../../components/features/MascotSelector';
-import { Eye, PenTool } from 'lucide-react';
+import { useState, useCallback, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
+import { Rocket, Sparkles } from 'lucide-react';
+import { promoFlyerApi, batchFlyerApi, downloadApi, hiringFlyerApi, memeApi } from '../../../services/api';
+import ContentTypeSelector, { type ContentType } from './components/ContentTypeSelector';
+import StyleSection from './components/StyleSection';
+import VehicleSection, { type VehicleMode } from './components/VehicleSection';
+import HiringInputs from './components/HiringInputs';
+import MemeInputs from './components/MemeInputs';
+import FlyerResultsCarousel from './components/FlyerResultsCarousel';
+import type { GenerationSlot, GeneratedFlyer } from './components/FlyerResultCard';
 import ShareModal from '../../../components/features/ShareModal';
 import FlyerEditor from '../../../components/flyer-editor/FlyerEditor';
-import PushToStartButton from '../../../components/features/PushToStartButton';
-import ContentCalendar from '../../../components/features/ContentCalendar';
+import VideoFromFlyerModal from '../../../components/features/VideoFromFlyerModal';
 import FirstFlyerCelebration, { hasSeenFirstFlyerCelebration } from '../../../components/features/FirstFlyerCelebration';
-import FlyerPreview from './components/FlyerPreview';
-import type { GeneratedFlyer } from './components/FlyerPreview';
-import { ContentStep, StyleStep, OptionsStep, GenerateStep } from './components/WizardSteps';
 
-type PackType = 'variety-3' | 'variety-5' | 'week-7' | 'era' | 'style';
+// Fisher-Yates shuffle
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
-const wizardSteps = ['Content', 'Style', 'Options', 'Generate'];
+const COUNT_OPTIONS = [1, 3, 5, 10];
 
-type PageMode = 'instant' | 'custom' | 'calendar';
+interface Family {
+  id: string;
+  name: string;
+  emoji: string;
+  themeIds: string[];
+}
 
 export default function PromoFlyerPage() {
-  const [searchParams] = useSearchParams();
-  const [pageMode, setPageMode] = useState<PageMode>('instant');
-  const [step, setStep] = useState(0);
-  const [useNostalgicThemes, setUseNostalgicThemes] = useState(true);
-  const [formData, setFormData] = useState({
-    message: '',
-    subject: searchParams.get('topic') || '',
-    details: '',
-    themeId: searchParams.get('theme') || '',
-    vehicle: { make: '', model: '', year: '', color: '', freeText: '' },
-    language: 'en' as 'en' | 'es' | 'both',
-    subjectType: 'auto' as 'hero-car' | 'mechanic' | 'detail-shot' | 'shop-exterior' | 'text-only' | 'auto',
+  // ---------- Data queries ----------
+  const { data: suggestionsData } = useQuery({
+    queryKey: ['batch-suggestions'],
+    queryFn: () => batchFlyerApi.getSuggestions().then(r => r.data),
   });
 
+  const { data: familiesData } = useQuery({
+    queryKey: ['style-families'],
+    queryFn: () => promoFlyerApi.getFamilies().then(r => r.data),
+  });
+
+  const services: any[] = suggestionsData?.allServices || [];
+  const specials: any[] = suggestionsData?.allSpecials || [];
+  const families: Family[] = (familiesData?.families || []).filter(
+    (f: any) => f.themeIds?.length > 0
+  );
+
+  // ---------- Form state ----------
+  const [contentType, setContentType] = useState<ContentType>('service');
+  const [serviceId, setServiceId] = useState<string | null>(null);
+  const [specialId, setSpecialId] = useState<string | null>(null);
+  const [headline, setHeadline] = useState('');
+  const [subject, setSubject] = useState('');
+  const [details, setDetails] = useState('');
+
+  // Hiring fields
+  const [position, setPosition] = useState('');
+  const [jobType, setJobType] = useState<'full-time' | 'part-time' | 'seasonal'>('full-time');
+  const [payRange, setPayRange] = useState('');
+  const [howToApply, setHowToApply] = useState<'call' | 'email' | 'visit' | 'online'>('call');
+
+  // Meme fields
+  const [memeStyleId, setMemeStyleId] = useState('');
+  const [memeTopic, setMemeTopic] = useState('');
+
+  // Style
+  const [themeId, setThemeId] = useState<string | null>(null);
+  const [familyId, setFamilyId] = useState<string | null>(null);
+  const [subjectType, setSubjectType] = useState('auto');
+  const [randomizeTheme, setRandomizeTheme] = useState(true);
+
+  // Vehicle
+  const [vehicleMode, setVehicleMode] = useState<VehicleMode>('random');
+  const [vehicle, setVehicle] = useState({ make: '', model: '', year: '', color: '', freeText: '__random__' });
   const [mascotId, setMascotId] = useState<string | null>(null);
 
-  // Pack generation state
-  const [packType, setPackType] = useState<PackType | null>(null);
-  const [packEra, setPackEra] = useState<string | null>(null);
-  const [packStyle, setPackStyle] = useState<string | null>(null);
+  // Count
+  const [count, setCount] = useState(3);
 
-  const [generatedContent, setGeneratedContent] = useState<GeneratedFlyer | null>(null);
-  const [generatedPack, setGeneratedPack] = useState<GeneratedFlyer[]>([]);
-  const [showShareModal, setShowShareModal] = useState(false);
-  const [captionCopied, setCaptionCopied] = useState(false);
-  const [activePackIndex, setActivePackIndex] = useState(0);
-  const [mobileShowPreview, setMobileShowPreview] = useState(false);
-  const [showFirstFlyerCelebration, setShowFirstFlyerCelebration] = useState(false);
-  const [showFlyerEditor, setShowFlyerEditor] = useState(false);
+  // Results
+  const [slots, setSlots] = useState<GenerationSlot[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
 
-  // Fetch themes for legacy selector
-  const { data: themesData } = useQuery({
-    queryKey: ['promo-flyer-themes'],
-    queryFn: () => promoFlyerApi.getThemes().then(res => res.data),
-  });
+  // Modals
+  const [editingSlot, setEditingSlot] = useState<GenerationSlot | null>(null);
+  const [animatingSlot, setAnimatingSlot] = useState<GenerationSlot | null>(null);
+  const [sharingSlot, setSharingSlot] = useState<GenerationSlot | null>(null);
+  const [showCelebration, setShowCelebration] = useState(false);
 
-  // Generate single flyer mutation
-  const generateMutation = useMutation({
-    mutationFn: () => {
-      const v = formData.vehicle;
-      const isRandom = v.freeText === '__random__';
-      return promoFlyerApi.generate({
-        message: formData.message,
-        subject: formData.subject,
-        details: formData.details || undefined,
-        themeId: formData.themeId,
-        language: formData.language,
-        subjectType: formData.subjectType,
-        mascotId: mascotId || undefined,
-        // Vehicle: random uses legacy vehicleId, structured/free text uses new fields
-        ...(isRandom
-          ? { vehicleId: 'random' }
-          : v.freeText
-          ? { vehicleFreeText: v.freeText }
-          : v.make
-          ? { vehicleMake: v.make, vehicleModel: v.model || undefined, vehicleYear: v.year || undefined, vehicleColor: v.color || undefined }
-          : {}),
-      });
-    },
-    onSuccess: (res) => {
-      setGeneratedContent({
-        ...res.data,
-        title: formData.subject,
-      });
-      setGeneratedPack([]);
-      setMobileShowPreview(true); // Auto-show preview on mobile
+  const firstFlyerCheckedRef = useRef(false);
 
-      // Check if this is user's first flyer
-      if (!hasSeenFirstFlyerCelebration()) {
-        setShowFirstFlyerCelebration(true);
-      } else {
-        toast.success('Flyer generated!');
-      }
-    },
-    onError: () => {
-      toast.error('Generation failed. Please try again.');
-    },
-  });
+  // ---------- Helpers ----------
 
-  // Generate pack mutation
-  const generatePackMutation = useMutation({
-    mutationFn: () => {
-      const v = formData.vehicle;
-      const isRandom = v.freeText === '__random__';
-      return promoFlyerApi.generatePack({
-        message: formData.message,
-        subject: formData.subject,
-        details: formData.details || undefined,
-        packType: packType!,
-        era: packEra as '1950s' | '1960s' | '1970s' | '1980s' | undefined,
-        style: packStyle as 'comic-book' | 'movie-poster' | 'magazine' | undefined,
-        vehicleId: isRandom ? 'random' : undefined,
-        language: formData.language,
-      });
-    },
-    onSuccess: (res) => {
-      setGeneratedPack(res.data.flyers);
-      setGeneratedContent(null);
-      setActivePackIndex(0);
-      setMobileShowPreview(true); // Auto-show preview on mobile
-      toast.success(`${res.data.totalGenerated} flyers generated!`);
-    },
-    onError: () => {
-      toast.error('Pack generation failed. Please try again.');
-    },
-  });
+  const updateSlot = useCallback((slotId: string, updates: Partial<GenerationSlot>) => {
+    setSlots(prev => prev.map(s => s.id === slotId ? { ...s, ...updates } : s));
+  }, []);
 
-  const handleNext = () => {
-    if (step < wizardSteps.length - 1) {
-      setStep(step + 1);
-    } else {
-      if (packType) {
-        generatePackMutation.mutate();
-      } else {
-        generateMutation.mutate();
+  /** Pick N theme IDs spread across different families for variety */
+  const pickThemes = useCallback((n: number): Array<{ themeId: string; themeName: string }> => {
+    if (!randomizeTheme && themeId) {
+      return Array.from({ length: n }, () => ({ themeId, themeName: '' }));
+    }
+
+    if (!randomizeTheme && familyId) {
+      const fam = families.find(f => f.id === familyId);
+      if (fam) {
+        const shuffled = shuffle(fam.themeIds);
+        return Array.from({ length: n }, (_, i) => ({
+          themeId: shuffled[i % shuffled.length],
+          themeName: fam.name,
+        }));
       }
     }
-  };
 
-  const handleDownload = async (content: GeneratedFlyer) => {
+    // Random: spread across different families
+    if (families.length === 0) {
+      return Array.from({ length: n }, () => ({ themeId: '', themeName: 'Random' }));
+    }
+    const shuffledFams = shuffle(families);
+    return Array.from({ length: n }, (_, i) => {
+      const fam = shuffledFams[i % shuffledFams.length];
+      const tid = fam.themeIds[Math.floor(Math.random() * fam.themeIds.length)];
+      return { themeId: tid, themeName: `${fam.emoji} ${fam.name}` };
+    });
+  }, [randomizeTheme, themeId, familyId, families]);
+
+  /** Build vehicle params for the API call */
+  const getVehicleParams = useCallback(() => {
+    const params: Record<string, any> = {};
+    if (mascotId) params.mascotId = mascotId;
+
+    if (vehicleMode === 'none') return params;
+    if (vehicleMode === 'random' || vehicleMode === 'mascot') {
+      params.vehicleId = 'random';
+      return params;
+    }
+    // specific
+    const v = vehicle;
+    if (v.freeText && v.freeText !== '__random__') {
+      params.vehicleFreeText = v.freeText;
+    } else if (v.make) {
+      params.vehicleMake = v.make;
+      if (v.model) params.vehicleModel = v.model;
+      if (v.year) params.vehicleYear = v.year;
+      if (v.color) params.vehicleColor = v.color;
+    }
+    return params;
+  }, [vehicleMode, vehicle, mascotId]);
+
+  // ---------- Generation ----------
+
+  const generateFlyers = useCallback(async (
+    slotsToGen: GenerationSlot[],
+    genType: ContentType,
+    genHeadline: string,
+    genSubject: string,
+    genDetails: string,
+  ) => {
+    setIsGenerating(true);
+
+    const promises = slotsToGen.map(async (slot) => {
+      updateSlot(slot.id, { status: 'loading' });
+
+      try {
+        let result: GeneratedFlyer;
+
+        if (genType === 'hiring') {
+          const res = await hiringFlyerApi.generate({
+            mode: 'simple',
+            jobTitle: position || 'Automotive Technician',
+            jobType,
+            payRange: payRange || undefined,
+            howToApply,
+            language: 'en',
+            themeId: slot.themeId || undefined,
+          });
+          result = {
+            id: res.data.id,
+            imageUrl: res.data.imageUrl,
+            caption: res.data.caption || '',
+            captionSpanish: res.data.captionSpanish,
+            title: res.data.title || position,
+            theme: res.data.theme || slot.themeId,
+            themeName: res.data.themeName || slot.themeName,
+          };
+        } else if (genType === 'meme') {
+          const res = await memeApi.generate({
+            styleId: memeStyleId,
+            topic: memeTopic,
+            mascotId: mascotId || undefined,
+          });
+          result = {
+            id: res.data.id,
+            imageUrl: res.data.imageUrl,
+            caption: res.data.caption || '',
+            title: res.data.title || memeTopic,
+            theme: res.data.style?.id || 'meme',
+            themeName: res.data.style?.name || 'Meme',
+          };
+        } else {
+          const res = await promoFlyerApi.generate({
+            message: genHeadline,
+            subject: genSubject,
+            details: genDetails || undefined,
+            themeId: slot.themeId,
+            subjectType: subjectType as any,
+            ...getVehicleParams(),
+          });
+          result = {
+            id: res.data.id || res.data.contentId,
+            imageUrl: res.data.imageUrl,
+            caption: res.data.caption || '',
+            captionSpanish: res.data.captionSpanish,
+            title: genSubject || genHeadline,
+            theme: res.data.theme || slot.themeId,
+            themeName: res.data.themeName || slot.themeName,
+            vehicle: res.data.vehicle,
+          };
+        }
+
+        updateSlot(slot.id, { status: 'done', flyer: result });
+
+        // First-ever flyer celebration
+        if (!firstFlyerCheckedRef.current && !hasSeenFirstFlyerCelebration()) {
+          firstFlyerCheckedRef.current = true;
+          setShowCelebration(true);
+        }
+      } catch (err: any) {
+        const msg = err?.response?.data?.error || err?.message || 'Generation failed';
+        updateSlot(slot.id, { status: 'error', error: msg });
+      }
+    });
+
+    await Promise.allSettled(promises);
+    setIsGenerating(false);
+    toast.success('Generation complete!');
+  }, [updateSlot, position, jobType, payRange, howToApply, memeStyleId, memeTopic, mascotId, subjectType, getVehicleParams]);
+
+  // ---------- Easy Button ----------
+
+  const handleEasyGenerate = useCallback(() => {
+    let easyHeadline = 'Auto Repair Special!';
+    let easySubject = 'Auto Repair';
+    let easyDetails = '';
+
+    if (services.length > 0) {
+      const svc = services[Math.floor(Math.random() * services.length)];
+      easySubject = typeof svc === 'string' ? svc : svc.name;
+      const headlines = [
+        `${easySubject} Special!`,
+        `Expert ${easySubject}`,
+        `Save on ${easySubject}`,
+        `Quality ${easySubject}`,
+        `${easySubject} Done Right`,
+      ];
+      easyHeadline = headlines[Math.floor(Math.random() * headlines.length)];
+    } else if (specials.length > 0) {
+      const sp = specials[Math.floor(Math.random() * specials.length)];
+      easySubject = typeof sp === 'string' ? sp : sp.name;
+      easyHeadline = sp.discountText
+        ? `${sp.discountText} — ${easySubject}`
+        : `${easySubject} Special!`;
+      easyDetails = sp.description || '';
+    }
+
+    const themes = pickThemes(count);
+    const newSlots: GenerationSlot[] = themes.map((t, i) => ({
+      id: `easy-${Date.now()}-${i}`,
+      status: 'pending' as const,
+      flyer: null,
+      error: null,
+      themeId: t.themeId,
+      themeName: t.themeName,
+    }));
+
+    setSlots(newSlots);
+    generateFlyers(newSlots, 'service', easyHeadline, easySubject, easyDetails);
+  }, [services, specials, count, pickThemes, generateFlyers]);
+
+  // ---------- Custom Generate ----------
+
+  const handleCustomGenerate = useCallback(() => {
+    if (contentType === 'service' || contentType === 'special' || contentType === 'custom') {
+      if (!headline && !subject) {
+        toast.error('Enter a headline or subject');
+        return;
+      }
+    }
+    if (contentType === 'hiring' && !position) {
+      toast.error('Enter a position');
+      return;
+    }
+    if (contentType === 'meme' && (!memeStyleId || !memeTopic)) {
+      toast.error('Pick a meme style and topic');
+      return;
+    }
+
+    const themes = pickThemes(count);
+    const newSlots: GenerationSlot[] = themes.map((t, i) => ({
+      id: `custom-${Date.now()}-${i}`,
+      status: 'pending' as const,
+      flyer: null,
+      error: null,
+      themeId: t.themeId,
+      themeName: t.themeName,
+    }));
+
+    setSlots(newSlots);
+    generateFlyers(newSlots, contentType, headline, subject, details);
+  }, [contentType, headline, subject, details, position, memeStyleId, memeTopic, count, pickThemes, generateFlyers]);
+
+  // ---------- Download ----------
+
+  const handleDownload = useCallback(async (slot: GenerationSlot) => {
+    if (!slot.flyer) return;
     try {
-      const response = await downloadApi.downloadSingle(content.id);
+      const response = await downloadApi.downloadSingle(slot.flyer.id);
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${content.title || 'promo-flyer'}.png`;
+      a.download = `${slot.flyer.title || 'flyer'}.png`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -155,305 +334,281 @@ export default function PromoFlyerPage() {
     } catch {
       toast.error('Failed to download');
     }
-  };
+  }, []);
 
-  const handleCopyCaption = (caption: string) => {
-    navigator.clipboard.writeText(caption);
-    setCaptionCopied(true);
-    toast.success('Caption copied!');
-    setTimeout(() => setCaptionCopied(false), 2000);
-  };
+  // ---------- Auto-fill handlers ----------
 
-  const handleSurpriseMe = async () => {
-    try {
-      const response = await promoFlyerApi.getRandomTheme({ nostalgicOnly: true });
-      setFormData({ ...formData, themeId: response.data.theme.id });
-      toast.success(`Selected: ${response.data.theme.name}`);
-    } catch {
-      toast.error('Failed to get random theme');
+  const handleServiceSelect = (svc: any) => {
+    setServiceId(svc?.id || null);
+    if (svc) {
+      setSubject(svc.name);
+      setHeadline(`${svc.name} Special!`);
+      setDetails(svc.description || '');
     }
   };
 
-  const canProceed = () => {
-    switch (step) {
-      case 0:
-        return formData.message && formData.subject;
-      case 1:
-        return formData.themeId;
-      case 2:
-        if (packType === 'era' && !packEra) return false;
-        if (packType === 'style' && !packStyle) return false;
-        return true;
-      case 3:
-        return true;
-      default:
-        return false;
+  const handleSpecialSelect = (sp: any) => {
+    setSpecialId(sp?.id || null);
+    if (sp) {
+      setSubject(sp.name);
+      setHeadline(sp.discountText ? `${sp.discountText} — ${sp.name}` : `${sp.name}!`);
+      setDetails(sp.description || '');
     }
   };
 
-  const isGenerating = generateMutation.isPending || generatePackMutation.isPending;
+  // Active flyers for modals
+  const activeEditFlyer = editingSlot?.flyer;
+  const activeSharingFlyer = sharingSlot?.flyer;
+  const activeAnimatingFlyer = animatingSlot?.flyer;
 
-  const currentFlyer = generatedPack.length > 0 ? generatedPack[activePackIndex] : generatedContent;
+  // ---------- Count selector (shared) ----------
+  const CountPills = () => (
+    <div className="flex gap-1">
+      {COUNT_OPTIONS.map(n => (
+        <button
+          key={n}
+          type="button"
+          onClick={() => setCount(n)}
+          className={`w-9 h-9 flex items-center justify-center border-2 text-sm font-heading transition-all ${
+            count === n
+              ? 'border-retro-red bg-retro-red text-white'
+              : 'border-gray-300 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:border-gray-500'
+          }`}
+        >
+          {n}
+        </button>
+      ))}
+    </div>
+  );
 
-  const resetForm = () => {
-    setGeneratedContent(null);
-    setGeneratedPack([]);
-    setStep(0);
-    setFormData({
-      message: '',
-      subject: '',
-      details: '',
-      themeId: '',
-      vehicle: { make: '', model: '', year: '', color: '', freeText: '' },
-      language: 'en',
-      subjectType: 'auto' as 'hero-car' | 'mechanic' | 'detail-shot' | 'shop-exterior' | 'text-only' | 'auto',
-    });
-    setPackType(null);
-    setPackEra(null);
-    setPackStyle(null);
-    setMascotId(null);
-    setMobileShowPreview(false); // Back to form on mobile
-  };
+  // ===================================================================
+  // RENDER
+  // ===================================================================
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="max-w-lg mx-auto space-y-6 pb-12">
       {/* Header */}
       <div className="text-center">
-        <h1 className="heading-retro text-5xl">FLYER CREATOR</h1>
-        <p className="text-gray-600 mt-2 text-lg">
-          16 style families, smart rotation, push-button marketing
+        <h1 className="heading-retro text-4xl sm:text-5xl">CREATE A FLYER</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-1">
+          Easy button or full control — your call
         </p>
       </div>
 
-      {/* Mode Tabs */}
-      <div className="flex border-2 border-black">
-        {[
-          { mode: 'instant' as PageMode, label: 'Instant', desc: 'One-click flyer' },
-          { mode: 'calendar' as PageMode, label: 'Week Plan', desc: '7-day calendar' },
-          { mode: 'custom' as PageMode, label: 'Custom', desc: 'Build your own' },
-        ].map(({ mode, label, desc }) => (
+      {/* ========== EASY BUTTON ========== */}
+      <div className="card-retro bg-gradient-to-br from-retro-red/5 to-retro-teal/5 dark:from-retro-red/10 dark:to-retro-teal/10 p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <Sparkles size={20} className="text-retro-red" />
+          <h2 className="font-heading text-lg uppercase">Instant Flyer</h2>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          We'll pick the best service, style, and car. Just hit go.
+        </p>
+
+        <div className="flex items-center gap-3">
+          <CountPills />
           <button
-            key={mode}
-            onClick={() => setPageMode(mode)}
-            className={`flex-1 py-3 px-2 text-center border-r last:border-r-0 border-black transition-all ${
-              pageMode === mode
-                ? 'bg-retro-navy text-white'
-                : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
-            }`}
+            onClick={handleEasyGenerate}
+            disabled={isGenerating}
+            className="flex-1 py-3 bg-retro-red text-white border-2 border-black shadow-retro hover:shadow-none transition-all font-heading uppercase text-lg flex items-center justify-center gap-2 disabled:opacity-50"
           >
-            <span className="font-heading text-sm uppercase block">{label}</span>
-            <span className="text-xs opacity-70 hidden sm:block">{desc}</span>
+            <Rocket size={20} />
+            {isGenerating ? 'Generating...' : 'GO'}
           </button>
-        ))}
+        </div>
       </div>
 
-      {/* INSTANT MODE - Push to Start */}
-      {pageMode === 'instant' && (
-        <div className="card-retro bg-gradient-to-br from-gray-50 to-gray-100">
-          <PushToStartButton />
-        </div>
-      )}
+      {/* ========== DIVIDER ========== */}
+      <div className="flex items-center gap-3">
+        <div className="flex-1 border-t-2 border-gray-300 dark:border-gray-600" />
+        <span className="font-heading text-xs uppercase text-gray-400 dark:text-gray-500 whitespace-nowrap">
+          or customize
+        </span>
+        <div className="flex-1 border-t-2 border-gray-300 dark:border-gray-600" />
+      </div>
 
-      {/* CALENDAR MODE - Week Planner */}
-      {pageMode === 'calendar' && (
-        <div className="card-retro">
-          <ContentCalendar />
-        </div>
-      )}
+      {/* ========== CONTENT SECTION ========== */}
+      <div className="card-retro p-5 space-y-4">
+        <h3 className="font-heading text-sm uppercase text-gray-500 dark:text-gray-400">
+          What are you promoting?
+        </h3>
 
-      {/* CUSTOM MODE - Wizard Builder */}
-      {pageMode === 'custom' && (
-        <div className="space-y-6">
-          {/* Wizard Progress */}
-          <div className="flex items-center justify-between">
-            {wizardSteps.map((stepName, index) => (
-              <div key={stepName} className="flex items-center">
-                <button
-                  onClick={() => index < step && setStep(index)}
-                  className={`w-10 h-10 flex items-center justify-center border-2 border-black font-heading ${
-                    index < step
-                      ? 'bg-retro-teal text-white cursor-pointer'
-                      : index === step
-                      ? 'bg-retro-red text-white'
-                      : 'bg-white text-gray-400'
-                  }`}
-                >
-                  {index + 1}
-                </button>
-                {index < wizardSteps.length - 1 && (
-                  <div className={`w-12 sm:w-16 h-1 mx-1 sm:mx-2 ${index < step ? 'bg-retro-teal' : 'bg-gray-300'}`} />
-                )}
-              </div>
-            ))}
-          </div>
+        <ContentTypeSelector
+          contentType={contentType}
+          onContentTypeChange={setContentType}
+          services={services}
+          selectedServiceId={serviceId}
+          onServiceSelect={handleServiceSelect}
+          specials={specials}
+          selectedSpecialId={specialId}
+          onSpecialSelect={handleSpecialSelect}
+        />
 
-          {/* Mobile Toggle Button */}
-          <div className="lg:hidden sticky top-0 z-20 bg-retro-cream py-3 -mx-4 px-4 border-b border-gray-200 flex gap-2">
-            <button
-              onClick={() => setMobileShowPreview(false)}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 border-2 transition-all ${
-                !mobileShowPreview
-                  ? 'border-retro-red bg-retro-red text-white'
-                  : 'border-gray-300 bg-white text-gray-600'
-              }`}
-            >
-              <PenTool size={18} />
-              <span className="font-heading text-sm uppercase">Edit</span>
-            </button>
-            <button
-              onClick={() => setMobileShowPreview(true)}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 border-2 transition-all ${
-                mobileShowPreview
-                  ? 'border-retro-red bg-retro-red text-white'
-                  : 'border-gray-300 bg-white text-gray-600'
-              } ${currentFlyer ? '' : 'opacity-50'}`}
-              disabled={!currentFlyer}
-            >
-              <Eye size={18} />
-              <span className="font-heading text-sm uppercase">Preview</span>
-              {currentFlyer && (
-                <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-              )}
-            </button>
-          </div>
-
-          <div className="grid lg:grid-cols-2 gap-8">
-            {/* Form - Hidden on mobile when preview is active */}
-            <div className={`card-retro ${mobileShowPreview ? 'hidden lg:block' : ''}`}>
-              <h2 className="font-heading text-xl uppercase mb-4">
-                {wizardSteps[step]}
-              </h2>
-
-              {step === 0 && (
-                <ContentStep formData={formData} setFormData={setFormData} />
-              )}
-
-              {step === 1 && (
-                <StyleStep
-                  formData={formData}
-                  setFormData={setFormData}
-                  useNostalgicThemes={useNostalgicThemes}
-                  setUseNostalgicThemes={setUseNostalgicThemes}
-                  themesData={themesData}
-                  onSurpriseMe={handleSurpriseMe}
-                />
-              )}
-
-              {step === 2 && (
-                <OptionsStep
-                  formData={formData}
-                  setFormData={setFormData}
-                  packType={packType}
-                  setPackType={setPackType}
-                  packEra={packEra}
-                  setPackEra={setPackEra}
-                  packStyle={packStyle}
-                  setPackStyle={setPackStyle}
-                />
-              )}
-
-              {step === 3 && (
-                <GenerateStep
-                  formData={formData}
-                  packType={packType}
-                  packEra={packEra}
-                  packStyle={packStyle}
-                />
-              )}
-
-              {/* Mascot Selector (visible across all steps) */}
-              <div className="mt-6 pt-4 border-t border-gray-200">
-                <label className="block font-heading text-sm uppercase mb-2">Feature Your Mascot</label>
-                <MascotSelector onSelect={setMascotId} selectedMascotId={mascotId} />
-              </div>
-
-              <div className="flex justify-between mt-6">
-                <button
-                  onClick={() => setStep(Math.max(0, step - 1))}
-                  disabled={step === 0}
-                  className="btn-retro-outline disabled:opacity-50"
-                >
-                  Back
-                </button>
-                <button
-                  onClick={handleNext}
-                  disabled={!canProceed() || isGenerating}
-                  className="btn-retro-primary disabled:opacity-50"
-                >
-                  {step === 3
-                    ? isGenerating
-                      ? 'Generating...'
-                      : packType
-                      ? 'Generate Pack'
-                      : 'Generate Flyer'
-                    : 'Next'}
-                </button>
-              </div>
+        {/* Content-type-specific inputs */}
+        {contentType === 'hiring' ? (
+          <HiringInputs
+            position={position}
+            onPositionChange={setPosition}
+            jobType={jobType}
+            onJobTypeChange={setJobType}
+            payRange={payRange}
+            onPayRangeChange={setPayRange}
+            howToApply={howToApply}
+            onHowToApplyChange={setHowToApply}
+          />
+        ) : contentType === 'meme' ? (
+          <MemeInputs
+            styleId={memeStyleId}
+            onStyleIdChange={setMemeStyleId}
+            topic={memeTopic}
+            onTopicChange={setMemeTopic}
+          />
+        ) : (
+          <div className="space-y-3">
+            <div>
+              <label className="block font-heading uppercase text-sm mb-1.5">Headline *</label>
+              <input
+                type="text"
+                className="input-retro"
+                placeholder="e.g., 20% OFF Oil Changes!"
+                value={headline}
+                onChange={e => setHeadline(e.target.value)}
+              />
             </div>
-
-            {/* Preview - Hidden on mobile when form is active */}
-            <div className={`card-retro ${!mobileShowPreview ? 'hidden lg:block' : ''}`}>
-              <FlyerPreview
-                currentFlyer={currentFlyer}
-                generatedPack={generatedPack}
-                activePackIndex={activePackIndex}
-                setActivePackIndex={setActivePackIndex}
-                isGenerating={isGenerating}
-                captionCopied={captionCopied}
-                onDownload={handleDownload}
-                onCopyCaption={handleCopyCaption}
-                onShare={() => setShowShareModal(true)}
-                onReset={resetForm}
-                onEditImage={() => setShowFlyerEditor(true)}
+            <div>
+              <label className="block font-heading uppercase text-sm mb-1.5">Subject *</label>
+              <input
+                type="text"
+                className="input-retro"
+                placeholder="e.g., Full Synthetic Oil Change"
+                value={subject}
+                onChange={e => setSubject(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block font-heading uppercase text-sm mb-1.5">
+                Details <span className="text-gray-400 font-normal normal-case">(optional)</span>
+              </label>
+              <textarea
+                className="input-retro min-h-[60px]"
+                placeholder="e.g., Includes filter, up to 5 quarts..."
+                value={details}
+                onChange={e => setDetails(e.target.value)}
               />
             </div>
           </div>
+        )}
+      </div>
+
+      {/* ========== STYLE SECTION ========== */}
+      <StyleSection
+        themeId={themeId}
+        onThemeChange={setThemeId}
+        familyId={familyId}
+        onFamilyChange={setFamilyId}
+        randomize={randomizeTheme}
+        onRandomizeToggle={() => setRandomizeTheme(prev => !prev)}
+        subjectType={subjectType}
+        onSubjectTypeChange={setSubjectType}
+      />
+
+      {/* ========== VEHICLE SECTION ========== */}
+      <div className="card-retro p-5">
+        <VehicleSection
+          vehicleMode={vehicleMode}
+          onVehicleModeChange={setVehicleMode}
+          vehicle={vehicle}
+          onVehicleChange={setVehicle}
+          mascotId={mascotId}
+          onMascotChange={setMascotId}
+        />
+      </div>
+
+      {/* ========== GENERATE BUTTON ========== */}
+      <div className="card-retro p-5">
+        <div className="flex items-center gap-3">
+          <CountPills />
+          <button
+            onClick={handleCustomGenerate}
+            disabled={isGenerating}
+            className="flex-1 py-3 bg-retro-red text-white border-2 border-black shadow-retro hover:shadow-none transition-all font-heading uppercase text-lg flex items-center justify-center gap-2 disabled:opacity-50"
+          >
+            <Rocket size={20} />
+            {isGenerating
+              ? 'Generating...'
+              : count > 1
+              ? `Generate ${count} Flyers`
+              : 'Generate Flyer'}
+          </button>
+        </div>
+      </div>
+
+      {/* ========== RESULTS CAROUSEL ========== */}
+      {slots.length > 0 && (
+        <div className="card-retro p-5">
+          <FlyerResultsCarousel
+            slots={slots}
+            onEdit={slot => setEditingSlot(slot)}
+            onAnimate={slot => setAnimatingSlot(slot)}
+            onShare={slot => setSharingSlot(slot)}
+            onDownload={handleDownload}
+          />
         </div>
       )}
 
-      {/* Share Modal */}
-      {currentFlyer && (
+      {/* ========== MODALS ========== */}
+
+      {activeSharingFlyer && (
         <ShareModal
-          isOpen={showShareModal}
-          onClose={() => setShowShareModal(false)}
+          isOpen={!!sharingSlot}
+          onClose={() => setSharingSlot(null)}
           content={{
-            id: currentFlyer.id,
-            title: currentFlyer.title,
-            imageUrl: currentFlyer.imageUrl,
-            caption: currentFlyer.caption,
+            id: activeSharingFlyer.id,
+            title: activeSharingFlyer.title,
+            imageUrl: activeSharingFlyer.imageUrl,
+            caption: activeSharingFlyer.caption,
           }}
         />
       )}
 
-      {/* Flyer Editor Modal */}
-      {showFlyerEditor && currentFlyer && (
+      {editingSlot && activeEditFlyer && (
         <FlyerEditor
-          contentId={currentFlyer.id}
-          imageUrl={currentFlyer.imageUrl}
-          title={currentFlyer.title}
-          onClose={() => setShowFlyerEditor(false)}
+          contentId={activeEditFlyer.id}
+          imageUrl={activeEditFlyer.imageUrl}
+          title={activeEditFlyer.title}
+          onClose={() => setEditingSlot(null)}
           onSave={(newImageUrl) => {
-            if (generatedPack.length > 0) {
-              setGeneratedPack(prev =>
-                prev.map((f, i) => i === activePackIndex ? { ...f, imageUrl: newImageUrl } : f)
-              );
-            }
-            if (generatedContent) {
-              setGeneratedContent({ ...generatedContent, imageUrl: newImageUrl });
-            }
-            setShowFlyerEditor(false);
+            updateSlot(editingSlot.id, {
+              flyer: { ...activeEditFlyer, imageUrl: newImageUrl },
+            });
+            setEditingSlot(null);
             toast.success('Image updated!');
           }}
         />
       )}
 
-      {/* First Flyer Celebration */}
+      {animatingSlot && activeAnimatingFlyer && (
+        <VideoFromFlyerModal
+          isOpen={!!animatingSlot}
+          onClose={() => setAnimatingSlot(null)}
+          flyerId={activeAnimatingFlyer.id}
+          flyerTitle={activeAnimatingFlyer.title}
+          flyerImageUrl={activeAnimatingFlyer.imageUrl}
+        />
+      )}
+
       <FirstFlyerCelebration
-        isOpen={showFirstFlyerCelebration}
-        onClose={() => setShowFirstFlyerCelebration(false)}
-        flyerTitle={generatedContent?.title || formData.subject}
-        onShare={() => setShowShareModal(true)}
-        onDownload={() => generatedContent && handleDownload(generatedContent)}
+        isOpen={showCelebration}
+        onClose={() => setShowCelebration(false)}
+        flyerTitle={subject || headline || 'Your Flyer'}
+        onShare={() => {
+          const firstDone = slots.find(s => s.status === 'done');
+          if (firstDone) setSharingSlot(firstDone);
+        }}
+        onDownload={() => {
+          const firstDone = slots.find(s => s.status === 'done');
+          if (firstDone) handleDownload(firstDone);
+        }}
       />
     </div>
   );
