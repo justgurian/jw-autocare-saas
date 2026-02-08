@@ -451,6 +451,79 @@ export const billingApi = {
   getUsage: () => api.get('/billing/usage'),
 };
 
+/**
+ * Stream an NDJSON POST request using native fetch + ReadableStream.
+ * Axios doesn't support streaming, so we bypass it here.
+ * Each line of the response is parsed as JSON and passed to onEvent().
+ */
+export async function streamNdjsonPost<T = any>(
+  path: string,
+  body: Record<string, unknown>,
+  onEvent: (event: T) => void,
+): Promise<void> {
+  const token = getAccessToken();
+  const baseUrl = import.meta.env.VITE_API_URL || '/api/v1';
+  const url = `${baseUrl}${path.startsWith('/') ? path : `/${path}`}`;
+
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!resp.ok) {
+    throw new Error(`HTTP ${resp.status}`);
+  }
+
+  const contentType = resp.headers.get('content-type') || '';
+
+  // If server returned regular JSON (pastedText mode), handle as single event
+  if (contentType.includes('application/json')) {
+    const data = await resp.json();
+    onEvent({ type: 'result', success: true, extracted: data.extracted || data, source: 'text' } as T);
+    return;
+  }
+
+  // NDJSON streaming
+  const reader = resp.body?.getReader();
+  if (!reader) throw new Error('Response body is not readable');
+
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    // Keep the last (possibly incomplete) line in the buffer
+    buffer = lines.pop() || '';
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+      try {
+        onEvent(JSON.parse(trimmed) as T);
+      } catch {
+        // Skip malformed lines
+      }
+    }
+  }
+
+  // Process any remaining data in the buffer
+  if (buffer.trim()) {
+    try {
+      onEvent(JSON.parse(buffer.trim()) as T);
+    } catch {
+      // Skip
+    }
+  }
+}
+
 export const brandKitApi = {
   get: () => api.get('/brand-kit'),
   update: (data: Record<string, unknown>) => api.put('/brand-kit', data),

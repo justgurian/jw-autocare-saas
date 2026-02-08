@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
-import { Search, X, Loader2, Globe } from 'lucide-react';
+import { Search, X, Globe, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { brandKitApi } from '../../../services/api';
+import { streamNdjsonPost } from '../../../services/api';
+import RetroLoadingStage from '../../../components/garage/RetroLoadingStage';
 
 // All available services - extracted for search functionality
 const ALL_SERVICES = [
@@ -43,6 +44,17 @@ export default function ServicesStep({
 }: ServicesStepProps) {
   const [serviceSearch, setServiceSearch] = useState('');
   const [isImporting, setIsImporting] = useState(false);
+  const [liveMessage, setLiveMessage] = useState('');
+  const [discoveredPages, setDiscoveredPages] = useState<string[]>([]);
+  const [importError, setImportError] = useState('');
+
+  // Custom phase messages for the tachometer during website import
+  const importPhaseMessages: Record<number, string[]> = {
+    0: ['Warming up the engine...', 'Connecting to your website...', 'Turning the ignition...'],
+    1: ['Scanning the shop front...', 'Reading your homepage...', 'Looking for service menus...'],
+    2: ['Flipping through the service menu...', 'Checking the specials board...', 'Reading the fine print...'],
+    3: ['AI mechanic is under the hood...', 'Extracting services & specials...', 'Almost done...'],
+  };
 
   const handleImportWebsite = async () => {
     if (!websiteUrl) {
@@ -56,48 +68,71 @@ export default function ServicesStep({
       onWebsiteUrlChange(normalizedUrl);
     }
     setIsImporting(true);
+    setImportError('');
+    setLiveMessage('');
+    setDiscoveredPages([]);
+
     try {
-      const res = await brandKitApi.importWebsite({ url: normalizedUrl });
-      const extracted = res.data?.data || res.data;
+      await streamNdjsonPost('/brand-kit/import-website', { url: normalizedUrl }, (event: any) => {
+        if (event.type === 'progress') {
+          setLiveMessage(event.message || '');
+        } else if (event.type === 'pages_found') {
+          setDiscoveredPages(event.pages || []);
+          setLiveMessage(`Found ${(event.pages || []).length} pages to explore`);
+        } else if (event.type === 'result' && event.success) {
+          // Process extracted data
+          const extracted = event.extracted || {};
 
-      // Extract services — API may return strings or {name, description} objects
-      const rawServices: any[] = extracted.services || [];
-      const extractedServices: string[] = rawServices.map((svc: any) =>
-        typeof svc === 'string' ? svc : (svc.name || String(svc))
-      );
-      if (extractedServices.length > 0) {
-        // Match against known services + add custom ones
-        const matched: string[] = [];
-        const custom: string[] = [];
-        for (const svc of extractedServices) {
-          const found = ALL_SERVICES.find(s => s.toLowerCase() === svc.toLowerCase());
-          if (found) {
-            matched.push(found);
+          // Extract services — API may return strings or {name, description} objects
+          const rawServices: any[] = extracted.services || [];
+          const extractedServices: string[] = rawServices.map((svc: any) =>
+            typeof svc === 'string' ? svc : (svc.name || String(svc))
+          );
+          if (extractedServices.length > 0) {
+            const matched: string[] = [];
+            const custom: string[] = [];
+            for (const svc of extractedServices) {
+              const found = ALL_SERVICES.find(s => s.toLowerCase() === svc.toLowerCase());
+              if (found) {
+                matched.push(found);
+              } else {
+                custom.push(svc);
+              }
+            }
+            const merged = [...new Set([...selectedServices, ...matched, ...custom])];
+            onServicesChange(merged);
+
+            const pageLabel = event.pageCount && event.pageCount > 1 ? ` from ${event.pageCount} pages` : '';
+            toast.success(`Found ${extractedServices.length} services${pageLabel}!`);
           } else {
-            custom.push(svc);
+            toast('No services found. Try adding them manually below.', { icon: '🔍' });
           }
-        }
-        const merged = [...new Set([...selectedServices, ...matched, ...custom])];
-        onServicesChange(merged);
-        toast.success(`Found ${extractedServices.length} services from your website!`);
-      } else {
-        toast('No services found on that page. Try adding them manually below.', { icon: '🔍' });
-      }
 
-      // Extract specials if available
-      const extractedSpecials = extracted.specials || [];
-      if (extractedSpecials.length > 0 && onSpecialsExtracted) {
-        const mapped = extractedSpecials.map((s: any) => ({
-          title: s.title || s.name || '',
-          discount: String(s.discountValue || s.discount || '10'),
-          description: s.description || '',
-        }));
-        onSpecialsExtracted(mapped);
-        toast.success(`Also found ${mapped.length} specials!`);
+          // Extract specials if available
+          const extractedSpecials = extracted.specials || [];
+          if (extractedSpecials.length > 0 && onSpecialsExtracted) {
+            const mapped = extractedSpecials.map((s: any) => ({
+              title: s.title || s.name || '',
+              discount: String(s.discountValue || s.discount || '10'),
+              description: s.description || '',
+            }));
+            onSpecialsExtracted(mapped);
+            toast.success(`Also found ${mapped.length} specials!`);
+          }
+
+          setIsImporting(false);
+        } else if (event.type === 'error') {
+          setImportError(event.message || "Couldn't read that website.");
+          setIsImporting(false);
+        }
+      });
+
+      // Stream ended without a result/error event
+      if (isImporting) {
+        setIsImporting(false);
       }
     } catch {
-      toast.error("Couldn't read that URL. You can add services manually below.");
-    } finally {
+      setImportError("Couldn't connect to the server. Try again or add services manually.");
       setIsImporting(false);
     }
   };
@@ -130,42 +165,93 @@ export default function ServicesStep({
   return (
     <div className="space-y-4">
       {/* URL Import Option */}
-      <div className="bg-retro-navy/5 dark:bg-gray-700/30 p-4 border-2 border-retro-navy/20 dark:border-gray-600 mb-6">
-        <p className="font-heading text-sm uppercase mb-2">
-          <Globe size={16} className="inline mr-1" />
-          Import from Website (Optional)
-        </p>
-        <div className="flex gap-2">
-          <input
-            type="url"
-            className="input-retro flex-1"
-            placeholder="https://yourshop.com/services"
-            value={websiteUrl || ''}
-            onChange={(e) => onWebsiteUrlChange(e.target.value)}
-            disabled={isImporting}
+      {isImporting ? (
+        /* ─── Importing: Full animated loading experience ─── */
+        <div className="bg-retro-navy/5 dark:bg-gray-700/30 p-6 border-2 border-retro-teal/40 dark:border-retro-teal/30 mb-6">
+          <RetroLoadingStage
+            isLoading={isImporting}
+            estimatedDuration={25000}
+            size="md"
+            showExhaust
+            phaseMessages={importPhaseMessages}
           />
-          <button
-            type="button"
-            className="btn-retro-secondary text-sm disabled:opacity-50 flex items-center gap-1"
-            onClick={handleImportWebsite}
-            disabled={isImporting || !websiteUrl}
-          >
-            {isImporting ? (
-              <>
-                <Loader2 size={16} className="animate-spin" />
-                Scanning...
-              </>
-            ) : (
-              'Import'
-            )}
-          </button>
+
+          {/* Live status from NDJSON stream */}
+          {liveMessage && (
+            <p className="text-center text-sm text-retro-teal dark:text-retro-teal font-heading uppercase mt-2 animate-pulse">
+              {liveMessage}
+            </p>
+          )}
+
+          {/* Discovered page badges */}
+          {discoveredPages.length > 0 && (
+            <div className="flex flex-wrap gap-2 justify-center mt-3">
+              {discoveredPages.map((page) => (
+                <span
+                  key={page}
+                  className="text-xs px-2 py-1 bg-retro-teal/10 dark:bg-retro-teal/20 border border-retro-teal/30 text-retro-teal font-heading uppercase"
+                >
+                  {page}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Cancel button */}
+          <div className="text-center mt-4">
+            <button
+              type="button"
+              className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 underline"
+              onClick={() => setIsImporting(false)}
+            >
+              Skip &mdash; I'll add services manually
+            </button>
+          </div>
         </div>
-        <p className="text-xs text-gray-500 mt-1">
-          {isImporting
-            ? 'AI is reading your website and extracting services & specials...'
-            : 'AI will extract services, specials, and more from your website'}
-        </p>
-      </div>
+      ) : (
+        /* ─── Idle: URL input + Import button ─── */
+        <div className="bg-retro-navy/5 dark:bg-gray-700/30 p-4 border-2 border-retro-navy/20 dark:border-gray-600 mb-6">
+          <p className="font-heading text-sm uppercase mb-2">
+            <Globe size={16} className="inline mr-1" />
+            Import from Website (Optional)
+          </p>
+          <div className="flex gap-2">
+            <input
+              type="url"
+              className="input-retro flex-1"
+              placeholder="www.yourshop.com"
+              value={websiteUrl || ''}
+              onChange={(e) => onWebsiteUrlChange(e.target.value)}
+            />
+            <button
+              type="button"
+              className="btn-retro-secondary text-sm disabled:opacity-50"
+              onClick={handleImportWebsite}
+              disabled={!websiteUrl}
+            >
+              Import
+            </button>
+          </div>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            AI will scan multiple pages to find services, specials, and more
+          </p>
+
+          {/* Error state */}
+          {importError && (
+            <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-sm">
+              <div className="flex items-start gap-2">
+                <AlertCircle size={16} className="text-red-500 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-red-700 dark:text-red-400">{importError}</p>
+                  <p className="text-red-500 dark:text-red-500 text-xs mt-1">
+                    You can add services manually below instead.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Search Bar for Services */}
       <div className="sticky top-0 bg-white dark:bg-gray-800 z-10 pb-4">

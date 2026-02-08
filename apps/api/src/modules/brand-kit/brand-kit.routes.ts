@@ -7,7 +7,7 @@ import { ValidationError } from '../../middleware/error.middleware';
 import { cache, invalidateCache } from '../../services/redis.service';
 import { generationRateLimiter } from '../../middleware/rate-limit.middleware';
 import { geminiService } from '../../services/gemini.service';
-import { fetchWebsiteText } from '../../services/scraper.util';
+import { scrapeWebsite } from '../../services/scraper.util';
 import { logger } from '../../utils/logger';
 
 const router = Router();
@@ -386,7 +386,7 @@ const importWebsiteSchema = z.object({
   message: 'Either url or pastedText must be provided',
 });
 
-const EXTRACTION_PROMPT = `You are a business data extraction expert. Analyze the following text from an auto repair shop's website and extract structured information.
+const EXTRACTION_PROMPT = `You are a business data extraction expert. Analyze the following markdown content scraped from an auto repair shop's website (possibly from multiple pages separated by ---).
 
 Return a JSON object with this EXACT structure:
 {
@@ -426,6 +426,7 @@ Return a JSON object with this EXACT structure:
 }
 
 Rules:
+- The content is markdown from multiple pages — look through ALL sections for services, specials, and business info
 - For services, use these categories: Maintenance, Brakes, Tires, AC/Heating, Engine, Transmission, Electrical, Body, Inspection, Other
 - For specials, discountType must be: "percentage", "fixed", or "bogo"
 - Extract ALL services mentioned, even if pricing isn't listed (leave priceRange as "Call for pricing")
@@ -437,63 +438,122 @@ Website content:
 `;
 
 // POST /import-website — scrape or accept pasted text, extract via Gemini
+// URL mode uses NDJSON streaming for real-time progress; pastedText mode returns regular JSON
 router.post('/import-website', generationRateLimiter, async (req: Request, res: Response, next: NextFunction) => {
+  const parsed = importWebsiteSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ type: 'error', message: 'Please provide a valid URL or paste text.' });
+    return;
+  }
+
+  const { url, pastedText } = parsed.data;
+
+  // ─── Mode A: Pasted text (non-streaming, regular JSON response) ───
+  if (pastedText) {
+    try {
+      logger.info('Running Gemini extraction for pasted text', { textLength: pastedText.length, tenantId: req.user!.tenantId });
+      const result = await geminiService.generateText(EXTRACTION_PROMPT + pastedText, { temperature: 0.2, maxTokens: 4096 });
+      const responseText = result.text || '';
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        res.status(422).json({ success: false, error: 'Could not extract structured data.' });
+        return;
+      }
+      const extracted = JSON.parse(jsonMatch[0]);
+      res.json({ success: true, extracted, source: 'text', sourceUrl: null });
+    } catch (error) {
+      next(error);
+    }
+    return;
+  }
+
+  // ─── Mode B: URL (NDJSON streaming) ───
+  res.setHeader('Content-Type', 'application/x-ndjson');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('X-Accel-Buffering', 'no'); // Prevent Railway nginx buffering
+  res.flushHeaders();
+
+  const send = (event: Record<string, unknown>) => {
+    res.write(JSON.stringify(event) + '\n');
+  };
+
+  // Master timeout: 60 seconds for the entire operation
+  const masterTimeout = setTimeout(() => {
+    send({ type: 'error', message: 'Import timed out. The website took too long to respond.' });
+    res.end();
+  }, 60_000);
+
   try {
-    const parsed = importWebsiteSchema.safeParse(req.body);
-    if (!parsed.success) {
-      throw new ValidationError('Validation failed',
-        Object.fromEntries(parsed.error.errors.map(e => [e.path.join('.'), [e.message]]))
-      );
-    }
+    logger.info('Starting website scrape with streaming', { url, tenantId: req.user!.tenantId });
 
-    const { url, pastedText } = parsed.data;
-    let text: string;
-    let source: 'url' | 'text';
-
-    if (url) {
-      source = 'url';
-      text = await fetchWebsiteText(url);
-    } else {
-      source = 'text';
-      text = pastedText!;
-    }
-
-    logger.info('Running Gemini extraction for website import', {
-      source,
-      textLength: text.length,
-      tenantId: req.user!.tenantId,
+    // Step 1: Scrape website with progress callbacks
+    const combinedMarkdown = await scrapeWebsite(url!, (event) => {
+      const ndjsonEvent: Record<string, unknown> = {
+        type: event.pagesFound ? 'pages_found' : 'progress',
+        step: event.step,
+        message: event.message,
+        progress: event.progress,
+      };
+      if (event.pagesFound) ndjsonEvent.pages = event.pagesFound;
+      if (event.detail) ndjsonEvent.detail = event.detail;
+      send(ndjsonEvent);
     });
 
-    const result = await geminiService.generateText(EXTRACTION_PROMPT + text, {
+    // Step 2: Gemini extraction
+    send({ type: 'progress', step: 'analyzing', message: 'AI is extracting services & specials...', progress: 80 });
+
+    const result = await geminiService.generateText(EXTRACTION_PROMPT + combinedMarkdown, {
       temperature: 0.2,
       maxTokens: 4096,
     });
 
+    send({ type: 'progress', step: 'analyzing', message: 'Organizing the results...', progress: 95 });
+
     const responseText = result.text || '';
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+
     if (!jsonMatch) {
       logger.warn('Gemini returned no parseable JSON', { responsePreview: responseText.slice(0, 300) });
-      res.status(422).json({ success: false, error: 'Could not extract structured data. Try pasting the text directly.' });
-      return;
+      send({ type: 'error', message: 'Could not extract structured data. Try pasting the text directly.' });
+    } else {
+      let extracted: any;
+      try {
+        extracted = JSON.parse(jsonMatch[0]);
+      } catch {
+        send({ type: 'error', message: 'Extraction produced invalid data. Try pasting text directly.' });
+        clearTimeout(masterTimeout);
+        res.end();
+        return;
+      }
+
+      const pageCount = combinedMarkdown.split('--- Page:').length;
+      send({
+        type: 'result',
+        success: true,
+        extracted,
+        source: 'url',
+        sourceUrl: url,
+        pageCount,
+      });
+    }
+  } catch (error: any) {
+    logger.error('Website import streaming failed', { error: error.message, url });
+
+    let userMessage = "Couldn't read that website. You can add services manually or paste text.";
+    if (error.message?.includes('timed out') || error.message?.includes('Timed out') || error.name === 'AbortError') {
+      userMessage = 'The website took too long to respond. Try again or paste text directly.';
+    } else if (error.message?.includes('SSL')) {
+      userMessage = 'SSL certificate error. The website may have security issues.';
+    } else if (error.message?.includes('404') || error.message?.includes('not found')) {
+      userMessage = 'Page not found. Check the URL and try again.';
+    } else if (error.message?.includes('403') || error.message?.includes('Forbidden')) {
+      userMessage = 'This website blocks automated access. Try pasting text instead.';
     }
 
-    let extracted: any;
-    try {
-      extracted = JSON.parse(jsonMatch[0]);
-    } catch {
-      logger.warn('Failed to parse extracted JSON', { raw: jsonMatch[0].slice(0, 500) });
-      res.status(422).json({ success: false, error: 'Extraction produced invalid JSON. Try pasting the text directly.' });
-      return;
-    }
-
-    res.json({
-      success: true,
-      extracted,
-      source,
-      sourceUrl: url || null,
-    });
-  } catch (error) {
-    next(error);
+    send({ type: 'error', message: userMessage });
+  } finally {
+    clearTimeout(masterTimeout);
+    res.end();
   }
 });
 
