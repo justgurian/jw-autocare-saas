@@ -93,6 +93,16 @@ export default function OnboardingPage() {
   }, []);
 
   const handleNext = async () => {
+    // Frontend validation before saving
+    if (currentStep === 1 && !formData.businessName.trim()) {
+      toast.error('Please enter your business name.');
+      return;
+    }
+    if (currentStep === 3 && formData.services.length === 0) {
+      toast.error('Please select at least one service before continuing.');
+      return;
+    }
+
     setIsSaving(true);
     try {
       // Save data for the current step before moving to next
@@ -144,9 +154,14 @@ export default function OnboardingPage() {
           await promoFlyerApi.saveVehiclePreferences(formData.vehiclePreferences);
         }
       } else if (currentStep === 7) {
-        // Step 7: Style Taste Test — save preferences, then complete
+        // Step 7: Style Taste Test — save preferences (optional), then complete
         if (formData.styleFamilyIds.length > 0) {
-          await promoFlyerApi.savePreferences(formData.styleFamilyIds);
+          try {
+            await promoFlyerApi.savePreferences(formData.styleFamilyIds);
+          } catch (prefErr) {
+            // Preferences are nice-to-have — don't block completion
+            console.warn('Style preferences save failed (non-blocking):', prefErr);
+          }
         }
       }
 
@@ -159,9 +174,22 @@ export default function OnboardingPage() {
         localStorage.setItem('startDashboardTour', 'true');
         navigate('/dashboard');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to save step:', error);
-      toast.error('Failed to save. Please try again.');
+      // Extract the actual server error message
+      const serverMsg = error?.response?.data?.message || error?.message || '';
+      if (serverMsg.toLowerCase().includes('service')) {
+        // Services validation failed — redirect to step 3
+        toast.error('Please add at least one service before completing setup.');
+        setCurrentStep(3);
+      } else if (serverMsg.toLowerCase().includes('business name')) {
+        toast.error('Please add your business name before completing setup.');
+        setCurrentStep(1);
+      } else if (serverMsg) {
+        toast.error(serverMsg);
+      } else {
+        toast.error('Failed to save. Please try again.');
+      }
     } finally {
       setIsSaving(false);
     }

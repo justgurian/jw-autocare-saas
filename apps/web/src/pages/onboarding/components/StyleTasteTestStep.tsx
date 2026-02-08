@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { promoFlyerApi } from '../../../services/api';
-import { CheckCircle, Loader2 } from 'lucide-react';
+import { CheckCircle, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 
 interface StyleFamily {
   id: string;
@@ -21,9 +21,10 @@ interface StyleTasteTestStepProps {
 export default function StyleTasteTestStep({ selectedFamilies, onChange }: StyleTasteTestStepProps) {
   const [animatedIn, setAnimatedIn] = useState<Set<number>>(new Set());
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['style-families'],
     queryFn: () => promoFlyerApi.getFamilies().then(res => res.data),
+    retry: 2,
   });
 
   const families: StyleFamily[] = data?.families || [];
@@ -49,6 +50,26 @@ export default function StyleTasteTestStep({ selectedFamilies, onChange }: Style
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 size={32} className="animate-spin text-retro-teal" />
+      </div>
+    );
+  }
+
+  if (isError || families.length === 0) {
+    return (
+      <div className="text-center py-12 space-y-4">
+        <AlertCircle size={40} className="text-retro-red mx-auto" />
+        <p className="font-heading text-sm uppercase text-gray-600 dark:text-gray-400">
+          {isError ? "Couldn't load style families" : 'No style families available'}
+        </p>
+        <p className="text-sm text-gray-500 dark:text-gray-500">
+          You can skip this step and set your style preferences later in settings.
+        </p>
+        <button
+          onClick={() => refetch()}
+          className="btn-retro-outline text-sm flex items-center gap-2 mx-auto"
+        >
+          <RefreshCw size={14} /> Try Again
+        </button>
       </div>
     );
   }
