@@ -25,7 +25,7 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-const COUNT_OPTIONS = [1, 3, 5, 10];
+// Count range: 1-10 via slider
 
 interface Family {
   id: string;
@@ -361,23 +361,19 @@ export default function PromoFlyerPage() {
   const activeSharingFlyer = sharingSlot?.flyer;
   const activeAnimatingFlyer = animatingSlot?.flyer;
 
-  // ---------- Count selector (shared) ----------
-  const CountPills = () => (
-    <div className="flex gap-1">
-      {COUNT_OPTIONS.map(n => (
-        <button
-          key={n}
-          type="button"
-          onClick={() => setCount(n)}
-          className={`w-9 h-9 flex items-center justify-center border-2 text-sm font-heading transition-all ${
-            count === n
-              ? 'border-retro-red bg-retro-red text-white'
-              : 'border-gray-300 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:border-gray-500'
-          }`}
-        >
-          {n}
-        </button>
-      ))}
+  // ---------- Count slider (shared) ----------
+  const CountSlider = () => (
+    <div className="flex items-center gap-3 flex-1">
+      <span className="font-heading text-lg w-7 text-center tabular-nums text-retro-red">{count}</span>
+      <input
+        type="range"
+        min={1}
+        max={10}
+        step={1}
+        value={count}
+        onChange={e => setCount(Number(e.target.value))}
+        className="flex-1 h-2 rounded-full appearance-none cursor-pointer bg-gray-200 dark:bg-gray-700 accent-retro-red [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-retro-red [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow-md"
+      />
     </div>
   );
 
@@ -406,7 +402,7 @@ export default function PromoFlyerPage() {
         </p>
 
         <div className="flex items-center gap-3">
-          <CountPills />
+          <CountSlider />
           <button
             onClick={handleEasyGenerate}
             disabled={isGenerating}
@@ -527,7 +523,7 @@ export default function PromoFlyerPage() {
       {/* ========== GENERATE BUTTON ========== */}
       <div className="card-retro p-5">
         <div className="flex items-center gap-3">
-          <CountPills />
+          <CountSlider />
           <button
             onClick={handleCustomGenerate}
             disabled={isGenerating}

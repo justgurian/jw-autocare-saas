@@ -15,10 +15,10 @@ const router = Router();
 router.use(authenticate);
 router.use(tenantContext);
 
-// Get all content
+// Get all content (lightweight — excludes base64 imageUrl blobs)
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { tool, status, page = '1', limit = '20' } = req.query;
+    const { tool, status, page = '1', limit = '50' } = req.query;
 
     const where: Record<string, unknown> = { tenantId: req.user!.tenantId };
     if (tool) where.tool = tool;
@@ -26,15 +26,34 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 
     const skip = (Number(page) - 1) * Number(limit);
 
-    const [content, total] = await Promise.all([
+    const [rows, total] = await Promise.all([
       prisma.content.findMany({
         where,
         orderBy: { createdAt: 'desc' },
         skip,
         take: Number(limit),
+        select: {
+          id: true,
+          title: true,
+          tool: true,
+          contentType: true,
+          theme: true,
+          caption: true,
+          captionSpanish: true,
+          status: true,
+          createdAt: true,
+          metadata: true,
+        },
       }),
       prisma.content.count({ where }),
     ]);
+
+    // Return lightweight image URLs that point to the image-serving endpoint
+    const content = rows.map(row => ({
+      ...row,
+      imageUrl: `/api/v1/content/${row.id}/image`,
+      themeName: (row.metadata as any)?.themeName || row.theme,
+    }));
 
     res.json({
       content,
@@ -45,6 +64,44 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
         pages: Math.ceil(total / Number(limit)),
       },
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Serve content image (streams the actual image without loading full JSON response)
+router.get('/:id/image', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const content = await prisma.content.findFirst({
+      where: {
+        id: req.params.id,
+        tenantId: req.user!.tenantId,
+      },
+      select: { imageUrl: true },
+    });
+
+    if (!content || !content.imageUrl) {
+      res.status(404).json({ error: 'Image not found' });
+      return;
+    }
+
+    // If stored as base64 data URL, decode and stream
+    if (content.imageUrl.startsWith('data:')) {
+      const match = content.imageUrl.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/s);
+      if (!match) {
+        res.status(500).json({ error: 'Invalid image data' });
+        return;
+      }
+      const mimeType = match[1];
+      const buffer = Buffer.from(match[2], 'base64');
+      res.set('Content-Type', mimeType);
+      res.set('Cache-Control', 'public, max-age=86400');
+      res.send(buffer);
+      return;
+    }
+
+    // If it's a URL, redirect to it
+    res.redirect(content.imageUrl);
   } catch (error) {
     next(error);
   }

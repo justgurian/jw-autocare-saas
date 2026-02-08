@@ -49,6 +49,8 @@ export default function FlyerEditor({ contentId, imageUrl, title, onClose, onSav
   const [showOtherVehicle, setShowOtherVehicle] = useState(false);
   const [otherMake, setOtherMake] = useState('');
   const [otherModel, setOtherModel] = useState('');
+  const [otherYear, setOtherYear] = useState('');
+  const [otherColor, setOtherColor] = useState('');
 
   // Fetch vehicle suggestions
   const { data: suggestions } = useQuery({
@@ -97,13 +99,13 @@ export default function FlyerEditor({ contentId, imageUrl, title, onClose, onSav
 
   return (
     <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-      <div className="bg-white border-2 border-black w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-white dark:bg-gray-900 border-2 border-black dark:border-gray-600 w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b-2 border-black">
-          <h2 className="font-heading text-lg uppercase">
+        <div className="flex items-center justify-between p-4 border-b-2 border-black dark:border-gray-600">
+          <h2 className="font-heading text-lg uppercase text-gray-900 dark:text-gray-100">
             Edit Flyer{title ? ` — ${title}` : ''}
           </h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 transition-colors">
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 transition-colors">
             <X size={24} />
           </button>
         </div>
@@ -111,7 +113,7 @@ export default function FlyerEditor({ contentId, imageUrl, title, onClose, onSav
         {/* Content */}
         <div className="flex-1 flex overflow-hidden">
           {/* Image Preview */}
-          <div className="w-1/2 p-4 bg-gray-100 flex items-center justify-center">
+          <div className="w-1/2 p-4 bg-gray-100 dark:bg-gray-950 flex items-center justify-center">
             <div className="relative">
               <img
                 src={currentImageUrl}
@@ -119,7 +121,7 @@ export default function FlyerEditor({ contentId, imageUrl, title, onClose, onSav
                 className="max-w-full max-h-[60vh] border-2 border-black"
               />
               {isLoading && (
-                <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
+                <div className="absolute inset-0 bg-white/80 dark:bg-black/80 flex items-center justify-center">
                   <div className="text-center">
                     <Loader2 size={48} className="animate-spin mx-auto text-retro-red" />
                     <p className="mt-2 font-heading">Applying edit...</p>
@@ -130,20 +132,20 @@ export default function FlyerEditor({ contentId, imageUrl, title, onClose, onSav
           </div>
 
           {/* Edit Controls */}
-          <div className="w-1/2 p-4 overflow-y-auto space-y-5">
+          <div className="w-1/2 p-4 overflow-y-auto space-y-5 text-gray-900 dark:text-gray-100">
             {/* Undo/Redo */}
             <div className="flex gap-2">
               <button
                 onClick={undo}
                 disabled={!canUndo || isLoading}
-                className="flex items-center gap-2 px-3 py-2 border-2 border-black bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                className="flex items-center gap-2 px-3 py-2 border-2 border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               >
                 <Undo size={16} /> Undo
               </button>
               <button
                 onClick={redo}
                 disabled={!canRedo || isLoading}
-                className="flex items-center gap-2 px-3 py-2 border-2 border-black bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                className="flex items-center gap-2 px-3 py-2 border-2 border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               >
                 <Redo size={16} /> Redo
               </button>
@@ -164,7 +166,7 @@ export default function FlyerEditor({ contentId, imageUrl, title, onClose, onSav
                       vehicleModel: s.model,
                     })}
                     disabled={isLoading}
-                    className="px-3 py-2 border-2 border-gray-300 hover:border-retro-red hover:bg-red-50 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-2 border-2 border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 hover:border-retro-red hover:bg-red-50 dark:hover:bg-retro-red/20 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {s.label}
                   </button>
@@ -172,19 +174,19 @@ export default function FlyerEditor({ contentId, imageUrl, title, onClose, onSav
                 <button
                   onClick={() => setShowOtherVehicle(!showOtherVehicle)}
                   disabled={isLoading}
-                  className="px-3 py-2 border-2 border-dashed border-gray-400 hover:border-retro-red text-sm text-gray-500 hover:text-retro-red transition-all disabled:opacity-50 flex items-center gap-1"
+                  className="px-3 py-2 border-2 border-dashed border-gray-400 dark:border-gray-500 hover:border-retro-red text-sm text-gray-500 dark:text-gray-400 hover:text-retro-red transition-all disabled:opacity-50 flex items-center gap-1"
                 >
                   <Plus size={14} /> Other...
                 </button>
               </div>
               {showOtherVehicle && (
-                <div className="flex gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   <input
                     type="text"
                     value={otherMake}
                     onChange={(e) => setOtherMake(e.target.value)}
                     placeholder="Make (e.g. Tesla)"
-                    className="flex-1 p-2 border-2 border-black text-sm focus:border-retro-red outline-none"
+                    className="p-2 border-2 border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-sm focus:border-retro-red outline-none placeholder-gray-400 dark:placeholder-gray-500"
                     disabled={isLoading}
                   />
                   <input
@@ -192,23 +194,42 @@ export default function FlyerEditor({ contentId, imageUrl, title, onClose, onSav
                     value={otherModel}
                     onChange={(e) => setOtherModel(e.target.value)}
                     placeholder="Model (e.g. Model 3)"
-                    className="flex-1 p-2 border-2 border-black text-sm focus:border-retro-red outline-none"
+                    className="p-2 border-2 border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-sm focus:border-retro-red outline-none placeholder-gray-400 dark:placeholder-gray-500"
+                    disabled={isLoading}
+                  />
+                  <input
+                    type="text"
+                    value={otherYear}
+                    onChange={(e) => setOtherYear(e.target.value)}
+                    placeholder="Year (e.g. 2024)"
+                    className="p-2 border-2 border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-sm focus:border-retro-red outline-none placeholder-gray-400 dark:placeholder-gray-500"
+                    disabled={isLoading}
+                  />
+                  <input
+                    type="text"
+                    value={otherColor}
+                    onChange={(e) => setOtherColor(e.target.value)}
+                    placeholder="Color (e.g. Red)"
+                    className="p-2 border-2 border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-sm focus:border-retro-red outline-none placeholder-gray-400 dark:placeholder-gray-500"
                     disabled={isLoading}
                   />
                   <button
                     onClick={() => {
                       if (otherMake.trim()) {
+                        // Build a descriptive string: "2024 Red Tesla Model 3"
+                        const parts = [otherYear.trim(), otherColor.trim(), otherMake.trim(), otherModel.trim()].filter(Boolean);
                         editMutation.mutate({
                           editType: 'swap-vehicle',
-                          vehicleMake: otherMake.trim(),
-                          vehicleModel: otherModel.trim() || undefined,
+                          vehicleMake: parts.join(' '),
                         });
                         setOtherMake('');
                         setOtherModel('');
+                        setOtherYear('');
+                        setOtherColor('');
                       }
                     }}
                     disabled={!otherMake.trim() || isLoading}
-                    className="px-4 py-2 bg-retro-navy text-white border-2 border-black text-sm disabled:opacity-50"
+                    className="col-span-2 px-4 py-2 bg-retro-navy text-white border-2 border-black dark:border-gray-500 text-sm font-heading uppercase disabled:opacity-50 hover:bg-retro-navy/90 transition-colors"
                   >
                     Go
                   </button>
@@ -227,7 +248,7 @@ export default function FlyerEditor({ contentId, imageUrl, title, onClose, onSav
                   value={newHeadline}
                   onChange={(e) => setNewHeadline(e.target.value)}
                   placeholder="Enter new headline text..."
-                  className="flex-1 p-2 border-2 border-black text-sm focus:border-retro-red outline-none"
+                  className="flex-1 p-2 border-2 border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-sm focus:border-retro-red outline-none placeholder-gray-400 dark:placeholder-gray-500"
                   maxLength={200}
                   disabled={isLoading}
                 />
@@ -239,7 +260,7 @@ export default function FlyerEditor({ contentId, imageUrl, title, onClose, onSav
                     }
                   }}
                   disabled={!newHeadline.trim() || isLoading}
-                  className="px-4 py-2 bg-retro-navy text-white border-2 border-black text-sm disabled:opacity-50"
+                  className="px-4 py-2 bg-retro-navy text-white border-2 border-black dark:border-gray-500 text-sm disabled:opacity-50"
                 >
                   Apply
                 </button>
@@ -259,7 +280,7 @@ export default function FlyerEditor({ contentId, imageUrl, title, onClose, onSav
                       key={preset.id}
                       onClick={() => editMutation.mutate({ editType: 'adjust-preset', preset: preset.id })}
                       disabled={isLoading}
-                      className="p-2 border-2 border-gray-300 hover:border-retro-red hover:bg-red-50 transition-all text-center disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="p-2 border-2 border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 hover:border-retro-red hover:bg-red-50 dark:hover:bg-retro-red/20 transition-all text-center disabled:opacity-50 disabled:cursor-not-allowed"
                       title={preset.description}
                     >
                       <Icon size={16} className="mx-auto mb-1" />
@@ -281,7 +302,7 @@ export default function FlyerEditor({ contentId, imageUrl, title, onClose, onSav
                   value={customPrompt}
                   onChange={(e) => setCustomPrompt(e.target.value)}
                   placeholder="Describe any change you want..."
-                  className="flex-1 p-2 border-2 border-black text-sm focus:border-retro-red outline-none"
+                  className="flex-1 p-2 border-2 border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-sm focus:border-retro-red outline-none placeholder-gray-400 dark:placeholder-gray-500"
                   maxLength={500}
                   disabled={isLoading}
                 />
@@ -293,12 +314,12 @@ export default function FlyerEditor({ contentId, imageUrl, title, onClose, onSav
                     }
                   }}
                   disabled={!customPrompt.trim() || isLoading}
-                  className="px-4 py-2 bg-retro-navy text-white border-2 border-black text-sm disabled:opacity-50"
+                  className="px-4 py-2 bg-retro-navy text-white border-2 border-black dark:border-gray-500 text-sm disabled:opacity-50"
                 >
                   Apply
                 </button>
               </div>
-              <div className="mt-2 text-xs text-gray-400 space-y-0.5">
+              <div className="mt-2 text-xs text-gray-400 dark:text-gray-500 space-y-0.5">
                 <p>"Add a sunset background"</p>
                 <p>"Make the text stand out more"</p>
                 <p>"Change the color scheme to blue and white"</p>
@@ -308,17 +329,17 @@ export default function FlyerEditor({ contentId, imageUrl, title, onClose, onSav
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between p-4 border-t-2 border-black bg-gray-50">
+        <div className="flex items-center justify-between p-4 border-t-2 border-black dark:border-gray-600 bg-gray-50 dark:bg-gray-800">
           <button
             onClick={onClose}
-            className="px-6 py-2 border-2 border-black bg-white hover:bg-gray-50"
+            className="px-6 py-2 border-2 border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100"
           >
             Cancel
           </button>
           <button
             onClick={() => onSave(currentImageUrl)}
             disabled={!hasChanges || isLoading}
-            className="px-6 py-2 bg-green-500 text-white border-2 border-black shadow-retro hover:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-6 py-2 bg-green-500 text-white border-2 border-black dark:border-green-700 shadow-retro hover:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             <Save size={18} />
             Save Changes
