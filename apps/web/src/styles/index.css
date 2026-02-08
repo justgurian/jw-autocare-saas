@@ -60,10 +60,10 @@
     --color-scrollbar-track: 229 231 235;
     --color-scrollbar-thumb: 26 54 93;
 
-    /* Radius */
-    --radius-sm: 4px;
-    --radius-md: 8px;
-    --radius-lg: 12px;
+    /* Radius — softened for modern feel */
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
 
     /* shadcn/ui compatibility aliases */
     --background: var(--color-background);
@@ -142,37 +142,114 @@
     --destructive-foreground: 255 255 255;
   }
 
-  /* Dark mode overrides for inline Tailwind classes */
-  .dark .border-black {
-    border-color: rgb(var(--color-border));
-  }
-  .dark .bg-white {
-    background-color: rgb(var(--color-surface));
-  }
-  .dark .bg-gray-50 {
-    background-color: rgb(var(--color-surface-alt));
-  }
-  .dark .bg-gray-100 {
-    background-color: rgb(var(--color-surface-alt));
-  }
-  .dark .bg-gray-200 {
-    background-color: rgb(63 63 70);
-  }
-  .dark .text-gray-500 {
-    color: rgb(var(--color-text-secondary));
-  }
-  .dark .text-gray-600 {
-    color: rgb(var(--color-text-secondary));
-  }
-  .dark .text-gray-400 {
-    color: rgb(var(--color-text-muted));
-  }
-  .dark .border-gray-200 {
-    border-color: rgb(var(--color-border));
-  }
-  .dark .border-gray-300 {
-    border-color: rgb(var(--color-border));
-  }
+  /* ============================================
+     DARK MODE OVERRIDES — Comprehensive
+     Fixes hardcoded Tailwind classes app-wide.
+     One section to rule them all.
+     ============================================ */
+
+  /* --- Borders --- */
+  .dark .border-black { border-color: rgb(var(--color-border)); }
+  .dark .border-gray-200 { border-color: rgb(var(--color-border-muted)); }
+  .dark .border-gray-300 { border-color: rgb(var(--color-border)); }
+  .dark .border-gray-400 { border-color: rgb(82 82 91); }
+  .dark .border-gray-500 { border-color: rgb(113 113 122); }
+  .dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]) { border-color: rgb(var(--color-border-muted)); }
+  .dark .divide-gray-300 > :not([hidden]) ~ :not([hidden]) { border-color: rgb(var(--color-border)); }
+  .dark .ring-gray-300 { --tw-ring-color: rgb(var(--color-border)); }
+  .dark .border-retro-red { border-color: rgb(var(--color-retro-red)); }
+
+  /* --- Solid backgrounds --- */
+  .dark .bg-white { background-color: rgb(var(--color-surface)); }
+  .dark .bg-gray-50 { background-color: rgb(var(--color-surface-alt)); }
+  .dark .bg-gray-100 { background-color: rgb(var(--color-surface-alt)); }
+  .dark .bg-gray-200 { background-color: rgb(63 63 70); }
+  .dark .bg-gray-300 { background-color: rgb(82 82 91); }
+
+  /* --- Pastel tinted backgrounds → subtle dark tints --- */
+  .dark .bg-red-50 { background-color: rgba(239, 68, 68, 0.1); }
+  .dark .bg-red-100 { background-color: rgba(239, 68, 68, 0.15); }
+  .dark .bg-green-50 { background-color: rgba(34, 197, 94, 0.1); }
+  .dark .bg-green-100 { background-color: rgba(34, 197, 94, 0.15); }
+  .dark .bg-teal-50 { background-color: rgba(45, 212, 191, 0.1); }
+  .dark .bg-teal-100 { background-color: rgba(45, 212, 191, 0.15); }
+  .dark .bg-blue-50 { background-color: rgba(59, 130, 246, 0.1); }
+  .dark .bg-blue-100 { background-color: rgba(59, 130, 246, 0.15); }
+  .dark .bg-amber-50 { background-color: rgba(245, 158, 11, 0.1); }
+  .dark .bg-amber-100 { background-color: rgba(245, 158, 11, 0.15); }
+  .dark .bg-purple-50 { background-color: rgba(168, 85, 247, 0.1); }
+  .dark .bg-purple-100 { background-color: rgba(168, 85, 247, 0.15); }
+  .dark .bg-yellow-50 { background-color: rgba(234, 179, 8, 0.1); }
+  .dark .bg-yellow-100 { background-color: rgba(234, 179, 8, 0.15); }
+  .dark .bg-pink-50 { background-color: rgba(236, 72, 153, 0.1); }
+  .dark .bg-pink-100 { background-color: rgba(236, 72, 153, 0.15); }
+  .dark .bg-orange-50 { background-color: rgba(249, 115, 22, 0.1); }
+  .dark .bg-orange-100 { background-color: rgba(249, 115, 22, 0.15); }
+  .dark .bg-indigo-50 { background-color: rgba(99, 102, 241, 0.1); }
+  .dark .bg-indigo-100 { background-color: rgba(99, 102, 241, 0.15); }
+
+  /* --- Text contrast --- */
+  .dark .text-gray-300 { color: rgb(212 212 216); }
+  .dark .text-gray-400 { color: rgb(var(--color-text-muted)); }
+  .dark .text-gray-500 { color: rgb(var(--color-text-secondary)); }
+  .dark .text-gray-600 { color: rgb(var(--color-text-secondary)); }
+  .dark .text-gray-700 { color: rgb(212 212 216); }
+  .dark .text-gray-800 { color: rgb(var(--color-text-primary)); }
+  .dark .text-gray-900 { color: rgb(var(--color-text-primary)); }
+  .dark .text-black { color: rgb(var(--color-text-primary)); }
+
+  /* --- Colored text legibility --- */
+  .dark .text-red-600 { color: rgb(248 113 113); }
+  .dark .text-red-700 { color: rgb(252 165 165); }
+  .dark .text-red-800 { color: rgb(254 202 202); }
+  .dark .text-green-600 { color: rgb(74 222 128); }
+  .dark .text-green-700 { color: rgb(134 239 172); }
+  .dark .text-blue-600 { color: rgb(96 165 250); }
+  .dark .text-blue-700 { color: rgb(147 197 253); }
+  .dark .text-blue-800 { color: rgb(191 219 254); }
+  .dark .text-purple-700 { color: rgb(196 181 253); }
+  .dark .text-amber-700 { color: rgb(253 224 71); }
+
+  /* --- Critical: retro-navy as TEXT must invert in dark mode --- */
+  /* retro-navy is the "dark ink" color — used as text on light bg. */
+  /* In dark mode, surfaces are dark, so navy text must become light. */
+  .dark .text-retro-navy { color: rgb(226 232 240); }
+
+  /* --- Retro colors used as backgrounds that need overrides --- */
+  .dark .bg-retro-cream { background-color: rgb(var(--color-surface)); }
+
+  /* --- Hover/interactive backgrounds --- */
+  .dark .hover\:bg-retro-cream:hover { background-color: rgb(var(--color-surface-alt)); }
+  .dark .hover\:bg-gray-50:hover { background-color: rgb(var(--color-surface-alt)); }
+  .dark .hover\:bg-gray-100:hover { background-color: rgb(63 63 70); }
+
+  /* --- Gradient endpoints --- */
+  .dark .from-gray-50 { --tw-gradient-from: rgb(var(--color-surface-alt)); }
+  .dark .from-gray-100 { --tw-gradient-from: rgb(var(--color-surface-alt)); }
+  .dark .to-gray-100 { --tw-gradient-to: rgb(var(--color-surface-alt)); }
+  .dark .to-gray-200 { --tw-gradient-to: rgb(63 63 70); }
+  .dark .from-white { --tw-gradient-from: rgb(var(--color-surface)); }
+  .dark .to-white { --tw-gradient-to: rgb(var(--color-surface)); }
+  .dark .from-retro-cream { --tw-gradient-from: rgb(var(--color-surface)); }
+  .dark .to-retro-cream { --tw-gradient-to: rgb(var(--color-surface)); }
+
+  /* --- Placeholder text --- */
+  .dark .placeholder-gray-400::placeholder { color: rgb(var(--color-text-muted)); }
+  .dark .placeholder-gray-500::placeholder { color: rgb(var(--color-text-muted)); }
+  .dark input::placeholder, .dark textarea::placeholder { color: rgb(var(--color-text-muted)); }
+
+  /* --- Colored borders in dark mode --- */
+  .dark .border-red-200 { border-color: rgba(239, 68, 68, 0.3); }
+  .dark .border-red-300 { border-color: rgba(239, 68, 68, 0.4); }
+  .dark .border-green-200 { border-color: rgba(34, 197, 94, 0.3); }
+  .dark .border-green-300 { border-color: rgba(34, 197, 94, 0.4); }
+  .dark .border-teal-300 { border-color: rgba(45, 212, 191, 0.4); }
+  .dark .border-blue-200 { border-color: rgba(59, 130, 246, 0.3); }
+  .dark .border-amber-300 { border-color: rgba(245, 158, 11, 0.4); }
+
+  /* --- Shadow ring colors --- */
+  .dark .ring-red-500 { --tw-ring-color: rgb(239 68 68); }
+  .dark .ring-blue-500 { --tw-ring-color: rgb(59 130 246); }
 
   html {
     font-family: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -606,11 +683,22 @@ button[disabled] {
 
 /* Tachometer loading animation utilities */
 .tach-needle {
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .tach-redline {
-  animation: tach-glow 1.5s ease-in-out infinite;
+  animation: tach-glow 1.2s ease-in-out infinite;
+}
+
+/* Chrome shine sweep animation */
+@keyframes tach-shine-sweep {
+  0% { transform: rotate(-60deg) translateX(-120px); }
+  100% { transform: rotate(60deg) translateX(120px); }
+}
+
+.tach-shine rect {
+  animation: tach-shine-sweep 4s ease-in-out infinite;
+  transform-origin: 100px 100px;
 }
 
 /* Easy Button breathing glow */
