@@ -1,17 +1,25 @@
 import { Sparkles, Wand2 } from 'lucide-react';
 import NostalgicThemeGrid from '../../../../components/features/NostalgicThemeGrid';
-import VehiclePicker from '../../../../components/features/VehiclePicker';
+import VehicleSelector from '../../../../components/features/VehicleSelector';
 import LanguageToggle from '../../../../components/features/LanguageToggle';
 import PackSelector from '../../../../components/features/PackSelector';
 
 type PackType = 'variety-3' | 'variety-5' | 'week-7' | 'era' | 'style';
+
+interface VehicleSelection {
+  make: string;
+  model: string;
+  year: string;
+  color: string;
+  freeText: string;
+}
 
 interface FormData {
   message: string;
   subject: string;
   details: string;
   themeId: string;
-  vehicleId: string | null;
+  vehicle: VehicleSelection;
   language: 'en' | 'es' | 'both';
 }
 
@@ -187,9 +195,9 @@ export function OptionsStep({
 }: OptionsStepProps) {
   return (
     <div className="space-y-6">
-      <VehiclePicker
-        selectedVehicleId={formData.vehicleId}
-        onSelectVehicle={(vehicleId) => setFormData({ ...formData, vehicleId })}
+      <VehicleSelector
+        value={formData.vehicle}
+        onChange={(vehicle) => setFormData({ ...formData, vehicle })}
       />
 
       <LanguageToggle
@@ -230,8 +238,11 @@ export function GenerateStep({ formData, packType, packEra, packStyle }: Generat
         <p><strong>Message:</strong> {formData.message}</p>
         <p><strong>Subject:</strong> {formData.subject}</p>
         <p><strong>Theme:</strong> {formData.themeId}</p>
-        {formData.vehicleId && (
-          <p><strong>Vehicle:</strong> {formData.vehicleId === 'random' ? 'Random' : formData.vehicleId}</p>
+        {(formData.vehicle.make || formData.vehicle.freeText) && (
+          <p><strong>Vehicle:</strong> {
+            formData.vehicle.freeText === '__random__' ? 'Random'
+            : formData.vehicle.freeText || [formData.vehicle.color, formData.vehicle.year, formData.vehicle.make, formData.vehicle.model].filter(Boolean).join(' ')
+          }</p>
         )}
         <p><strong>Language:</strong> {formData.language === 'both' ? 'English & Spanish' : formData.language === 'es' ? 'Spanish' : 'English'}</p>
         {packType && (

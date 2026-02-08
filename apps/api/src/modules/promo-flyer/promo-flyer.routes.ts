@@ -37,6 +37,7 @@ import {
   recordVehicleUsage as recordVehicleUsageHelper,
 } from '../../services/vehicle-selection';
 import { getAllCarMakes, isValidMakeId } from '../../data/car-makes';
+import { CAR_MAKES, CAR_MODELS, CAR_YEARS, CAR_COLORS } from '../../constants/vehicles';
 import {
   generateSchema,
   generatePackSchema,
@@ -176,6 +177,16 @@ router.get('/vehicles', async (req: Request, res: Response, next: NextFunction) 
   } catch (error) {
     next(error);
   }
+});
+
+// Get modern vehicle data (makes, models, years, colors) for the VehicleSelector
+router.get('/vehicles/modern', (_req: Request, res: Response) => {
+  res.json({
+    makes: CAR_MAKES,
+    models: CAR_MODELS,
+    years: CAR_YEARS.slice(0, 30), // Last 30 years
+    colors: CAR_COLORS,
+  });
 });
 
 // Get a random theme (Surprise Me!)
@@ -816,7 +827,7 @@ router.post('/generate', generationRateLimiter, async (req: Request, res: Respon
       );
     }
 
-    const { message, subject, details, themeId, vehicleId, language, generateMockup } = result.data;
+    const { message, subject, details, themeId, vehicleId, vehicleMake, vehicleModel, vehicleYear, vehicleColor, vehicleFreeText, language, generateMockup } = result.data;
     const tenantId = req.user!.tenantId;
 
     // Handle random theme selection
@@ -835,10 +846,22 @@ router.post('/generate', generationRateLimiter, async (req: Request, res: Respon
       throw new ValidationError('Invalid theme', { themeId: ['Theme not found'] });
     }
 
-    // Handle vehicle selection
+    // Handle vehicle selection — new structured fields take priority over legacy vehicleId
+    const hasModernVehicle = vehicleFreeText || vehicleMake;
     let selectedVehicle: EraVehicle | undefined;
-    if (vehicleId === 'random') {
-      // If nostalgic theme, get era-appropriate vehicle
+    let modernVehiclePrompt = '';
+
+    if (hasModernVehicle) {
+      // New vehicle selector: build prompt from structured fields or free text
+      modernVehiclePrompt = buildVehiclePromptForFlyer({
+        make: vehicleMake || '',
+        model: vehicleModel || '',
+        year: vehicleYear,
+        color: vehicleColor,
+        freeText: vehicleFreeText,
+      });
+    } else if (vehicleId === 'random') {
+      // Legacy: era-appropriate random vehicle
       if (nostalgicTheme) {
         selectedVehicle = themeRegistry.getRandomVehicleByEra(nostalgicTheme.era);
       } else {
@@ -870,7 +893,9 @@ router.post('/generate', generationRateLimiter, async (req: Request, res: Respon
 
     // Build vehicle prompt addition
     let vehiclePromptAddition = '';
-    if (selectedVehicle) {
+    if (modernVehiclePrompt) {
+      vehiclePromptAddition = modernVehiclePrompt;
+    } else if (selectedVehicle) {
       vehiclePromptAddition = `\n\nFEATURE THIS VEHICLE: ${themeRegistry.getVehicleImagePrompt(selectedVehicle)}`;
     } else if (nostalgicTheme) {
       // For nostalgic themes without specific vehicle, add era context

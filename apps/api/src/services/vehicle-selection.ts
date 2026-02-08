@@ -137,16 +137,21 @@ export function selectVehicleForFlyer(prefs: VehiclePreferences): SelectedVehicl
 /**
  * Build the vehicle prompt injection for the AI image generator.
  *
- * Instructs the AI to render a modern car in whatever artistic style
- * the theme uses (e.g., modern Subaru WRX in 1970s comic book style).
+ * Accepts structured fields (make/model/year/color) or free text.
+ * Free text overrides structured fields when present.
  */
-export function buildVehiclePromptForFlyer(vehicle: SelectedVehicle): string {
-  return `
-
-FEATURED VEHICLE: Show a modern ${vehicle.make} ${vehicle.model} prominently in this design.
-Render the vehicle in the artistic style of the flyer — if the theme is retro, comic, vintage, or any specific art style, show the modern ${vehicle.make} ${vehicle.model} AS IF it existed in that era's art style.
-The car should be clean, well-maintained, and aspirational — something a proud owner would drive to this shop.
-Make the ${vehicle.make} ${vehicle.model} a focal point of the composition alongside the promotional content.`;
+export function buildVehiclePromptForFlyer(vehicle: {
+  make: string;
+  model: string;
+  year?: number | string;
+  color?: string;
+  freeText?: string;
+}): string {
+  if (vehicle.freeText) {
+    return `\nFEATURED VEHICLE: Show a ${vehicle.freeText} prominently in the design. Clean, well-maintained, aspirational. Render in the artistic style of the flyer theme.`;
+  }
+  const parts = [vehicle.color, vehicle.year, vehicle.make, vehicle.model].filter(Boolean).join(' ');
+  return `\nFEATURED VEHICLE: Show a ${parts} prominently in the design. Clean, well-maintained, aspirational. Render in the artistic style of the flyer theme. Make the car a focal point alongside the promotional content.`;
 }
 
 /**

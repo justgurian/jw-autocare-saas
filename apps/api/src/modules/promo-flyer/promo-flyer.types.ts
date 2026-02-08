@@ -14,7 +14,12 @@ export const generateSchema = z.object({
   subject: z.string().min(1).max(200),
   details: z.string().max(500).optional(),
   themeId: z.string().min(1),
-  vehicleId: z.string().optional(), // 'random' or specific vehicle ID
+  vehicleId: z.string().optional(), // 'random' or specific era vehicle ID (backward compat)
+  vehicleMake: z.string().max(50).optional(),
+  vehicleModel: z.string().max(50).optional(),
+  vehicleYear: z.union([z.string(), z.number()]).optional(),
+  vehicleColor: z.string().max(30).optional(),
+  vehicleFreeText: z.string().max(200).optional(),
   language: z.enum(['en', 'es', 'both']).default('en'),
   generateMockup: z.boolean().default(false),
 });

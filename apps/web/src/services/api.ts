@@ -153,6 +153,9 @@ export const promoFlyerApi = {
   // Push to Start - instant one-click generation
   instant: () => api.post('/tools/promo-flyer/instant'),
 
+  // Modern vehicle data (makes, models, years, colors) for VehicleSelector
+  getModernVehicles: () => api.get('/tools/promo-flyer/vehicles/modern'),
+
   // Generate single flyer (enhanced with vehicle and language options)
   generate: (data: {
     message: string;
@@ -160,6 +163,11 @@ export const promoFlyerApi = {
     details?: string;
     themeId: string;
     vehicleId?: string;
+    vehicleMake?: string;
+    vehicleModel?: string;
+    vehicleYear?: string | number;
+    vehicleColor?: string;
+    vehicleFreeText?: string;
     language?: 'en' | 'es' | 'both';
     mascotId?: string;
   }) => api.post('/tools/promo-flyer/generate', data),

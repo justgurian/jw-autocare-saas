@@ -30,7 +30,7 @@ export default function PromoFlyerPage() {
     subject: searchParams.get('topic') || '',
     details: '',
     themeId: searchParams.get('theme') || '',
-    vehicleId: null as string | null,
+    vehicle: { make: '', model: '', year: '', color: '', freeText: '' },
     language: 'en' as 'en' | 'es' | 'both',
   });
 
@@ -58,12 +58,26 @@ export default function PromoFlyerPage() {
 
   // Generate single flyer mutation
   const generateMutation = useMutation({
-    mutationFn: () =>
-      promoFlyerApi.generate({
-        ...formData,
-        vehicleId: formData.vehicleId || undefined,
+    mutationFn: () => {
+      const v = formData.vehicle;
+      const isRandom = v.freeText === '__random__';
+      return promoFlyerApi.generate({
+        message: formData.message,
+        subject: formData.subject,
+        details: formData.details || undefined,
+        themeId: formData.themeId,
+        language: formData.language,
         mascotId: mascotId || undefined,
-      }),
+        // Vehicle: random uses legacy vehicleId, structured/free text uses new fields
+        ...(isRandom
+          ? { vehicleId: 'random' }
+          : v.freeText
+          ? { vehicleFreeText: v.freeText }
+          : v.make
+          ? { vehicleMake: v.make, vehicleModel: v.model || undefined, vehicleYear: v.year || undefined, vehicleColor: v.color || undefined }
+          : {}),
+      });
+    },
     onSuccess: (res) => {
       setGeneratedContent({
         ...res.data,
@@ -86,17 +100,20 @@ export default function PromoFlyerPage() {
 
   // Generate pack mutation
   const generatePackMutation = useMutation({
-    mutationFn: () =>
-      promoFlyerApi.generatePack({
+    mutationFn: () => {
+      const v = formData.vehicle;
+      const isRandom = v.freeText === '__random__';
+      return promoFlyerApi.generatePack({
         message: formData.message,
         subject: formData.subject,
         details: formData.details || undefined,
         packType: packType!,
         era: packEra as '1950s' | '1960s' | '1970s' | '1980s' | undefined,
         style: packStyle as 'comic-book' | 'movie-poster' | 'magazine' | undefined,
-        vehicleId: formData.vehicleId || undefined,
+        vehicleId: isRandom ? 'random' : undefined,
         language: formData.language,
-      }),
+      });
+    },
     onSuccess: (res) => {
       setGeneratedPack(res.data.flyers);
       setGeneratedContent(null);
@@ -185,7 +202,7 @@ export default function PromoFlyerPage() {
       subject: '',
       details: '',
       themeId: '',
-      vehicleId: null,
+      vehicle: { make: '', model: '', year: '', color: '', freeText: '' },
       language: 'en',
     });
     setPackType(null);
@@ -201,7 +218,7 @@ export default function PromoFlyerPage() {
       <div className="text-center">
         <h1 className="heading-retro text-5xl">FLYER CREATOR</h1>
         <p className="text-gray-600 mt-2 text-lg">
-          10 style families, smart rotation, push-button marketing
+          16 style families, smart rotation, push-button marketing
         </p>
       </div>
 

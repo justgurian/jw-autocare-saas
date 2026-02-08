@@ -6,6 +6,7 @@
  */
 
 import type { ThemeDefinition, ThemeImagePrompt, ThemeTextPrompt } from './index';
+import { ALL_CONTENT_THEMES } from './content-themes';
 
 export interface StyleFamily {
   id: string;
@@ -166,6 +167,61 @@ export const STYLE_FAMILIES: StyleFamily[] = [
       'manga-racing-spirit',  // NEW
     ],
     tags: ['anime', 'manga', 'japanese', 'animation', 'action'],
+  },
+  // ---- Content Category Families (6 new) ----
+  {
+    id: 'pro-photography',
+    name: 'Pro Photography',
+    description: 'Studio shots, golden hour, macro detail & workshop flatlays',
+    emoji: '📸',
+    previewImage: '/images/families/pro-photography.svg',
+    themeIds: ['showroom-hero', 'golden-hour-shop', 'detail-closeup', 'overhead-flatlay'],
+    tags: ['photography', 'studio', 'macro', 'professional', 'golden-hour'],
+  },
+  {
+    id: 'social-meme',
+    name: 'Social Meme',
+    description: 'Relatable car humor, mechanic wisdom & dashboard drama',
+    emoji: '😂',
+    previewImage: '/images/families/social-meme.svg',
+    themeIds: ['relatable-carowner', 'mechanic-wisdom', 'dashboard-drama'],
+    tags: ['meme', 'humor', 'social', 'relatable', 'shareable'],
+  },
+  {
+    id: 'before-after',
+    name: 'Before / After',
+    description: 'Side-by-side transforms, dramatic reveals & repair timelines',
+    emoji: '🔄',
+    previewImage: '/images/families/before-after.svg',
+    themeIds: ['split-transform', 'dramatic-reveal', 'repair-timeline'],
+    tags: ['before-after', 'transformation', 'results', 'comparison'],
+  },
+  {
+    id: 'bold-cta',
+    name: 'Bold CTA',
+    description: 'Giant offers, service menus & limited-time urgency',
+    emoji: '📣',
+    previewImage: '/images/families/bold-cta.svg',
+    themeIds: ['big-offer', 'quick-facts', 'urgency-countdown'],
+    tags: ['cta', 'offer', 'sale', 'pricing', 'urgency'],
+  },
+  {
+    id: 'editorial',
+    name: 'Editorial',
+    description: 'Magazine covers, editorial spreads & newsletter cards',
+    emoji: '📰',
+    previewImage: '/images/families/editorial.svg',
+    themeIds: ['magazine-cover', 'auto-editorial', 'newsletter-card'],
+    tags: ['editorial', 'magazine', 'newsletter', 'premium', 'article'],
+  },
+  {
+    id: 'edu-tips',
+    name: 'Edu-Tips',
+    description: 'Pro tips, top-5 lists & myth-busting infographics',
+    emoji: '💡',
+    previewImage: '/images/families/edu-tips.svg',
+    themeIds: ['tip-card', 'numbered-list', 'myth-buster'],
+    tags: ['educational', 'tips', 'infographic', 'advice', 'knowledge'],
   },
 ];
 
@@ -439,6 +495,7 @@ export const ALL_NEW_FAMILY_THEMES: ThemeDefinition[] = [
   ...neonSynthwaveNewThemes,
   ...streetArtNewThemes,
   ...animeMangaNewThemes,
+  ...ALL_CONTENT_THEMES,
 ];
 
 // ============================================================================

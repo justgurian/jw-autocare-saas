@@ -137,68 +137,33 @@ export const geminiService = {
       // Build comprehensive prompt for high-quality auto repair marketing images
       const contactSection = buildContactSection(options.contactInfo);
 
-      const fullPrompt = `You are an elite professional graphic designer at a top-tier marketing agency, creating a STUNNING promotional image for a premium independent auto repair shop — the kind of shop trusted by its community, known for exceptional work, and proud of its reputation.
+      const fullPrompt = `You are a world-class graphic designer creating a marketing image for an auto repair shop.
 
-CREATE A VISUALLY STRIKING, HIGH-QUALITY MARKETING IMAGE with the following specifications:
-
-=== CORE CONTENT ===
 ${prompt}
 
 ${contactSection}
 
-=== VISUAL DESIGN REQUIREMENTS ===
+=== TEXT RENDERING (critical — follow exactly) ===
+Render text in this visual hierarchy, largest to smallest:
+1. HEADLINE — biggest, boldest text. Readable as a phone thumbnail.
+2. BUSINESS NAME — prominent branding, slightly smaller than headline.
+3. DETAILS — supporting info, clearly smaller.
+4. CTA / CONTACT — phone number or website at bottom edge. Smallest.
 
-COMPOSITION & LAYOUT:
-- Create a clean, professional composition with clear visual hierarchy
-- Use the rule of thirds for balanced, eye-catching design
-- Leave breathing room - don't overcrowd the image
-- Ensure the main message is immediately visible and readable
-- Aspect ratio: ${options.aspectRatio || '4:5'} (optimized for Instagram/Facebook)
+Rules:
+- Maximum 4 text elements total on the image
+- Every text element must have contrast backing (shadow, outline, or color bar)
+- Leave breathing room between text blocks
 
-TYPOGRAPHY & TEXT:
-- Use BOLD, LARGE, highly readable text for headlines
-- Text must have HIGH CONTRAST against background (white text on dark, or dark text with white outline)
-- Professional sans-serif fonts that convey trust and reliability
-- Text should be readable even when image is viewed as a small thumbnail on mobile
-- Include subtle text shadows or outlines for maximum readability
-
-COLOR PALETTE:
-- Use rich, vibrant colors that pop on social media feeds
-- Professional automotive colors: deep reds, metallic blues, chrome silvers, classic blacks
-- Accent colors that create energy: bright yellows, electric oranges, clean whites
-- Ensure colors work together harmoniously
-
-VISUAL ELEMENTS:
-- Incorporate automotive imagery: tools, cars, wheels, gauges, garage elements
-- Use dynamic angles and perspectives for visual interest
-- Add subtle shine, reflections, or metallic effects for premium feel
-- Include design elements like racing stripes, checkered patterns, or gear shapes
-
-STYLE & MOOD:
-- Premium, trustworthy, expert auto shop aesthetic — the kind of place you'd trust with your family's car
-- Clean, modern design that stands out in social media feeds
-- Balance between eye-catching and professional
-- Convey decades of expertise, unshakable reliability, and top-quality service
-
-=== QUALITY STANDARDS ===
-- This image will be used for REAL BUSINESS MARKETING for a PREMIUM independent auto repair shop
-- It must look like it was created by a top-tier professional graphic designer at a real agency
-- The image should make people STOP SCROLLING when they see it in their feed
-- Quality level: Ready to post on Instagram, Facebook, or print as a professional flyer
-- The viewer should feel TRUST and CONFIDENCE in this shop after seeing this image
-- This shop is in the TOP 5% of independent repair shops — the image quality must reflect that
+=== OUTPUT ===
+Single ${options.aspectRatio || '4:5'} image. Professional agency quality. Scroll-stopping on social media.
 
 === DO NOT INCLUDE ===
-- Realistic human faces or photographs of real people
-- Copyrighted logos, brand names, or trademarked characters
-- Low quality, clipart-style, or amateur-looking elements
-- Tiny unreadable text
-- Cluttered or chaotic layouts
-- Generic stock photo aesthetic
-- Cheesy, cheap, or discount-store aesthetics
-${options.negativePrompt ? `- ${options.negativePrompt}` : ''}
-
-Generate a single, stunning marketing image that a premium auto repair shop would be proud to post on their social media.`;
+- Realistic human faces or hands
+- Copyrighted logos or characters
+- Garbled, misspelled, or unreadable text
+- Cluttered layouts with too many elements
+${options.negativePrompt ? `- ${options.negativePrompt}` : ''}`;
 
       logger.info('Calling image model for generation...', {
         hasLogo: !!options.logoImage,

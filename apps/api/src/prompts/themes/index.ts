@@ -126,12 +126,14 @@ const legacyThemes: ThemeDefinition[] = [
     name: 'Retro Garage',
     category: 'vintage',
     previewUrl: '/themes/retro-garage-preview.jpg',
+    previewColors: ['#C41E3A', '#F5F5DC', '#4682B4', '#C0C0C0'],
+    shortDescription: 'Classic 1950s hand-painted garage signs',
     imagePrompt: {
-      style: 'vintage 1950s americana garage aesthetic, hand-painted sign style',
-      colorPalette: 'warm sepia tones, chrome accents, red and cream, classic blue',
-      typography: 'bold vintage lettering, hand-painted sign style, retro fonts',
-      elements: 'classic car silhouettes, oil cans, vintage tools, checkered floor, neon signs',
-      mood: 'nostalgic, trustworthy, classic american, family-owned feel',
+      style: 'Vintage 1950s americana garage. Hand-painted sign aesthetic with oil-stained textures. Full-service gas station era.',
+      colorPalette: 'Cherry red (#C41E3A), cream (#F5F5DC), steel blue (#4682B4), chrome silver (#C0C0C0). Warm sepia undertones.',
+      typography: 'Bold vintage slab-serif lettering. Hand-painted sign style with slight imperfections. All-caps headlines.',
+      elements: 'Classic car silhouettes, oil cans, vintage tools, checkered floor, neon "OPEN" sign, chrome pinstriping borders.',
+      mood: 'Nostalgic, trustworthy, classic American, family-owned warmth.',
     },
     textPrompt: {
       tone: 'friendly, nostalgic, family-business feel',
@@ -149,12 +151,14 @@ const legacyThemes: ThemeDefinition[] = [
     name: 'Arizona Desert',
     category: 'regional',
     previewUrl: '/themes/arizona-desert-preview.jpg',
+    previewColors: ['#CC5500', '#F4A460', '#FF6B81', '#40E0D0'],
+    shortDescription: 'Southwestern desert sunset vibes',
     imagePrompt: {
-      style: 'southwestern desert aesthetic, Arizona sunset vibes',
-      colorPalette: 'terracotta orange, desert sand, sunset pink, turquoise accents',
-      typography: 'bold western fonts, rustic styling, cactus motifs',
-      elements: 'saguaro cacti, desert mountains, sunset gradients, Route 66 vibes',
-      mood: 'warm, adventurous, local pride, rugged reliability',
+      style: 'Southwestern desert aesthetic. Arizona sunset golden hour. Adobe textures and dusty open roads.',
+      colorPalette: 'Terracotta (#CC5500), desert sand (#F4A460), sunset coral (#FF6B81), turquoise (#40E0D0). Warm earth tones throughout.',
+      typography: 'Bold western slab-serif. Rustic hand-stamped style. Warm-toned text on desert backgrounds.',
+      elements: 'Saguaro cacti silhouettes, desert mountains, sunset gradient sky, dusty road, adobe wall textures.',
+      mood: 'Warm, adventurous, local pride, rugged reliability.',
     },
     textPrompt: {
       tone: 'warm, local, adventure-oriented',
@@ -172,12 +176,14 @@ const legacyThemes: ThemeDefinition[] = [
     name: 'Neon Nights',
     category: 'modern',
     previewUrl: '/themes/neon-nights-preview.jpg',
+    previewColors: ['#0066FF', '#FF1493', '#39FF14', '#4B0082'],
+    shortDescription: 'Cyberpunk neon glow on dark streets',
     imagePrompt: {
-      style: 'cyberpunk neon aesthetic, night city vibes, glowing signage',
-      colorPalette: 'electric blue, hot pink, neon green, deep purple, black backgrounds',
-      typography: 'glowing neon tube letters, futuristic fonts, outlined text',
-      elements: 'neon signs, city reflections, rain-slicked streets, glowing car lights',
-      mood: 'edgy, modern, premium, night-owl energy',
+      style: 'Cyberpunk neon aesthetic. Night city vibes with glowing signage. Rain-slicked urban streets reflecting color.',
+      colorPalette: 'Electric blue (#0066FF), hot pink (#FF1493), neon green (#39FF14), deep purple (#4B0082). All on black (#0A0A0A) backgrounds.',
+      typography: 'Glowing neon tube lettering. Futuristic sans-serif with outer glow effect. Text looks like actual neon signs.',
+      elements: 'Neon tube signs, rain puddle reflections, city buildings, glowing car headlights, steam/fog with neon color.',
+      mood: 'Edgy, modern, premium, night-owl energy.',
     },
     textPrompt: {
       tone: 'edgy, premium, modern',
@@ -195,12 +201,14 @@ const legacyThemes: ThemeDefinition[] = [
     name: 'Classic Mechanic',
     category: 'professional',
     previewUrl: '/themes/classic-mechanic-preview.jpg',
+    previewColors: ['#1E3A5F', '#C0C0C0', '#FFFFFF', '#CC0000'],
+    shortDescription: 'Professional workshop with clean tools',
     imagePrompt: {
-      style: 'professional auto service aesthetic, clean workshop vibes',
-      colorPalette: 'deep blue, silver chrome, white, red accents',
-      typography: 'clean sans-serif, professional bold headings, clear readable text',
-      elements: 'wrench and gear icons, clean tools, organized workspace, certificates',
-      mood: 'professional, trustworthy, certified, expert',
+      style: 'Professional auto service aesthetic. Clean, organized workshop. ASE-certified expertise feel.',
+      colorPalette: 'Deep navy (#1E3A5F), chrome silver (#C0C0C0), clean white (#FFFFFF), red accent (#CC0000). Professional and trustworthy.',
+      typography: 'Clean sans-serif bold headings. Professional, readable at any size. High contrast on solid backgrounds.',
+      elements: 'Wrench and gear icons, organized tool wall, clean workspace, certification badge graphic, polished floor.',
+      mood: 'Professional, trustworthy, certified, expert craftsmanship.',
     },
     textPrompt: {
       tone: 'professional, expert, reassuring',
@@ -218,12 +226,14 @@ const legacyThemes: ThemeDefinition[] = [
     name: '80s Pop Culture',
     category: 'retro',
     previewUrl: '/themes/pop-culture-80s-preview.jpg',
+    previewColors: ['#FF1493', '#00CED1', '#FFD700', '#8A2BE2'],
+    shortDescription: 'Synthwave VHS era, totally radical',
     imagePrompt: {
-      style: '1980s pop culture aesthetic, synthwave vibes, VHS era',
-      colorPalette: 'hot pink, electric cyan, yellow, purple gradient sunsets',
-      typography: 'chrome 3D text, grid patterns, italic speed lines',
-      elements: 'palm trees, sunset grids, geometric shapes, cassette tapes, DeLorean vibes',
-      mood: 'fun, nostalgic, energetic, totally rad',
+      style: '1980s pop culture aesthetic. Synthwave sunset grid vibes. VHS-era neon glow. Retro-futurism.',
+      colorPalette: 'Hot pink (#FF1493), electric cyan (#00CED1), sunshine gold (#FFD700), purple gradient (#8A2BE2 to #4B0082). Sunset sky backdrop.',
+      typography: 'Chrome 3D extruded text with pink/cyan reflections. Italic speed angle. Bold outlines with metallic sheen.',
+      elements: 'Palm tree silhouettes, perspective grid horizon, geometric triangles, sunset gradient bands, DeLorean-style car.',
+      mood: 'Fun, nostalgic, energetic, totally rad. VHS tracking lines optional.',
     },
     textPrompt: {
       tone: 'fun, nostalgic, energetic',
@@ -241,12 +251,14 @@ const legacyThemes: ThemeDefinition[] = [
     name: 'Modern Minimal',
     category: 'modern',
     previewUrl: '/themes/modern-minimal-preview.jpg',
+    previewColors: ['#FFFFFF', '#1A1A1A', '#FF4444', '#E0E0E0'],
+    shortDescription: 'Clean white space, single accent color',
     imagePrompt: {
-      style: 'clean minimalist design, modern luxury aesthetic',
-      colorPalette: 'white space, black text, single accent color, subtle grays',
-      typography: 'thin modern fonts, generous spacing, lowercase elegance',
-      elements: 'clean lines, geometric shapes, ample white space, subtle shadows',
-      mood: 'sophisticated, premium, clean, modern luxury',
+      style: 'Clean minimalist design. Apple-inspired luxury. Maximum white space. Less is more.',
+      colorPalette: 'Pure white (#FFFFFF) dominant, charcoal black (#1A1A1A) text, single red accent (#FF4444), light gray (#E0E0E0) borders. 80% whitespace.',
+      typography: 'Thin modern sans-serif (Helvetica Neue style). Generous letter-spacing. Lowercase elegance for body, uppercase for headline.',
+      elements: 'Clean hairline borders, single geometric shape, ample negative space, subtle drop shadows. No clutter.',
+      mood: 'Sophisticated, premium, clean, modern luxury. Breathable layout.',
     },
     textPrompt: {
       tone: 'sophisticated, concise, premium',
@@ -264,12 +276,14 @@ const legacyThemes: ThemeDefinition[] = [
     name: 'Sports Car',
     category: 'automotive',
     previewUrl: '/themes/sports-car-preview.jpg',
+    previewColors: ['#CC0000', '#1C1C1C', '#C0C0C0', '#FFD700'],
+    shortDescription: 'High-performance racing heritage',
     imagePrompt: {
-      style: 'high-performance automotive aesthetic, racing heritage',
-      colorPalette: 'racing red, carbon black, metallic silver, yellow accents',
-      typography: 'bold italic racing fonts, speed lines, dynamic angles',
-      elements: 'racing stripes, carbon fiber textures, speedometer graphics, checkered flags',
-      mood: 'fast, powerful, exciting, performance-focused',
+      style: 'High-performance automotive aesthetic. Racing heritage poster feel. Dynamic angles and motion blur.',
+      colorPalette: 'Racing red (#CC0000), carbon black (#1C1C1C), metallic silver (#C0C0C0), yellow accent (#FFD700). Bold contrast.',
+      typography: 'Bold italic racing fonts with speed line streaks. Dynamic tilted angles. Large impact headlines.',
+      elements: 'Racing stripes, carbon fiber texture background, speedometer/tachometer graphic, checkered flag border accent.',
+      mood: 'Fast, powerful, exciting, adrenaline-fueled performance.',
     },
     textPrompt: {
       tone: 'exciting, performance-driven, enthusiast',
@@ -287,12 +301,14 @@ const legacyThemes: ThemeDefinition[] = [
     name: 'Family Friendly',
     category: 'lifestyle',
     previewUrl: '/themes/family-friendly-preview.jpg',
+    previewColors: ['#6495ED', '#FFD700', '#90EE90', '#FF8C00'],
+    shortDescription: 'Warm, approachable, family-first',
     imagePrompt: {
-      style: 'warm family-oriented design, approachable and friendly',
-      colorPalette: 'soft blue, warm yellow, gentle green, friendly orange',
-      typography: 'rounded friendly fonts, easy to read, welcoming style',
-      elements: 'family car silhouettes, happy illustrations, safe symbols, heart icons',
-      mood: 'warm, trustworthy, safe, family-first',
+      style: 'Warm family-oriented design. Approachable and inviting. Bright, cheerful, safe.',
+      colorPalette: 'Soft blue (#6495ED), warm yellow (#FFD700), gentle green (#90EE90), friendly orange (#FF8C00). Pastel-bright palette.',
+      typography: 'Rounded friendly sans-serif (like Nunito). Easy to read, warm and welcoming. Large, soft headline.',
+      elements: 'Family SUV/minivan silhouette, shield/safety icon, heart accent, clean simple layout with rounded corners.',
+      mood: 'Warm, trustworthy, safe, family-first. Feels like a neighbor you trust.',
     },
     textPrompt: {
       tone: 'warm, caring, family-oriented',
@@ -310,12 +326,14 @@ const legacyThemes: ThemeDefinition[] = [
     name: 'Truck Country',
     category: 'automotive',
     previewUrl: '/themes/truck-country-preview.jpg',
+    previewColors: ['#228B22', '#8B4513', '#D2691E', '#4682B4'],
+    shortDescription: 'Rugged work-ready pickup truck vibes',
     imagePrompt: {
-      style: 'rugged truck and country aesthetic, work-ready vibes',
-      colorPalette: 'forest green, brown earth tones, rust orange, denim blue',
-      typography: 'bold stencil fonts, rugged textures, workwear style',
-      elements: 'pickup truck silhouettes, mountains, dirt roads, tool graphics',
-      mood: 'rugged, hardworking, reliable, no-nonsense',
+      style: 'Rugged truck and country aesthetic. Work-ready, built tough. Dirt road reliability.',
+      colorPalette: 'Forest green (#228B22), earth brown (#8B4513), rust orange (#D2691E), denim blue (#4682B4). Natural earth tones.',
+      typography: 'Bold stencil military-style fonts. Rugged texture overlays. Workwear stamp aesthetic.',
+      elements: 'Pickup truck silhouette, mountain ridge backdrop, dirt road texture, heavy-duty tool graphics, steel plate border.',
+      mood: 'Rugged, hardworking, reliable, no-nonsense. Built Ford Tough energy.',
     },
     textPrompt: {
       tone: 'straight-talking, hardworking, reliable',
@@ -333,12 +351,14 @@ const legacyThemes: ThemeDefinition[] = [
     name: 'Eco Green',
     category: 'modern',
     previewUrl: '/themes/eco-green-preview.jpg',
+    previewColors: ['#228B22', '#87CEEB', '#8B4513', '#FFFFFF'],
+    shortDescription: 'Sustainable, eco-friendly, forward-thinking',
     imagePrompt: {
-      style: 'eco-friendly modern design, sustainable vibes',
-      colorPalette: 'leaf green, sky blue, earth brown, clean white',
-      typography: 'clean modern fonts, organic curves, nature-inspired',
-      elements: 'leaf motifs, EV charging, recycling symbols, nature backgrounds',
-      mood: 'sustainable, forward-thinking, responsible, clean',
+      style: 'Eco-friendly modern design. Clean, sustainable, forward-thinking. Nature meets technology.',
+      colorPalette: 'Leaf green (#228B22), sky blue (#87CEEB), earth brown (#8B4513), clean white (#FFFFFF). Natural, fresh palette.',
+      typography: 'Clean modern rounded sans-serif. Organic letter shapes. Light weight for eco lightness, bold for headlines.',
+      elements: 'Leaf/plant motifs, EV charging plug icon, recycling arrows, gradient green-to-blue backgrounds, clean air feel.',
+      mood: 'Sustainable, forward-thinking, responsible, clean. Feel-good environmentalism.',
     },
     textPrompt: {
       tone: 'responsible, forward-thinking, caring',
@@ -401,6 +421,12 @@ export const THEME_CATEGORIES = [
   { id: 'nostalgic', name: 'Nostalgic', icon: '🎬', description: 'Comic, movie, and magazine styles from classic eras' },
   { id: 'general', name: 'General', icon: '🎨', description: 'All-purpose styles' },
   { id: 'custom', name: 'Custom Styles', icon: '🎨', description: 'Admin-curated styles from any industry' },
+  { id: 'photography', name: 'Pro Photography', icon: '📸', description: 'Studio-quality car photography' },
+  { id: 'meme', name: 'Social Meme', icon: '😂', description: 'Relatable humor and shareable content' },
+  { id: 'before-after', name: 'Before / After', icon: '🔄', description: 'Transformation comparisons' },
+  { id: 'bold-cta', name: 'Bold CTA', icon: '📣', description: 'Direct offers and pricing' },
+  { id: 'editorial', name: 'Editorial', icon: '📰', description: 'Magazine and newsletter formats' },
+  { id: 'edu-tips', name: 'Edu-Tips', icon: '💡', description: 'Educational tips and infographics' },
 ];
 
 // Era definitions for nostalgic themes
@@ -480,52 +506,21 @@ export const themeRegistry = {
     // Fallback for legacy and additional themes
     const theme = themes.find(t => t.id === styleId);
     if (theme) {
-      return `You are an expert graphic designer creating a STUNNING promotional image for an auto repair shop's social media marketing.
+      return `Create a professional marketing flyer in the "${theme.name}" style.
 
 === CREATIVE DIRECTION ===
-Create a professional marketing flyer in the "${theme.name}" style.
 Visual Style: ${theme.imagePrompt.style}
-Color Mood: ${theme.imagePrompt.mood}
+Color Palette: ${theme.imagePrompt.colorPalette}
+Typography: ${theme.imagePrompt.typography}
+Design Elements: ${theme.imagePrompt.elements}
+Mood: ${theme.imagePrompt.mood}
 
-=== VISUAL DESIGN SPECIFICATIONS ===
-
-COLORS:
-${theme.imagePrompt.colorPalette}
-- Use bold, vibrant versions of these colors that pop on social media
-- Ensure strong contrast between background and text
-
-TYPOGRAPHY:
-${theme.imagePrompt.typography}
-- Headlines must be EXTREMELY LARGE, BOLD, and READABLE
-- Text must be clearly legible even as a small thumbnail
-- Use high contrast text colors (white with black outline works universally)
-
-DESIGN ELEMENTS:
-${theme.imagePrompt.elements}
-- Incorporate these elements tastefully to support the theme
-- Don't overcrowd - leave breathing room
-
-=== CONTENT TO FEATURE ===
-HEADLINE (prominent): "${content.headline}"
-SUBJECT/SERVICE: ${content.subject}
+=== CONTENT ===
+HEADLINE: "${content.headline}"
+SERVICE: ${content.subject}
 ${content.details ? `DETAILS: ${content.details}` : ''}
-${content.businessName ? `BUSINESS NAME: "${content.businessName}" - include as branding` : ''}
-${content.logoInstructions ? `LOGO: ${content.logoInstructions}` : ''}
-
-=== QUALITY STANDARDS ===
-- Professional marketing agency quality
-- Scroll-stopping visual impact
-- Clean, polished, impressive design
-- Auto repair industry appropriate
-
-=== MUST AVOID ===
-❌ Realistic human faces
-❌ Copyrighted logos or characters
-❌ Tiny, unreadable text
-❌ Cluttered layouts
-❌ Amateur or low-quality appearance
-
-Create ONE stunning 4:5 aspect ratio promotional image that an auto repair shop would proudly post on Instagram/Facebook.`;
+${content.businessName ? `BUSINESS NAME: "${content.businessName}"` : ''}
+${content.logoInstructions ? `LOGO: ${content.logoInstructions}` : ''}`;
     }
     return '';
   },

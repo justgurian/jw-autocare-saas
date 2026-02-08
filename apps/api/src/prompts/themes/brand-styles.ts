@@ -687,77 +687,26 @@ export function buildBrandStyleImagePrompt(
 ): string {
   const { imagePrompt } = style;
 
-  return `You are an expert graphic designer at a top marketing agency creating a STUNNING promotional image for an auto repair shop's social media marketing.
+  return `Create a professional "${style.name}" marketing flyer for an auto repair shop.
 
 === CREATIVE DIRECTION ===
 ${imagePrompt.styleDirective}
 
-=== TARGET OUTPUT ===
-Create a high-quality, professional promotional flyer/social media post that:
-- Stops people scrolling on Instagram/Facebook
-- Looks like it was designed by a professional agency
-- Perfectly captures the "${style.name}" visual identity
-- Makes people want to visit this auto shop
+=== VISUAL DESIGN ===
+STYLE: ${imagePrompt.visualElements}
+COLORS: ${imagePrompt.colorInstructions}
+TYPOGRAPHY: ${imagePrompt.typographyInstructions}
 
-=== VISUAL DESIGN SPECIFICATIONS ===
-
-STYLE & AESTHETIC:
-${imagePrompt.visualElements}
-
-COLOR PALETTE (USE THESE EXACT COLORS):
-${imagePrompt.colorInstructions}
-
-TYPOGRAPHY REQUIREMENTS (CRITICAL):
-${imagePrompt.typographyInstructions}
-- Main headline must be EXTREMELY LARGE and BOLD
-- Text must be crisp, clear, and readable even as a small thumbnail
-- Use HIGH CONTRAST - white or light text on dark backgrounds, or dark text with stroke on light backgrounds
-- Text should take up significant space in the composition
-
-=== CONTENT TO FEATURE ===
-HEADLINE (feature this prominently): "${content.headline}"
-SUBJECT/SERVICE: ${content.subject}
-${content.details ? `ADDITIONAL DETAILS: ${content.details}` : ''}
-${content.businessName ? `BUSINESS NAME: "${content.businessName}" - include this in the design as branding` : ''}
-${content.logoInstructions ? `\nLOGO PLACEMENT: ${content.logoInstructions}` : ''}
-
-=== COMPOSITION & LAYOUT ===
+=== COMPOSITION ===
 ${imagePrompt.compositionRules}
-- Create a single, cohesive marketing image (NOT a collage or multiple panels)
-- Strong visual hierarchy: Headline > Subject > Details > Branding
-- Professional marketing quality - this will represent a real business
-- Balanced, intentional white/negative space
+TOP ZONE: Business name / branding
+MIDDLE ZONE: Hero visual + headline (largest element)
+BOTTOM ZONE: CTA / contact info
 
-=== QUALITY STANDARDS ===
-This image MUST look like:
-- Professional graphic design work from a marketing agency
-- Something a business would proudly post on their social media
-- High-end marketing material, not clip-art or amateur design
-- Clean, polished, and visually impressive
-
-=== ABSOLUTE REQUIREMENTS ===
-✅ Professional marketing quality
-✅ Bold, readable text that pops
-✅ Cohesive ${style.name} visual style throughout
-✅ Eye-catching colors and composition
-✅ Automotive/auto-repair appropriate imagery
-
-=== MUST AVOID ===
-${imagePrompt.avoidElements}
-❌ Realistic photographs of human faces
-❌ Copyrighted logos, brand names, or characters
-❌ Tiny, illegible, or poorly placed text
-❌ Cluttered, busy, or chaotic layouts
-❌ Generic stock photo aesthetic
-❌ Watermarks or template-looking elements
-❌ Offensive, discriminatory, or inappropriate content
-❌ Low-quality, amateur, or unprofessional elements
-
-=== OUTPUT SPECIFICATIONS ===
-- Aspect ratio: 4:5 (portrait, optimized for Instagram/Facebook)
-- Single cohesive image (not a collage)
-- Print-ready quality at the given dimensions
-- The ${style.name} style should be immediately recognizable
-
-Create ONE stunning, scroll-stopping promotional image that a professional auto repair shop would proudly share on their social media.`;
+=== CONTENT ===
+HEADLINE: "${content.headline}"
+SERVICE: ${content.subject}
+${content.details ? `DETAILS: ${content.details}` : ''}
+${content.businessName ? `BUSINESS NAME: "${content.businessName}"` : ''}
+${content.logoInstructions ? `LOGO: ${content.logoInstructions}` : ''}`;
 }
