@@ -48,6 +48,7 @@ const JingleGeneratorPage = lazy(() => import('./pages/tools/jingle-generator/Ji
 const ServicesSpecialsPage = lazy(() => import('./pages/settings/ServicesSpecialsPage'));
 const BillingPage = lazy(() => import('./pages/settings/BillingPage'));
 const HiringFlyerPage = lazy(() => import('./pages/tools/hiring-flyer/HiringFlyerPage'));
+const StaffSpotlightPage = lazy(() => import('./pages/tools/staff-spotlight/StaffSpotlightPage'));
 
 // Page loading spinner
 function PageLoader() {
@@ -140,6 +141,7 @@ function App() {
             <Route path="/tools/shop-photographer" element={<ErrorBoundary><ShopPhotographerPage /></ErrorBoundary>} />
             <Route path="/tools/jingle-generator" element={<ErrorBoundary><JingleGeneratorPage /></ErrorBoundary>} />
             <Route path="/tools/hiring-flyer" element={<ErrorBoundary><HiringFlyerPage /></ErrorBoundary>} />
+            <Route path="/tools/staff-spotlight" element={<ErrorBoundary><StaffSpotlightPage /></ErrorBoundary>} />
             <Route path="/tools/review-reply" element={<ErrorBoundary><ReviewReplyPage /></ErrorBoundary>} />
             <Route path="/tools/theme-browser" element={<ErrorBoundary><ThemeBrowserPage /></ErrorBoundary>} />
             <Route path="/tools/image-editor" element={<ErrorBoundary><ImageEditorPage /></ErrorBoundary>} />

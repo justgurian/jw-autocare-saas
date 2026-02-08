@@ -31,6 +31,7 @@ import {
   Music,
   FolderOpen,
   Briefcase,
+  Users,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -59,6 +60,7 @@ export const allNavItems: NavItem[] = [
   { name: 'Now Hiring', href: '/tools/hiring-flyer', icon: Briefcase, description: 'Professional hiring flyers' },
   { name: 'Funny Meme', href: '/tools/meme-generator', icon: Laugh, description: 'Shareable car memes' },
   { name: 'Feature a Car', href: '/tools/car-of-day', icon: Star, description: 'Customer car showcase' },
+  { name: 'Staff Spotlight', href: '/tools/staff-spotlight', icon: Users, description: 'Scroll-stopping staff content' },
   { name: 'Shop Photographer', href: '/tools/shop-photographer', icon: Camera, description: 'Professional shop photos' },
   { name: 'Staff Cards', href: '/tools/business-cards', icon: CreditCard, description: 'Team business cards' },
   { name: 'Make a Video', href: '/tools/video-creator', icon: Video, description: 'Quick promotional videos' },
@@ -110,6 +112,7 @@ export const navigationGroups: NavigationGroup[] = [
       { name: 'Now Hiring', href: '/tools/hiring-flyer', icon: Briefcase, description: 'Professional hiring flyers' },
       { name: 'Funny Meme', href: '/tools/meme-generator', icon: Laugh, description: 'Shareable car memes' },
       { name: 'Feature a Car', href: '/tools/car-of-day', icon: Star, description: 'Customer car showcase' },
+      { name: 'Staff Spotlight', href: '/tools/staff-spotlight', icon: Users, description: 'Scroll-stopping staff content' },
       { name: 'Shop Photographer', href: '/tools/shop-photographer', icon: Camera, description: 'Professional shop photos' },
       { name: 'Staff Cards', href: '/tools/business-cards', icon: CreditCard, description: 'Team business cards' },
     ],

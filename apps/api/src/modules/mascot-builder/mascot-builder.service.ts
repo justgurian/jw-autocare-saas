@@ -10,7 +10,7 @@ import { config } from '../../config';
 import { prisma } from '../../db/client';
 import { logger } from '../../utils/logger';
 import { storageService } from '../../services/storage.service';
-import { MASCOT_OPTIONS, MASCOT_STYLES, MascotCustomization, MascotResult } from './mascot-options';
+import { MASCOT_OPTIONS, MASCOT_STYLES, MascotCustomization, MascotResult, MascotV2Input, MascotV2Result } from './mascot-options';
 
 const IMAGE_MODEL = 'gemini-3-pro-image-preview';
 const ai = new GoogleGenAI({ apiKey: config.gemini.apiKey });
@@ -164,6 +164,202 @@ export const mascotBuilderService = {
       imageUrl,
       characterPrompt,
     };
+  },
+
+  async generateV2(
+    tenantId: string,
+    userId: string,
+    input: MascotV2Input
+  ): Promise<{ results: MascotV2Result[] }> {
+    const { mode, styles, shirtName } = input;
+
+    // Resolve option lookups for build mode
+    const furColor = MASCOT_OPTIONS.furColors.find((c) => c.id === input.furColor);
+    const eyeStyle = MASCOT_OPTIONS.eyeStyles.find((e) => e.id === input.eyeStyle);
+    const hairstyle = MASCOT_OPTIONS.hairstyles.find((h) => h.id === input.hairstyle);
+    const outfitType = MASCOT_OPTIONS.outfitTypes.find((o) => o.id === input.outfitType) || MASCOT_OPTIONS.outfitTypes[0];
+    const outfitColor = MASCOT_OPTIONS.outfitColors.find((o) => o.id === input.outfitColor);
+    const accessory = input.accessory ? MASCOT_OPTIONS.accessories.find((a) => a.id === input.accessory) : null;
+    const seasonalAcc = input.seasonalAccessory ? MASCOT_OPTIONS.seasonalAccessories.find((s) => s.id === input.seasonalAccessory) : null;
+
+    const outfitDesc = outfitType.description;
+    const outfitColorName = outfitColor?.name || 'Navy Blue';
+    const accessoryDesc = accessory && accessory.id !== 'none' && accessory.description ? ` ${accessory.description}.` : '';
+    const seasonalDesc = seasonalAcc && seasonalAcc.id !== 'none' && seasonalAcc.description ? ` ${seasonalAcc.description}.` : '';
+
+    const colorName = furColor?.name || 'Orange';
+    const eyeDesc = eyeStyle?.description || 'Large round googly eyes';
+    const hairDesc = hairstyle?.description || 'Short cropped black hair';
+
+    const outfitSection = `Wearing ${outfitDesc} in ${outfitColorName} color with '${shirtName}' embroidered on the chest.${accessoryDesc}${seasonalDesc}`;
+
+    // Build per-style promises
+    const promises = styles.map(async (styleId) => {
+      const style = MASCOT_STYLES.find((s) => s.id === styleId);
+      if (!style) throw new Error(`Unknown style: ${styleId}`);
+
+      let prompt: string;
+
+      if (mode === 'photo') {
+        // Photo mode: reference-based generation
+        const basePrompt = style.promptBase
+          .replace('{bodyColor}', colorName)
+          .replace('{eyes}', eyeDesc)
+          .replace('{hair}', hairDesc);
+
+        prompt = `Create a ${basePrompt} mascot character INSPIRED BY the person in the reference photo. Match their general appearance — similar hair color/style, build, skin tone, and any distinctive features like glasses, beard, or tattoos — but render them entirely in the ${style.name} art style. The character should be ${outfitSection} Standing in a confident pose in front of an auto repair shop. The character should feel like a fun, stylized version of the real person. Full body shot, white/neutral background.`;
+      } else if (mode === 'describe') {
+        // Describe mode: text description-based generation
+        const basePrompt = style.promptBase
+          .replace('{bodyColor}', colorName)
+          .replace('{eyes}', eyeDesc)
+          .replace('{hair}', hairDesc);
+
+        prompt = `Create a ${basePrompt} mascot character based on this description: '${input.description}'. The character should be rendered entirely in the ${style.name} art style. ${outfitSection} Standing confidently in front of an auto repair shop. Full body shot, white/neutral background.`;
+      } else {
+        // Build mode: use existing buildMascotPrompt with the current style
+        prompt = this.buildMascotPrompt({
+          shirtName,
+          mascotName: input.mascotName,
+          mascotStyle: styleId,
+          furColor: input.furColor || 'orange',
+          eyeStyle: input.eyeStyle || 'googly',
+          hairstyle: input.hairstyle || 'short-black',
+          outfitColor: input.outfitColor || 'navy',
+          accessory: input.accessory,
+          outfitType: input.outfitType,
+          seasonalAccessory: input.seasonalAccessory,
+          personality: input.personality as MascotCustomization['personality'],
+        });
+      }
+
+      logger.info('Generating V2 mascot image', {
+        tenantId,
+        mode,
+        styleId,
+        shirtName,
+      });
+
+      // Build Gemini request contents
+      const parts: Array<{ inlineData?: { data: string; mimeType: string }; text?: string }> = [];
+
+      if (mode === 'photo' && input.photoBase64) {
+        // Strip data URL prefix if present
+        const base64Content = input.photoBase64.replace(/^data:[^;]+;base64,/, '');
+        parts.push({
+          inlineData: {
+            data: base64Content,
+            mimeType: 'image/jpeg',
+          },
+        });
+      }
+
+      parts.push({ text: prompt });
+
+      const response = await ai.models.generateContent({
+        model: IMAGE_MODEL,
+        contents: [{ role: 'user', parts }],
+        config: {
+          responseModalities: ['IMAGE', 'TEXT'],
+        },
+      });
+
+      // Extract image from response
+      const responseParts = response.candidates?.[0]?.content?.parts || [];
+      const imagePart = responseParts.find((p) => p.inlineData);
+
+      if (!imagePart?.inlineData?.data) {
+        throw new Error(`Image generation failed for style ${styleId} - no image in response`);
+      }
+
+      const imageData = Buffer.from(imagePart.inlineData.data, 'base64');
+      const mimeType = imagePart.inlineData.mimeType || 'image/png';
+
+      // Save image via storageService
+      const contentId = `mascot_${styleId}_${Date.now()}`;
+      const { url: imageUrl } = await storageService.saveImage(
+        imageData,
+        tenantId,
+        contentId,
+        mimeType
+      );
+
+      const displayName = input.mascotName || shirtName;
+
+      // Create Content record
+      const content = await prisma.content.create({
+        data: {
+          tenantId,
+          userId,
+          tool: 'mascot_builder',
+          contentType: 'image',
+          title: `Mascot - ${displayName} (${style.name})`,
+          imageUrl,
+          caption: `Meet ${displayName}, our shop mascot! (${style.name} style)`,
+          status: 'approved',
+          moderationStatus: 'passed',
+          metadata: {
+            shirtName,
+            mascotName: input.mascotName || null,
+            mascotStyle: styleId,
+            mode,
+            furColor: input.furColor || null,
+            eyeStyle: input.eyeStyle || null,
+            hairstyle: input.hairstyle || null,
+            outfitColor: input.outfitColor || null,
+            accessory: input.accessory || 'none',
+            outfitType: input.outfitType || 'jumpsuit',
+            seasonalAccessory: input.seasonalAccessory || 'none',
+            personality: input.personality || null,
+            description: input.description || null,
+            characterPrompt: prompt,
+          } as any,
+        },
+      });
+
+      // Log usage
+      await prisma.usageLog.create({
+        data: {
+          tenantId,
+          userId,
+          action: 'image_gen',
+          tool: 'mascot_builder',
+          creditsUsed: 1,
+          metadata: { contentId: content.id },
+        },
+      });
+
+      logger.info('V2 mascot saved', { contentId: content.id, tenantId, styleId });
+
+      return {
+        id: content.id,
+        style: styleId,
+        styleName: style.name,
+        imageUrl,
+        characterPrompt: prompt,
+        saved: true,
+      };
+    });
+
+    // Fire all style generations concurrently
+    const settled = await Promise.allSettled(promises);
+
+    const results: MascotV2Result[] = [];
+    for (const result of settled) {
+      if (result.status === 'fulfilled') {
+        results.push(result.value);
+      } else {
+        logger.error('V2 mascot generation failed for one style', {
+          reason: result.reason?.message || result.reason,
+        });
+      }
+    }
+
+    if (results.length === 0) {
+      throw new Error('All mascot style generations failed');
+    }
+
+    return { results };
   },
 
   async getMascots(tenantId: string) {

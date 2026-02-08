@@ -702,6 +702,42 @@ export const mascotBuilderApi = {
   }) => api.post('/tools/mascot-builder/generate', data),
   getMascots: () => api.get('/tools/mascot-builder/mascots'),
   deleteMascot: (id: string) => api.delete(`/tools/mascot-builder/mascots/${id}`),
+  generateV2: (data: {
+    mode: 'photo' | 'describe' | 'build';
+    photoBase64?: string;
+    description?: string;
+    styles: string[];
+    shirtName: string;
+    mascotName?: string;
+    furColor?: string;
+    eyeStyle?: string;
+    hairstyle?: string;
+    outfitType?: string;
+    outfitColor?: string;
+    accessory?: string;
+    seasonalAccessory?: string;
+    personality?: {
+      presetId: string;
+      catchphrase?: string;
+      energyLevel?: string;
+      speakingStyle?: string;
+    };
+  }) => api.post('/tools/mascot-builder/generate-v2', data),
+};
+
+export const staffSpotlightApi = {
+  getFormats: () => api.get('/tools/staff-spotlight/formats'),
+  generate: (data: {
+    photoBase64: string;
+    staffName: string;
+    position?: string;
+    yearsExperience?: number;
+    specialty?: string;
+    funFact?: string;
+    nickname?: string;
+    certifications?: string[];
+    formats: string[];
+  }) => api.post('/tools/staff-spotlight/generate', data),
 };
 
 export const styleClonerApi = {

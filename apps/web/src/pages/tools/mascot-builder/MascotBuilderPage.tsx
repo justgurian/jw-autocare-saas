@@ -1,13 +1,43 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { mascotBuilderApi } from '../../../services/api';
 import {
-  Palette,
-  Loader,
-  Sparkles,
+  Camera,
+  PenLine,
+  Wrench,
+  Rocket,
+  Loader2,
   Trash2,
+  CheckCircle,
+  AlertCircle,
+  Palette,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import PhotoUpload from '../../../components/features/PhotoUpload';
+
+// ─── Style definitions ─────────────────────────────────────────
+const ALL_STYLES = [
+  { id: 'muppet', name: 'Muppet', icon: '🧸' },
+  { id: 'sports', name: 'Sports', icon: '🏈' },
+  { id: 'cartoon', name: 'Cartoon', icon: '🎨' },
+  { id: 'retro', name: 'Retro', icon: '🏆' },
+  { id: 'anime', name: 'Anime', icon: '🎌' },
+  { id: 'cgi', name: 'CGI', icon: '💻' },
+  { id: 'mascot-bot', name: 'Robot', icon: '🤖' },
+  { id: 'superhero', name: 'Superhero', icon: '🦸' },
+  { id: 'caricature', name: 'Caricature', icon: '🎭' },
+  { id: 'lego', name: 'LEGO', icon: '🧱' },
+  { id: 'pixel-art', name: 'Pixel Art', icon: '👾' },
+  { id: 'claymation', name: 'Claymation', icon: '🎬' },
+] as const;
+
+const PERSONALITY_PRESETS = [
+  { id: 'hype-man', name: 'The Hype Man', icon: '🔥' },
+  { id: 'trusted-expert', name: 'The Trusted Expert', icon: '🔧' },
+  { id: 'funny-friend', name: 'The Funny Friend', icon: '😂' },
+  { id: 'neighborhood-buddy', name: 'The Neighborhood Buddy', icon: '🏘️' },
+  { id: 'drill-sergeant', name: 'The Drill Sergeant', icon: '🫡' },
+];
 
 const DEFAULT_FUR_COLORS = [
   { id: 'tan', name: 'Tan', hex: '#D2B48C' },
@@ -26,7 +56,6 @@ const DEFAULT_OUTFIT_COLORS = [
   { id: 'green', name: 'Green', hex: '#276749' },
   { id: 'black', name: 'Black', hex: '#1A1A1A' },
   { id: 'gray', name: 'Gray', hex: '#718096' },
-  { id: 'orange', name: 'Orange', hex: '#DD6B20' },
 ];
 
 const DEFAULT_EYE_STYLES = [
@@ -47,14 +76,6 @@ const DEFAULT_HAIRSTYLES = [
   { id: 'buzz-cut', name: 'Buzz Cut' },
 ];
 
-const DEFAULT_ACCESSORIES = [
-  { id: 'none', name: 'None' },
-  { id: 'sunglasses', name: 'Sunglasses' },
-  { id: 'hard-hat', name: 'Hard Hat' },
-  { id: 'bandana', name: 'Bandana' },
-  { id: 'cap', name: 'Baseball Cap' },
-];
-
 const DEFAULT_OUTFIT_TYPES = [
   { id: 'jumpsuit', name: 'Jumpsuit' },
   { id: 'polo', name: 'Polo Shirt' },
@@ -65,40 +86,17 @@ const DEFAULT_OUTFIT_TYPES = [
   { id: 'apron', name: 'Shop Apron' },
 ];
 
-const DEFAULT_SEASONAL = [
-  { id: 'none', name: 'None' },
-  { id: 'santa-hat', name: 'Santa Hat' },
-  { id: 'sunglasses', name: 'Sunglasses' },
-  { id: 'rain-gear', name: 'Rain Gear' },
-  { id: 'bunny-ears', name: 'Bunny Ears' },
-  { id: 'flag-cape', name: 'July 4th Cape' },
-  { id: 'fall-scarf', name: 'Fall Scarf' },
-];
+// ─── Types ─────────────────────────────────────────────────────
+type CreationMode = 'photo' | 'describe' | 'build';
 
-const DEFAULT_MASCOT_STYLES = [
-  { id: 'muppet', name: 'Muppet Puppet', description: 'Jim Henson-style felt & fur puppet', icon: '🧸', bodyColorLabel: 'Fur Color' },
-  { id: 'sports', name: 'Sports Mascot', description: 'Athletic team mascot in mechanic gear', icon: '🏈', bodyColorLabel: 'Mascot Color' },
-  { id: 'cartoon', name: 'Cartoon Character', description: '2D-style animated character, bold outlines', icon: '🎨', bodyColorLabel: 'Character Color' },
-  { id: 'retro', name: 'Retro Mascot', description: '1950s gas station attendant character', icon: '⛽', bodyColorLabel: 'Uniform Color' },
-  { id: 'anime', name: 'Anime / Chibi', description: 'Cute Japanese chibi style, big eyes', icon: '✨', bodyColorLabel: 'Accent Color' },
-  { id: 'realistic', name: 'Realistic CGI', description: 'Photorealistic 3D-rendered character', icon: '🤖', bodyColorLabel: 'Accent Color' },
-  { id: 'robot', name: 'Mascot Bot', description: 'Friendly robot mechanic, chrome & color', icon: '🦾', bodyColorLabel: 'Metal Color' },
-];
-
-const PERSONALITY_PRESETS = [
-  { id: 'hype-man', name: 'The Hype Man', description: 'Over-the-top excited about every service', icon: '🔥', energyLevel: 'maximum', speakingStyle: 'Fast-talking, uses superlatives', defaultCatchphrase: "LET'S GOOOOO! Your car is gonna LOVE this!" },
-  { id: 'trusted-expert', name: 'The Trusted Expert', description: 'Calm, knowledgeable, explains clearly', icon: '🔧', energyLevel: 'medium', speakingStyle: 'Measured and confident', defaultCatchphrase: "Here's the deal — we'll take great care of your ride." },
-  { id: 'funny-friend', name: 'The Funny Friend', description: 'Makes everything a joke', icon: '😂', energyLevel: 'high', speakingStyle: 'Jokes, puns, playful sarcasm', defaultCatchphrase: "Your car called... it says it misses us!" },
-  { id: 'neighborhood-buddy', name: 'The Neighborhood Buddy', description: 'Warm and personal', icon: '🏘️', energyLevel: 'low', speakingStyle: 'Conversational and warm', defaultCatchphrase: "We treat every car like it belongs to family." },
-  { id: 'drill-sergeant', name: 'The Drill Sergeant', description: 'Military precision meets mechanics', icon: '🫡', energyLevel: 'high', speakingStyle: 'Short commands, intense', defaultCatchphrase: "DROP AND GIVE ME AN OIL CHANGE, SOLDIER!" },
-];
-
-interface MascotStyleOption {
+interface MascotResult {
   id: string;
-  name: string;
-  description: string;
-  icon: string;
-  bodyColorLabel: string;
+  style: string;
+  styleName: string;
+  imageUrl: string;
+  status: 'pending' | 'loading' | 'done' | 'error';
+  saved: boolean;
+  error?: string;
 }
 
 interface Mascot {
@@ -111,23 +109,32 @@ interface Mascot {
   shirtName?: string;
 }
 
+// ─── Component ─────────────────────────────────────────────────
 export default function MascotBuilderPage() {
   const queryClient = useQueryClient();
-  const [mascotStyle, setMascotStyle] = useState('muppet');
-  const [mascotName, setMascotName] = useState('');
-  const [shirtName, setShirtName] = useState('');
+
+  // Creation mode
+  const [mode, setMode] = useState<CreationMode>('photo');
+  const [photoBase64, setPhotoBase64] = useState<string | null>(null);
+  const [description, setDescription] = useState('');
+  const [selectedStyles, setSelectedStyles] = useState<string[]>([]);
+
+  // Build mode options
   const [furColor, setFurColor] = useState('tan');
   const [eyeStyle, setEyeStyle] = useState('round');
   const [hairstyle, setHairstyle] = useState('short-black');
   const [outfitColor, setOutfitColor] = useState('navy');
-  const [accessory, setAccessory] = useState('none');
+
+  // Shared customize
+  const [shirtName, setShirtName] = useState('');
+  const [mascotName, setMascotName] = useState('');
   const [outfitType, setOutfitType] = useState('jumpsuit');
-  const [seasonalAccessory, setSeasonalAccessory] = useState('none');
-  const [personalityPreset, setPersonalityPreset] = useState('');
-  const [catchphrase, setCatchphrase] = useState('');
-  const [energyLevel, setEnergyLevel] = useState('high');
-  const [speakingStyle, setSpeakingStyle] = useState('');
-  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [accessory, setAccessory] = useState('none');
+  const [personalityId, setPersonalityId] = useState('');
+
+  // Results
+  const [results, setResults] = useState<MascotResult[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   // Fetch options from API (with fallback to defaults)
   const { data: optionsData } = useQuery({
@@ -140,449 +147,491 @@ export default function MascotBuilderPage() {
   const outfitColors = options?.outfitColors || DEFAULT_OUTFIT_COLORS;
   const eyeStyles = options?.eyeStyles || DEFAULT_EYE_STYLES;
   const hairstyles = options?.hairstyles || DEFAULT_HAIRSTYLES;
-  const accessories = options?.accessories || DEFAULT_ACCESSORIES;
-  const mascotStyles: MascotStyleOption[] = options?.mascotStyles || DEFAULT_MASCOT_STYLES;
-
-  // Get current style's body color label
-  const currentStyleDef = mascotStyles.find((s: MascotStyleOption) => s.id === mascotStyle) || mascotStyles[0];
-  const bodyColorLabel = currentStyleDef?.bodyColorLabel || 'Fur Color';
 
   // Fetch saved mascots
   const { data: mascotsData } = useQuery({
-    queryKey: ['mascots'],
+    queryKey: ['mascot-list'],
     queryFn: () => mascotBuilderApi.getMascots().then((res) => res.data),
   });
 
   const mascots: Mascot[] = mascotsData?.data || [];
 
-  // Generate mutation
-  const generateMutation = useMutation({
-    mutationFn: () =>
-      mascotBuilderApi.generate({
-        shirtName,
-        mascotName: mascotName || undefined,
-        mascotStyle,
-        furColor,
-        eyeStyle,
-        hairstyle,
-        outfitColor,
-        outfitType,
-        accessory: accessory !== 'none' ? accessory : undefined,
-        seasonalAccessory: seasonalAccessory !== 'none' ? seasonalAccessory : undefined,
-        personality: personalityPreset ? {
-          presetId: personalityPreset,
-          catchphrase,
-          energyLevel,
-          speakingStyle,
-        } : undefined,
-      }),
-    onSuccess: (response) => {
-      const data = response.data.data || response.data;
-      setGeneratedImage(data.imageUrl);
-      queryClient.invalidateQueries({ queryKey: ['mascots'] });
-      toast.success('Mascot created!');
-    },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.error || 'Failed to generate mascot');
-    },
-  });
-
-  // Delete mutation
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => mascotBuilderApi.deleteMascot(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['mascots'] });
-      toast.success('Mascot deleted');
-    },
-    onError: () => {
-      toast.error('Failed to delete mascot');
-    },
-  });
-
-  const handleGenerate = () => {
-    if (!shirtName.trim()) {
-      toast.error('Please enter a name for the shirt');
-      return;
-    }
-    generateMutation.mutate();
+  // ─── Handlers ──────────────────────────────────────────────
+  const toggleStyle = (styleId: string) => {
+    setSelectedStyles((prev) => {
+      if (prev.includes(styleId)) {
+        return prev.filter((s) => s !== styleId);
+      }
+      if (prev.length >= 4) {
+        toast.error('Max 4 styles at once');
+        return prev;
+      }
+      return [...prev, styleId];
+    });
   };
 
+  const canGenerate =
+    shirtName.trim().length > 0 &&
+    selectedStyles.length > 0 &&
+    (mode !== 'photo' || photoBase64 !== null) &&
+    (mode !== 'describe' || description.trim().length > 0);
+
+  const handleGenerate = async () => {
+    setIsGenerating(true);
+    const initialResults: MascotResult[] = selectedStyles.map((s) => ({
+      id: `mascot-${Date.now()}-${s}`,
+      style: s,
+      styleName: ALL_STYLES.find((st) => st.id === s)?.name || s,
+      imageUrl: '',
+      status: 'loading' as const,
+      saved: false,
+    }));
+    setResults(initialResults);
+
+    try {
+      const res = await mascotBuilderApi.generateV2({
+        mode,
+        photoBase64: mode === 'photo' ? photoBase64! : undefined,
+        description: mode === 'describe' ? description : undefined,
+        styles: selectedStyles,
+        shirtName,
+        mascotName: mascotName || undefined,
+        furColor: mode === 'build' ? furColor : undefined,
+        eyeStyle: mode === 'build' ? eyeStyle : undefined,
+        hairstyle: mode === 'build' ? hairstyle : undefined,
+        outfitType: outfitType || undefined,
+        outfitColor: mode === 'build' ? outfitColor : undefined,
+        accessory: accessory !== 'none' ? accessory : undefined,
+        personality: personalityId ? { presetId: personalityId } : undefined,
+      });
+
+      const apiResults = res.data.results || res.data.data?.results || [];
+      setResults((prev) =>
+        prev.map((r, i) => {
+          const apiResult = apiResults[i];
+          if (apiResult) {
+            return {
+              ...r,
+              status: 'done' as const,
+              imageUrl: apiResult.imageUrl,
+              id: apiResult.id,
+              saved: true,
+            };
+          }
+          return { ...r, status: 'error' as const, error: 'No result returned' };
+        }),
+      );
+      toast.success('Mascots generated!');
+      queryClient.invalidateQueries({ queryKey: ['mascot-list'] });
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || 'Generation failed';
+      setResults((prev) =>
+        prev.map((r) => ({ ...r, status: 'error' as const, error: msg })),
+      );
+      toast.error(msg);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleDeleteMascot = async (id: string) => {
+    try {
+      await mascotBuilderApi.deleteMascot(id);
+      queryClient.invalidateQueries({ queryKey: ['mascot-list'] });
+      toast.success('Mascot deleted');
+    } catch {
+      toast.error('Failed to delete mascot');
+    }
+  };
+
+  // ─── Render ────────────────────────────────────────────────
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="max-w-lg mx-auto space-y-6">
       {/* Header */}
       <div className="text-center">
         <h1 className="heading-retro flex items-center justify-center gap-3">
           <Palette className="text-retro-mustard" />
           Mascot Builder
         </h1>
-        <p className="text-gray-600 mt-2">Create a custom character mascot for your shop</p>
+        <p className="text-gray-600 mt-2">Create your shop's signature character</p>
       </div>
 
-      {/* Step 1: Mascot Style Selector */}
+      {/* ─── Mode Selector ─────────────────────────────────── */}
       <div className="card-retro">
-        <h2 className="font-heading text-lg uppercase mb-1">Step 1: Choose Your Style</h2>
-        <p className="text-sm text-gray-500 mb-4">Pick the art style for your mascot</p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {mascotStyles.map((style: MascotStyleOption) => (
-            <button
-              key={style.id}
-              onClick={() => setMascotStyle(style.id)}
-              className={`p-4 border-2 text-center transition-all ${
-                mascotStyle === style.id
-                  ? 'border-retro-red bg-retro-red/10 shadow-retro-sm'
-                  : 'border-gray-200 hover:border-gray-400'
-              }`}
-            >
-              <span className="text-3xl block mb-2">{style.icon}</span>
-              <span className="font-heading text-xs uppercase block">{style.name}</span>
-              <p className="text-[10px] text-gray-500 mt-1 leading-tight">{style.description}</p>
-            </button>
-          ))}
+        <h2 className="font-heading text-sm uppercase mb-3">How do you want to start?</h2>
+        <div className="grid grid-cols-3 gap-3">
+          <ModeButton
+            active={mode === 'photo'}
+            onClick={() => setMode('photo')}
+            icon={<Camera size={22} />}
+            label="Upload Photo"
+            desc="From a real person"
+          />
+          <ModeButton
+            active={mode === 'describe'}
+            onClick={() => setMode('describe')}
+            icon={<PenLine size={22} />}
+            label="Describe"
+            desc="Write what you see"
+          />
+          <ModeButton
+            active={mode === 'build'}
+            onClick={() => setMode('build')}
+            icon={<Wrench size={22} />}
+            label="Build"
+            desc="Pick every detail"
+          />
+        </div>
+
+        {/* Mode-specific content */}
+        <div className="mt-4">
+          {mode === 'photo' && (
+            <PhotoUpload
+              photoBase64={photoBase64}
+              onPhotoChange={setPhotoBase64}
+              label="Upload a reference photo"
+              hint="We'll turn this person into a mascot character"
+            />
+          )}
+
+          {mode === 'describe' && (
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Describe your mascot: A big friendly guy with a red beard, always smiling, looks like a lumberjack who fixes cars..."
+              className="input-retro w-full h-28 resize-none"
+              maxLength={500}
+            />
+          )}
+
+          {mode === 'build' && (
+            <div className="space-y-4">
+              {/* Fur/Body Color */}
+              <div>
+                <label className="block font-heading text-xs uppercase mb-2">Fur / Body Color</label>
+                <div className="flex gap-2 flex-wrap">
+                  {furColors.map((color: any) => (
+                    <button
+                      key={color.id}
+                      onClick={() => setFurColor(color.id)}
+                      className={`w-9 h-9 rounded-full border-2 transition-all ${
+                        furColor === color.id
+                          ? 'border-retro-red ring-2 ring-retro-red ring-offset-2'
+                          : 'border-gray-300 hover:border-gray-500'
+                      }`}
+                      style={{ backgroundColor: color.hex }}
+                      title={color.name}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Eye Style */}
+              <div>
+                <label className="block font-heading text-xs uppercase mb-2">Eye Style</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {eyeStyles.map((style: any) => (
+                    <button
+                      key={style.id}
+                      onClick={() => setEyeStyle(style.id)}
+                      className={`py-2 px-3 border-2 font-heading text-xs uppercase transition-all ${
+                        eyeStyle === style.id
+                          ? 'border-retro-red bg-red-50 text-retro-red'
+                          : 'border-gray-300 hover:border-gray-500'
+                      }`}
+                    >
+                      {style.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Hairstyle */}
+              <div>
+                <label className="block font-heading text-xs uppercase mb-2">Hairstyle</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {hairstyles.map((style: any) => (
+                    <button
+                      key={style.id}
+                      onClick={() => setHairstyle(style.id)}
+                      className={`py-2 px-1 border-2 font-heading text-[10px] uppercase transition-all ${
+                        hairstyle === style.id
+                          ? 'border-retro-red bg-red-50 text-retro-red'
+                          : 'border-gray-300 hover:border-gray-500'
+                      }`}
+                    >
+                      {style.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Outfit Color */}
+              <div>
+                <label className="block font-heading text-xs uppercase mb-2">Outfit Color</label>
+                <div className="flex gap-2 flex-wrap">
+                  {outfitColors.map((color: any) => (
+                    <button
+                      key={color.id}
+                      onClick={() => setOutfitColor(color.id)}
+                      className={`w-9 h-9 rounded-full border-2 transition-all ${
+                        outfitColor === color.id
+                          ? 'border-retro-red ring-2 ring-retro-red ring-offset-2'
+                          : 'border-gray-300 hover:border-gray-500'
+                      }`}
+                      style={{ backgroundColor: color.hex }}
+                      title={color.name}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Two-panel layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left Panel: Customization */}
-        <div className="card-retro space-y-5">
-          <h2 className="font-heading text-lg uppercase">Step 2: Customize</h2>
+      {/* ─── Style Picker ──────────────────────────────────── */}
+      <div className="card-retro">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-heading text-sm uppercase">Pick Your Styles (1-4)</h2>
+          <span className="text-xs text-gray-500">
+            {selectedStyles.length} of 4 selected
+          </span>
+        </div>
+        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+          {ALL_STYLES.map((style) => {
+            const isSelected = selectedStyles.includes(style.id);
+            return (
+              <button
+                key={style.id}
+                onClick={() => toggleStyle(style.id)}
+                className={`p-3 border-2 text-center transition-all ${
+                  isSelected
+                    ? 'border-retro-red bg-red-50 text-retro-red'
+                    : 'border-gray-300 bg-white text-gray-600 hover:border-gray-500'
+                }`}
+              >
+                <span className="text-2xl block">{style.icon}</span>
+                <span className="font-heading text-[10px] uppercase block mt-1">
+                  {style.name}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
-          {/* Mascot Name */}
-          <div>
-            <label className="block font-heading text-sm uppercase mb-1">Mascot Name</label>
-            <input
-              type="text"
-              value={mascotName}
-              onChange={(e) => setMascotName(e.target.value)}
-              placeholder='e.g. "Torque Tony", "Bay Bob"'
-              className="input-retro w-full"
-              maxLength={30}
-            />
-            <p className="text-xs text-gray-400 mt-1">Your mascot's identity in flyers and videos</p>
-          </div>
+      {/* ─── Customize ─────────────────────────────────────── */}
+      <div className="card-retro space-y-4">
+        <h2 className="font-heading text-sm uppercase">Customize</h2>
 
-          {/* Shirt Name */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Name on Shirt */}
           <div>
-            <label className="block font-heading text-sm uppercase mb-1">Shirt Name *</label>
+            <label className="block font-heading text-xs uppercase mb-1">
+              Name on Shirt <span className="text-retro-red">*</span>
+            </label>
             <input
               type="text"
               value={shirtName}
               onChange={(e) => setShirtName(e.target.value)}
-              placeholder="Name on the shirt patch..."
+              placeholder="MIKE"
               className="input-retro w-full"
               maxLength={20}
             />
           </div>
 
-          {/* Body/Fur Color */}
+          {/* Mascot Name */}
           <div>
-            <label className="block font-heading text-sm uppercase mb-2">{bodyColorLabel}</label>
-            <div className="flex gap-2 flex-wrap">
-              {furColors.map((color: any) => (
-                <button
-                  key={color.id}
-                  onClick={() => setFurColor(color.id)}
-                  className={`w-10 h-10 rounded-full border-2 transition-all ${
-                    furColor === color.id
-                      ? 'border-retro-red ring-2 ring-retro-red ring-offset-2'
-                      : 'border-gray-300 hover:border-gray-500'
-                  }`}
-                  style={{ backgroundColor: color.hex }}
-                  title={color.name}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Eye Style */}
-          <div>
-            <label className="block font-heading text-sm uppercase mb-2">Eye Style</label>
-            <div className="grid grid-cols-2 gap-2">
-              {eyeStyles.map((style: any) => (
-                <button
-                  key={style.id}
-                  onClick={() => setEyeStyle(style.id)}
-                  className={`py-2 px-3 border-2 font-heading text-xs uppercase transition-all ${
-                    eyeStyle === style.id
-                      ? 'border-retro-red bg-red-50 text-retro-red'
-                      : 'border-gray-300 hover:border-gray-500'
-                  }`}
-                >
-                  {style.name}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Hairstyle */}
-          <div>
-            <label className="block font-heading text-sm uppercase mb-2">Hairstyle</label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {hairstyles.map((style: any) => (
-                <button
-                  key={style.id}
-                  onClick={() => setHairstyle(style.id)}
-                  className={`py-2 px-2 border-2 font-heading text-xs uppercase transition-all ${
-                    hairstyle === style.id
-                      ? 'border-retro-red bg-red-50 text-retro-red'
-                      : 'border-gray-300 hover:border-gray-500'
-                  }`}
-                >
-                  {style.name}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Outfit Color */}
-          <div>
-            <label className="block font-heading text-sm uppercase mb-2">Outfit Color</label>
-            <div className="flex gap-2 flex-wrap">
-              {outfitColors.map((color: any) => (
-                <button
-                  key={color.id}
-                  onClick={() => setOutfitColor(color.id)}
-                  className={`w-10 h-10 rounded-full border-2 transition-all ${
-                    outfitColor === color.id
-                      ? 'border-retro-red ring-2 ring-retro-red ring-offset-2'
-                      : 'border-gray-300 hover:border-gray-500'
-                  }`}
-                  style={{ backgroundColor: color.hex }}
-                  title={color.name}
-                />
-              ))}
-            </div>
+            <label className="block font-heading text-xs uppercase mb-1">
+              Mascot Name <span className="text-gray-400 text-[10px]">(optional)</span>
+            </label>
+            <input
+              type="text"
+              value={mascotName}
+              onChange={(e) => setMascotName(e.target.value)}
+              placeholder="Wrench Willie"
+              className="input-retro w-full"
+              maxLength={30}
+            />
           </div>
 
           {/* Outfit Type */}
           <div>
-            <label className="block font-heading text-sm uppercase mb-2 text-retro-navy">Outfit Type</label>
-            <div className="grid grid-cols-2 gap-2">
-              {(options?.outfitTypes || DEFAULT_OUTFIT_TYPES).map((type: any) => (
-                <button
-                  key={type.id}
-                  onClick={() => setOutfitType(type.id)}
-                  className={`py-2 px-3 border-2 font-heading text-xs uppercase transition-all ${
-                    outfitType === type.id
-                      ? 'border-retro-red bg-red-50 text-retro-red'
-                      : 'border-gray-300 hover:border-gray-500'
-                  }`}
-                >
-                  {type.name}
-                </button>
+            <label className="block font-heading text-xs uppercase mb-1">Outfit</label>
+            <select
+              value={outfitType}
+              onChange={(e) => setOutfitType(e.target.value)}
+              className="select-retro w-full"
+            >
+              {DEFAULT_OUTFIT_TYPES.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
               ))}
-            </div>
-          </div>
-
-          {/* Accessory */}
-          <div>
-            <label className="block font-heading text-sm uppercase mb-2">Accessory</label>
-            <div className="flex gap-2 flex-wrap">
-              {accessories.map((acc: any) => (
-                <button
-                  key={acc.id}
-                  onClick={() => setAccessory(acc.id)}
-                  className={`py-2 px-3 border-2 font-heading text-xs uppercase transition-all ${
-                    accessory === acc.id
-                      ? 'border-retro-red bg-red-50 text-retro-red'
-                      : 'border-gray-300 hover:border-gray-500'
-                  }`}
-                >
-                  {acc.name}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Seasonal Accessory */}
-          <div>
-            <label className="block font-heading text-sm uppercase mb-2 text-retro-navy">Seasonal Accessory</label>
-            <div className="grid grid-cols-2 gap-2">
-              {(options?.seasonalAccessories || DEFAULT_SEASONAL).map((item: any) => (
-                <button
-                  key={item.id}
-                  onClick={() => setSeasonalAccessory(item.id)}
-                  className={`py-2 px-3 border-2 font-heading text-xs uppercase transition-all ${
-                    seasonalAccessory === item.id
-                      ? 'border-retro-red bg-red-50 text-retro-red'
-                      : 'border-gray-300 hover:border-gray-500'
-                  }`}
-                >
-                  {item.name}
-                </button>
-              ))}
-            </div>
+            </select>
           </div>
 
           {/* Personality */}
-          <div className="border-t-2 border-gray-200 pt-4">
-            <label className="block font-heading text-sm uppercase mb-2 text-retro-navy">Personality</label>
-            <p className="text-xs text-gray-500 mb-3">How your mascot acts in videos</p>
-            <div className="space-y-2">
-              {PERSONALITY_PRESETS.map((preset: any) => (
-                <button
-                  key={preset.id}
-                  onClick={() => {
-                    setPersonalityPreset(preset.id);
-                    setCatchphrase(preset.defaultCatchphrase);
-                    setEnergyLevel(preset.energyLevel);
-                    setSpeakingStyle(preset.speakingStyle);
-                  }}
-                  className={`w-full py-3 px-4 border-2 text-left transition-all ${
-                    personalityPreset === preset.id
-                      ? 'border-retro-red bg-red-50'
-                      : 'border-gray-200 hover:border-gray-400'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">{preset.icon}</span>
-                    <span className="font-heading text-sm uppercase">{preset.name}</span>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1 ml-7">{preset.description}</p>
-                </button>
+          <div>
+            <label className="block font-heading text-xs uppercase mb-1">Personality</label>
+            <select
+              value={personalityId}
+              onChange={(e) => setPersonalityId(e.target.value)}
+              className="select-retro w-full"
+            >
+              <option value="">None</option>
+              {PERSONALITY_PRESETS.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.icon} {p.name}
+                </option>
               ))}
-            </div>
+            </select>
           </div>
-
-          {/* Catchphrase */}
-          {personalityPreset && (
-            <div>
-              <label className="block font-heading text-sm uppercase mb-1 text-retro-navy">Catchphrase</label>
-              <input
-                type="text"
-                value={catchphrase}
-                onChange={(e) => setCatchphrase(e.target.value)}
-                className="input-retro w-full"
-                placeholder="Enter your mascot's catchphrase..."
-                maxLength={100}
-              />
-            </div>
-          )}
-
-          {/* Energy Level */}
-          {personalityPreset && (
-            <div>
-              <label className="block font-heading text-sm uppercase mb-2 text-retro-navy">Energy Level</label>
-              <div className="grid grid-cols-4 gap-1">
-                {(['low', 'medium', 'high', 'maximum'] as const).map((level) => (
-                  <button
-                    key={level}
-                    onClick={() => setEnergyLevel(level)}
-                    className={`py-2 px-1 border-2 font-heading text-xs uppercase transition-all ${
-                      energyLevel === level
-                        ? 'border-retro-red bg-red-50 text-retro-red'
-                        : 'border-gray-300 hover:border-gray-500'
-                    }`}
-                  >
-                    {level === 'maximum' ? 'MAX!' : level}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Generate Button */}
-          <button
-            onClick={handleGenerate}
-            disabled={generateMutation.isPending || !shirtName.trim()}
-            className="w-full btn-retro-primary flex items-center justify-center gap-2 py-3 disabled:opacity-50"
-          >
-            {generateMutation.isPending ? (
-              <>
-                <Loader className="animate-spin" size={20} />
-                Generating...
-              </>
-            ) : (
-              <>
-                <Sparkles size={20} />
-                GENERATE MASCOT
-              </>
-            )}
-          </button>
-        </div>
-
-        {/* Right Panel: Preview */}
-        <div className="card-retro flex flex-col items-center justify-center min-h-[400px]">
-          {generateMutation.isPending ? (
-            <div className="text-center space-y-4">
-              <Loader className="w-16 h-16 animate-spin text-retro-red mx-auto" />
-              <p className="font-heading text-lg uppercase">Creating Your Mascot...</p>
-              <p className="text-sm text-gray-500">This usually takes about 15-30 seconds</p>
-              <div className="text-xs text-gray-400 bg-gray-50 p-3 border border-gray-200 max-w-xs mx-auto">
-                <p>Style: {currentStyleDef?.name}</p>
-                {mascotName && <p>Name: {mascotName}</p>}
-              </div>
-            </div>
-          ) : generatedImage ? (
-            <div className="text-center space-y-4 w-full">
-              <img
-                src={generatedImage}
-                alt={`Mascot: ${mascotName || shirtName}`}
-                className="w-full max-w-md mx-auto border-2 border-black shadow-retro"
-              />
-              {mascotName && (
-                <p className="font-display text-2xl text-retro-navy">{mascotName}</p>
-              )}
-              <p className="font-heading text-sm uppercase text-gray-500">
-                {currentStyleDef?.name} — "{shirtName}"
-              </p>
-            </div>
-          ) : (
-            <div className="text-center text-gray-400 space-y-3">
-              <span className="text-6xl block">{currentStyleDef?.icon || '🧸'}</span>
-              <p className="font-heading uppercase">Mascot Preview</p>
-              <p className="text-sm">Choose a style, customize, then hit generate!</p>
-              <div className="text-xs text-gray-400 bg-gray-50 p-3 border border-gray-200 max-w-xs mx-auto">
-                <p className="font-heading uppercase text-gray-500 mb-1">Current Selection:</p>
-                <p>Style: {currentStyleDef?.name}</p>
-                <p>{bodyColorLabel}: {furColors.find((c: any) => c.id === furColor)?.name || furColor}</p>
-                <p>Eyes: {eyeStyles.find((s: any) => s.id === eyeStyle)?.name || eyeStyle}</p>
-                <p>Hair: {hairstyles.find((s: any) => s.id === hairstyle)?.name || hairstyle}</p>
-                <p>Outfit: {outfitColors.find((c: any) => c.id === outfitColor)?.name || outfitColor}</p>
-                {accessory !== 'none' && (
-                  <p>Accessory: {accessories.find((a: any) => a.id === accessory)?.name || accessory}</p>
-                )}
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Saved Mascots Gallery */}
-      {mascots.length > 0 && (
+      {/* ─── Generate Button ───────────────────────────────── */}
+      <button
+        onClick={handleGenerate}
+        disabled={!canGenerate || isGenerating}
+        className="w-full btn-retro-primary flex items-center justify-center gap-2 py-3 disabled:opacity-50"
+      >
+        {isGenerating ? (
+          <>
+            <Loader2 className="animate-spin" size={20} />
+            Generating...
+          </>
+        ) : (
+          <>
+            <Rocket size={20} />
+            Generate {selectedStyles.length || ''} Mascot
+            {selectedStyles.length > 1 ? 's' : ''}
+          </>
+        )}
+      </button>
+
+      {/* ─── Results Grid ──────────────────────────────────── */}
+      {results.length > 0 && (
         <div className="card-retro">
-          <h2 className="font-heading text-lg uppercase mb-4">Your Mascots</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <h2 className="font-heading text-sm uppercase mb-3">Results</h2>
+          <div className="grid grid-cols-2 gap-4">
+            {results.map((result) => (
+              <div
+                key={result.id}
+                className="card-retro p-3 flex flex-col items-center"
+              >
+                {result.status === 'loading' && (
+                  <div className="w-full aspect-square flex items-center justify-center bg-gray-50">
+                    <Loader2 className="w-10 h-10 animate-spin text-gray-400" />
+                  </div>
+                )}
+
+                {result.status === 'error' && (
+                  <div className="w-full aspect-square flex flex-col items-center justify-center bg-gray-50 text-center p-3">
+                    <AlertCircle className="w-8 h-8 text-red-400 mb-2" />
+                    <p className="text-xs text-red-500">{result.error}</p>
+                  </div>
+                )}
+
+                {result.status === 'done' && (
+                  <img
+                    src={result.imageUrl}
+                    alt={`${result.styleName} mascot`}
+                    className="w-full aspect-square object-cover border border-gray-200"
+                  />
+                )}
+
+                <div className="mt-2 flex items-center gap-2 w-full">
+                  <span className="text-lg">
+                    {ALL_STYLES.find((s) => s.id === result.style)?.icon}
+                  </span>
+                  <span className="font-heading text-xs uppercase flex-1">
+                    {result.styleName}
+                  </span>
+                  {result.status === 'done' && result.saved && (
+                    <CheckCircle size={16} className="text-green-500" />
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ─── My Saved Mascots ──────────────────────────────── */}
+      <div className="card-retro">
+        <h2 className="font-heading text-sm uppercase mb-3">My Saved Mascots</h2>
+        {mascots.length === 0 ? (
+          <p className="text-sm text-gray-500">No mascots saved yet</p>
+        ) : (
+          <div className="flex overflow-x-auto gap-3 pb-2">
             {mascots.map((mascot) => {
-              const name = mascot.mascotName || mascot.metadata?.mascotName;
-              const style = mascot.mascotStyle || mascot.metadata?.mascotStyle || 'muppet';
-              const styleDef = mascotStyles.find((s: MascotStyleOption) => s.id === style);
+              const name =
+                mascot.mascotName || mascot.metadata?.mascotName || mascot.shirtName || mascot.metadata?.shirtName || mascot.title;
+              const styleId = mascot.mascotStyle || mascot.metadata?.mascotStyle || 'muppet';
+              const styleDef = ALL_STYLES.find((s) => s.id === styleId);
               return (
-                <div key={mascot.id} className="card-retro p-3">
+                <div
+                  key={mascot.id}
+                  className="flex-shrink-0 w-24 text-center"
+                >
                   <img
                     src={mascot.imageUrl}
-                    alt={mascot.title}
-                    className="w-full aspect-square object-cover border"
+                    alt={name}
+                    className="w-24 h-32 object-cover border border-gray-200 rounded"
                   />
-                  <div className="mt-2">
-                    {name && <h4 className="font-heading text-sm">{name}</h4>}
-                    <p className="text-xs text-gray-500">
-                      {styleDef?.icon} {styleDef?.name || style} — {mascot.shirtName || mascot.metadata?.shirtName || mascot.title}
-                    </p>
-                  </div>
+                  <p className="font-heading text-[10px] uppercase mt-1 truncate">
+                    {name}
+                  </p>
+                  {styleDef && (
+                    <span className="text-xs">
+                      {styleDef.icon} {styleDef.name}
+                    </span>
+                  )}
                   <button
-                    onClick={() => deleteMutation.mutate(mascot.id)}
-                    disabled={deleteMutation.isPending}
-                    className="text-xs text-red-500 mt-1 flex items-center gap-1 hover:text-red-700"
+                    onClick={() => handleDeleteMascot(mascot.id)}
+                    className="text-xs text-red-500 mt-1 flex items-center gap-1 mx-auto hover:text-red-700"
                   >
-                    <Trash2 size={12} /> Delete
+                    <Trash2 size={10} /> Delete
                   </button>
                 </div>
               );
             })}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
+  );
+}
+
+// ─── Sub-components ────────────────────────────────────────────
+
+function ModeButton({
+  active,
+  onClick,
+  icon,
+  label,
+  desc,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+  desc: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`p-4 border-2 text-center transition-all ${
+        active
+          ? 'border-retro-red bg-red-50 text-retro-red'
+          : 'border-gray-300 bg-white text-gray-600 hover:border-gray-500'
+      }`}
+    >
+      <div className="flex justify-center mb-1">{icon}</div>
+      <span className="font-heading text-xs uppercase block">{label}</span>
+      <span className="text-[10px] text-gray-500 block mt-1">{desc}</span>
+    </button>
   );
 }

@@ -162,6 +162,46 @@ export const MASCOT_STYLES: MascotStyle[] = [
     promptBase: 'A friendly robot auto mechanic character. Smooth chrome and {bodyColor} colored metal plating. {eyes} with glowing LED screen eyes. Antenna or sensor array on head. Articulated joints, tool-arm attachments. Cheerful digital smile on face screen. Clean product photography, studio lighting, white background.',
     bodyColorLabel: 'Metal Color',
   },
+  {
+    id: 'superhero',
+    name: 'Superhero',
+    description: 'Comic book superhero character',
+    icon: '🦸',
+    promptBase: 'Comic book superhero character. Bold heroic pose, flowing cape, power aura. {bodyColor} skin tone. {eyes}. {hair}. Superhero costume with chest emblem, utility belt. Dramatic comic book art style with halftone dots and bold outlines. Heroic stance, muscular build, confident expression.',
+    bodyColorLabel: 'Skin Tone',
+  },
+  {
+    id: 'caricature',
+    name: 'Caricature',
+    description: 'Exaggerated bobblehead-style caricature',
+    icon: '🎭',
+    promptBase: 'Exaggerated bobblehead-style caricature. Oversized head, small body. {bodyColor} exaggerated skin tone. {eyes} enlarged and expressive. {hair} amplified and dramatic. Distinctive features exaggerated for humorous effect. Professional caricature artist style, vibrant colors.',
+    bodyColorLabel: 'Skin Tone',
+  },
+  {
+    id: 'lego',
+    name: 'LEGO Figure',
+    description: 'LEGO minifigure style character',
+    icon: '🧱',
+    promptBase: 'LEGO minifigure style character. Blocky rectangular proportions, cylindrical head. {bodyColor} plastic-like smooth texture. {eyes} as simple printed dots on yellow/plastic face. {hair} as snap-on LEGO hair piece. Realistic toy photography of a LEGO minifigure.',
+    bodyColorLabel: 'Plastic Color',
+  },
+  {
+    id: 'pixel-art',
+    name: 'Pixel Art',
+    description: '8-bit retro video game character sprite',
+    icon: '👾',
+    promptBase: '8-bit retro video game character sprite. {bodyColor} limited color palette, blocky pixels. {eyes} as simple pixel dots. {hair} as pixelated blocks. 16x16 or 32x32 pixel character upscaled. Retro game aesthetic, clean pixel boundaries.',
+    bodyColorLabel: 'Palette Color',
+  },
+  {
+    id: 'claymation',
+    name: 'Claymation',
+    description: 'Stop-motion clay animation character',
+    icon: '🏺',
+    promptBase: 'Stop-motion clay animation character. {bodyColor} modeling clay texture with visible fingerprints and slight imperfections. {eyes} as round clay balls. {hair} as sculpted clay strands. Warm studio lighting, miniature set aesthetic. Wallace & Gromit / Laika Studios style.',
+    bodyColorLabel: 'Clay Color',
+  },
 ];
 
 export interface MascotCustomization {
@@ -182,10 +222,41 @@ export interface MascotCustomization {
   };
 }
 
+export interface MascotV2Input {
+  mode: 'photo' | 'describe' | 'build';
+  photoBase64?: string;
+  description?: string;
+  styles: string[];
+  shirtName: string;
+  mascotName?: string;
+  furColor?: string;
+  eyeStyle?: string;
+  hairstyle?: string;
+  outfitType?: string;
+  outfitColor?: string;
+  accessory?: string;
+  seasonalAccessory?: string;
+  personality?: {
+    presetId: string;
+    catchphrase?: string;
+    energyLevel?: string;
+    speakingStyle?: string;
+  };
+}
+
 export interface MascotResult {
   id: string;
   imageUrl: string;
   characterPrompt: string;
+}
+
+export interface MascotV2Result {
+  id: string;
+  style: string;
+  styleName: string;
+  imageUrl: string;
+  characterPrompt: string;
+  saved: boolean;
 }
 
 export interface PersonalityPreset {

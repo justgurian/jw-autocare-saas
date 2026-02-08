@@ -50,6 +50,7 @@ import styleClonerRoutes from './modules/style-cloner/style-cloner.routes';
 import shopPhotographerRoutes from './modules/shop-photographer/shop-photographer.routes';
 import jingleGeneratorRoutes from './modules/jingle-generator/jingle-generator.routes';
 import hiringFlyerRoutes from './modules/hiring-flyer/hiring-flyer.routes';
+import staffSpotlightRoutes from './modules/staff-spotlight/staff-spotlight.routes';
 
 // Initialize Redis (non-blocking, app works without it)
 getRedisClient();
@@ -155,6 +156,7 @@ apiV1.use('/tools/style-cloner', styleClonerRoutes);
 apiV1.use('/tools/shop-photographer', shopPhotographerRoutes);
 apiV1.use('/tools/jingle-generator', jingleGeneratorRoutes);
 apiV1.use('/tools/hiring-flyer', hiringFlyerRoutes);
+apiV1.use('/tools/staff-spotlight', staffSpotlightRoutes);
 
 app.use('/api/v1', apiV1);
 

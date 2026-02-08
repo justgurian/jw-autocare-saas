@@ -4,8 +4,10 @@
  */
 
 import { Router, Request, Response, NextFunction } from 'express';
+import { z } from 'zod';
 import { authenticate } from '../../middleware/auth.middleware';
 import { tenantContext } from '../../middleware/tenant.middleware';
+import { generationRateLimiter } from '../../middleware/rate-limit.middleware';
 import { mascotBuilderService } from './mascot-builder.service';
 import { MASCOT_OPTIONS, MASCOT_STYLES, PERSONALITY_PRESETS } from './mascot-options';
 import { logger } from '../../utils/logger';
@@ -159,6 +161,84 @@ router.post('/generate', async (req: Request, res: Response, next: NextFunction)
     });
   } catch (error) {
     logger.error('Mascot generation request failed', { error });
+    next(error);
+  }
+});
+
+/**
+ * POST /api/v1/tools/mascot-builder/generate-v2
+ * Generate mascot images in multiple styles using one of three modes: photo, describe, build
+ */
+const validStyleIds = MASCOT_STYLES.map((s) => s.id);
+
+const generateV2Schema = z.object({
+  mode: z.enum(['photo', 'describe', 'build']),
+  photoBase64: z.string().optional(),
+  description: z.string().max(500).optional(),
+  styles: z.array(z.string()).min(1).max(4).refine(
+    (arr) => arr.every((id) => validStyleIds.includes(id)),
+    { message: `Each style must be one of: ${validStyleIds.join(', ')}` }
+  ),
+  shirtName: z.string().min(1).max(20),
+  mascotName: z.string().max(30).optional(),
+  furColor: z.string().optional(),
+  eyeStyle: z.string().optional(),
+  hairstyle: z.string().optional(),
+  outfitType: z.string().optional(),
+  outfitColor: z.string().optional(),
+  accessory: z.string().optional(),
+  seasonalAccessory: z.string().optional(),
+  personality: z.object({
+    presetId: z.string(),
+    catchphrase: z.string().optional(),
+    energyLevel: z.string().optional(),
+    speakingStyle: z.string().optional(),
+  }).optional(),
+}).refine(
+  (data) => {
+    if (data.mode === 'photo') return !!data.photoBase64;
+    return true;
+  },
+  { message: 'photoBase64 is required when mode is photo', path: ['photoBase64'] }
+).refine(
+  (data) => {
+    if (data.mode === 'describe') return !!data.description;
+    return true;
+  },
+  { message: 'description is required when mode is describe', path: ['description'] }
+);
+
+router.post('/generate-v2', generationRateLimiter, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const tenantId = req.tenantId!;
+    const userId = req.user!.id;
+
+    const parsed = generateV2Schema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        success: false,
+        error: parsed.error.errors.map((e) => e.message).join('; '),
+      });
+    }
+
+    const input = parsed.data;
+
+    logger.info('Mascot V2 generation requested', {
+      tenantId,
+      userId,
+      mode: input.mode,
+      styles: input.styles,
+      shirtName: input.shirtName,
+    });
+
+    const { results } = await mascotBuilderService.generateV2(tenantId, userId, input);
+
+    res.status(201).json({
+      success: true,
+      results,
+    });
+  } catch (error) {
+    logger.error('Mascot V2 generation request failed', { error });
     next(error);
   }
 });
